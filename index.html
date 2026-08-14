@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מרכז תרגול אנגלית - Chen Studying</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-blue: #38bdf8;
+            --accent-indigo: #818cf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lexend', 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            direction: rtl;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: var(--accent-blue);
+            font-size: 2.2rem;
+            margin: 0 0 10px 0;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transition: all 0.25s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-blue);
+            box-shadow: 0 15px 30px rgba(56, 189, 248, 0.15);
+        }
+
+        .card-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0 0 10px 0;
+        }
+
+        .card-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            flex: 1;
+        }
+
+        .btn {
+            background-color: #0284c7;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 1rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .card:hover .btn {
+            background-color: var(--accent-blue);
+            color: #0f172a;
+        }
+
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>📚 מרכז תרגול אנגלית אינטראקטיבי</h1>
+            <p class="subtitle">בחרו את אפליקציית התרגול הרצויה להתחלת הלמידה</p>
+        </header>
+
+        <div class="grid">
+            <a href="Unseen New.html" class="card">
+                <div>
+                    <div class="card-icon">📖</div>
+                    <div class="card-title">תרגול קריאה באנגלית (Unseen)</div>
+                    <div class="card-desc">
+                        קטעי קריאה אינטראקטיביים עם הקראה בקול (T2S), מרקור מילים, שאלות אמריקאיות, כרטיסיות מילים ומצב נגישות לדיסלקציה.
+                    </div>
+                </div>
+                <div class="btn">פתיחת תרגול Unseen ➔</div>
+            </a>
+
+            <a href="Modules Practice.html" class="card">
+                <div>
+                    <div class="card-icon">🩵</div>
+                    <div class="card-title">כרטיסיות תרגול מודולים</div>
+                    <div class="card-desc">
+                        ערכות תרגול מנוקדות לפי מודולים (תנועות A, O, I), מעקב והתקדמות אישית, הקראת מילים, אפשרות למחיקת טאבים ונגישות.
+                    </div>
+                </div>
+                <div class="btn">פתיחת כרטיסיות מודולים ➔</div>
+            </a>
+        </div>
+
+        <footer>
+            תרגול אנגלית אינטראקטיבי • מותאם למחשב ולסלולר
+        </footer>
+    </div>
+
+</body>
+</html>
