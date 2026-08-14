@@ -446,6 +446,56 @@
             outline: none;
         }
 
+        .json-instructions {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        .json-btn-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            margin-top: 8px;
+        }
+        .json-action-btn {
+            background-color: #334155;
+            color: #38bdf8;
+            border: 1px solid #475569;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        .json-action-btn:hover {
+            background-color: #0284c7;
+            color: white;
+            border-color: #0284c7;
+        }
+        .status-msg {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+            font-size: 0.9rem;
+        }
+        .msg-success {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid #22c55e;
+        }
+        .msg-error {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid #ef4444;
+        }
+
         textarea {
             width: 100%;
             height: 140px;
@@ -526,6 +576,96 @@
             word-spacing: 0.2em;
         }
 
+        /* Modal Overlay & Sync Card */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 480px;
+            width: 100%;
+            color: #f8fafc;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            direction: rtl;
+        }
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .modal-desc {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        .sync-link-input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background-color: #0f172a;
+            color: #38bdf8;
+            font-size: 0.85rem;
+            direction: ltr;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+        .modal-btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .modal-btn {
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+        .modal-btn:hover {
+            background-color: #38bdf8;
+            color: #0f172a;
+        }
+        .modal-btn.close-btn {
+            background-color: #334155;
+            color: #cbd5e1;
+        }
+        .modal-btn.close-btn:hover {
+            background-color: #475569;
+            color: white;
+        }
+
         @media (max-width: 640px) {
             body {
                 padding: 12px 10px;
@@ -566,6 +706,7 @@
 
     <div class="top-bar">
         <button class="a11y-btn" id="dyslexia-toggle" onclick="toggleDyslexiaFont()" aria-pressed="false">♿ פונט נגיש לדיסלקציה</button>
+        <button class="a11y-btn" onclick="openSyncModal()" title="סנכרן התקדמות למכשיר אחר">📱 סנכרון למכשיר אחר</button>
     </div>
 
     <header>
@@ -642,12 +783,24 @@
         💡 <b>קיצורי מקלדת:</b> [רווח] הפיכה | [חצים] מעבר | [S] הקראה | [1] הצלחתי | [2] צריכה תרגול
     </div>
 
-    <!-- JSON Input for Future Modules -->
+    <!-- JSON Input & Export for Custom Modules -->
     <div class="json-section">
-        <details>
-            <summary>⚙️ להדבקת תרגיל JSON חדש (הוספת טאב חדש)</summary>
-            <textarea id="json-input" placeholder="הדבק כאן את קוד ה-JSON שקיבלת בצ'אט..."></textarea>
-            <button class="load-btn" onclick="loadCustomJSON()">טען והוסף מודול כטאב חדש</button>
+        <details id="json-details">
+            <summary>⚙️ טעינה/יצוא JSON של מודולים (הוספת טאב חדש או עריכה)</summary>
+            
+            <div class="json-instructions">
+                💡 <b>הנחיות:</b> ניתן להדביק קוד JSON של מודול חדש כדי להוסיף אותו כטאב, להעתיק את השבלונה המוכנה מתחת, או לייצא את המודול הנוכחי ל-JSON.
+            </div>
+
+            <div class="json-btn-bar">
+                <button class="json-action-btn" onclick="populateDefaultJSONTemplate()">🔄 טען שבלונה לדוגמה</button>
+                <button class="json-action-btn" onclick="copyJSONInputText()">📋 העתק JSON</button>
+            </div>
+
+            <textarea id="json-input" placeholder="הדבק כאן את קוד ה-JSON..."></textarea>
+            <div id="json-status" class="status-msg"></div>
+
+            <button class="load-btn" onclick="loadCustomJSON()">🚀 טען והוסף מודול כטאב חדש</button>
         </details>
     </div>
 
@@ -852,8 +1005,80 @@
             applyDyslexiaFont(!document.body.classList.contains('dyslexia-font'));
         }
 
+        /* ===================================================
+           סנכרון בין מכשירים (URL & QR Sync)
+        =================================================== */
+        function getSyncPayload() {
+            const payload = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('english_reading') || key.includes('dyslexia'))) {
+                    payload[key] = localStorage.getItem(key);
+                }
+            }
+            return payload;
+        }
+
+        function generateSyncURL() {
+            const payload = getSyncPayload();
+            const jsonStr = JSON.stringify(payload);
+            const b64 = btoa(encodeURIComponent(jsonStr));
+            return window.location.origin + window.location.pathname + '#sync=' + encodeURIComponent(b64);
+        }
+
+        function openSyncModal() {
+            const url = generateSyncURL();
+            document.getElementById('sync-url-input').value = url;
+            document.getElementById('sync-modal').classList.add('active');
+        }
+
+        function closeSyncModal() {
+            document.getElementById('sync-modal').classList.remove('active');
+        }
+
+        function copySyncURL() {
+            const input = document.getElementById('sync-url-input');
+            input.select();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(input.value).then(() => {
+                    alert('✓ הקישור לסנכרון ההתקדמות הועתק בהצלחה!');
+                }).catch(() => {
+                    document.execCommand('copy');
+                    alert('✓ הקישור לסנכרון ההתקדמות הועתק בהצלחה!');
+                });
+            } else {
+                document.execCommand('copy');
+                alert('✓ הקישור לסנכרון ההתקדמות הועתק בהצלחה!');
+            }
+        }
+
+        function checkURLSync() {
+            try {
+                const hash = window.location.hash;
+                if (hash && hash.includes('#sync=')) {
+                    const rawB64 = decodeURIComponent(hash.split('#sync=')[1]);
+                    const jsonStr = decodeURIComponent(atob(rawB64));
+                    const payload = JSON.parse(jsonStr);
+
+                    if (payload && typeof payload === 'object') {
+                        let count = 0;
+                        Object.keys(payload).forEach(k => {
+                            localStorage.setItem(k, payload[k]);
+                            count++;
+                        });
+
+                        history.replaceState(null, '', window.location.pathname + window.location.search);
+                        alert(`✓ התקדמות והגדרות סונכרנו בהצלחה במכשיר זה! (${count} פריטים נטענו)`);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to parse sync URL:", e);
+            }
+        }
+
         // Load progress & custom modules from localStorage
         function loadStorageData() {
+            checkURLSync();
             applyDyslexiaFont(localStorage.getItem(DYSLEXIA_KEY) === '1');
             try {
                 // Load progress stats
@@ -1151,53 +1376,110 @@
             updateCard();
         }
 
-        function loadCustomJSON() {
-            try {
-                const input = document.getElementById('json-input').value;
-                const parsed = JSON.parse(input);
-                if (parsed.cards && Array.isArray(parsed.cards)) {
-                    if (!parsed.id) parsed.id = 'custom_' + Date.now();
-                    if (!parsed.tabName) parsed.tabName = parsed.title ? parsed.title.split(':')[0] : `מודול ${modulesData.length + 1}`;
+        const SAMPLE_MODULE_TEMPLATE = {
+            "id": "mod_sample_e",
+            "tabName": "מודול (E)",
+            "title": "מודול דוגמה: תנועת E קצרה (Short E)",
+            "rule": "<div class=\"rule-section\"><b>הסבר וחוקיות:</b> כשהאות <b>E</b> מופיעה באמצע מילה קצרה, היא מקבלת צליל \"אֶה\" קצר (סגול).</div>\n<div class=\"rule-section\"><b>סימון הניקוד:</b> נסמן את הצליל הזה תמיד עם <b>סגול ( ֶ )</b>.</div>",
+            "cards": [
+                { "en": "RED", "he": "רֶד", "meaning": "אדום" },
+                { "en": "BED", "he": "בֶּד", "meaning": "מיטה" },
+                { "en": "PEN", "he": "פֶּן", "meaning": "עט" },
+                { "en": "TEN", "he": "תֶּן", "meaning": "עשר" },
+                { "en": "NET", "he": "נֶת", "meaning": "רשת" },
+                { "en": "PET", "he": "פֶּט", "meaning": "חיית מחמד" },
+                { "en": "LEG", "he": "לֶג", "meaning": "רגל" },
+                { "en": "HEN", "he": "הֶן", "meaning": "תרנגולת" }
+            ]
+        };
 
-                    modulesData.push(parsed);
-                    saveModulesToStorage();
-
-                    document.getElementById('json-input').value = '';
-                    selectModule(modulesData.length - 1); // Switch to the newly added tab
-                    
-                    alert('המודול החדש נוסף כטאב בהצלחה!');
-                } else {
-                    alert('פורמט JSON לא תקין. ודא שיש שדה cards.');
-                }
-            } catch (e) {
-                alert('שגיאה בפענוח ה-JSON: ' + e.message);
+        function populateDefaultJSONTemplate() {
+            const textarea = document.getElementById('json-input');
+            if (textarea) {
+                textarea.value = JSON.stringify(SAMPLE_MODULE_TEMPLATE, null, 2);
             }
         }
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
-            
-            if (e.code === 'Space') {
-                e.preventDefault();
-                flipCard();
-            } else if (e.code === 'ArrowRight' || e.code === 'ArrowUp') {
-                prevCard();
-            } else if (e.code === 'ArrowLeft' || e.code === 'ArrowDown') {
-                nextCard();
-            } else if (e.code === 'KeyS' || e.code === 'KeyA') {
-                playAudio();
-            } else if (e.code === 'Digit1' || e.code === 'Numpad1') {
-                markCardStatus(true);
-            } else if (e.code === 'Digit2' || e.code === 'Numpad2') {
-                markCardStatus(false);
+        function copyJSONInputText() {
+            const textarea = document.getElementById('json-input');
+            if (textarea && textarea.value.trim()) {
+                textarea.select();
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(textarea.value).then(() => {
+                        alert('✓ תוכן ה-JSON הועתק ללוח!');
+                    }).catch(() => {
+                        document.execCommand('copy');
+                        alert('✓ תוכן ה-JSON הועתק ללוח!');
+                    });
+                } else {
+                    document.execCommand('copy');
+                    alert('✓ תוכן ה-JSON הועתק ללוח!');
+                }
+            } else {
+                alert('תיבת ה-JSON ריקה.');
             }
-        });
+        }
+
+        function loadCustomJSON() {
+            const inputEl = document.getElementById('json-input');
+            const statusEl = document.getElementById('json-status');
+            const rawVal = inputEl ? inputEl.value.trim() : '';
+
+            if (statusEl) statusEl.style.display = 'none';
+
+            try {
+                if (!rawVal) throw new Error('תיבת ה-JSON ריקה. אנא הדבק קוד JSON תקין.');
+
+                const parsed = JSON.parse(rawVal);
+                if (!parsed.cards || !Array.isArray(parsed.cards) || parsed.cards.length === 0) {
+                    throw new Error('פורמט JSON לא תקין. חייב להכיל מערך "cards" עם לפחות מילה אחת.');
+                }
+
+                if (!parsed.id) parsed.id = 'custom_' + Date.now();
+                if (!parsed.tabName) parsed.tabName = parsed.title ? parsed.title.split(':')[0] : `מודול ${modulesData.length + 1}`;
+
+                modulesData.push(parsed);
+                saveModulesToStorage();
+
+                if (statusEl) {
+                    statusEl.textContent = '✓ המודול החדש נוסף כטאב בהצלחה! מעביר לטאב החדש...';
+                    statusEl.className = 'status-msg msg-success';
+                    statusEl.style.display = 'block';
+                }
+
+                setTimeout(() => {
+                    selectModule(modulesData.length - 1);
+                }, 800);
+
+            } catch (e) {
+                if (statusEl) {
+                    statusEl.textContent = '❌ שגיאה: ' + e.message;
+                    statusEl.className = 'status-msg msg-error';
+                    statusEl.style.display = 'block';
+                } else {
+                    alert('❌ שגיאה: ' + e.message);
+                }
+            }
+        }
 
         // Initial setup
         loadStorageData();
         renderTabButtons();
         updateCard();
+        populateDefaultJSONTemplate();
     </script>
+
+    <!-- מודאל סנכרון בין מכשירים -->
+    <div id="sync-modal" class="modal-overlay" onclick="if(event.target===this) closeSyncModal()">
+        <div class="modal-card">
+            <div class="modal-title">📱 סנכרון התקדמות בין מכשירים</div>
+            <div class="modal-desc">העתיקו את הקישור ופתחו אותו במכשיר השני לסנכרון מיידי של ההתקדמות וההגדרות.</div>
+            <input type="text" id="sync-url-input" class="sync-link-input" readonly onclick="this.select()">
+            <div class="modal-btn-group">
+                <button class="modal-btn" onclick="copySyncURL()">📋 העתק קישור</button>
+                <button class="modal-btn close-btn" onclick="closeSyncModal()">סגור</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
