@@ -789,7 +789,7 @@
             <summary>⚙️ טעינה/יצוא JSON של מודולים (הוספת טאב חדש או עריכה)</summary>
             
             <div class="json-instructions">
-                💡 <b>הנחיות:</b> ניתן להדביק קוד JSON של מודול חדש כדי להוסיף אותו כטאב, להעתיק את השבלונה המוכנה מתחת, או לייצא את המודול הנוכחי ל-JSON.
+                💡 <b>הנחיות:</b> ניתן להדביק קוד JSON של <b>מודול בודד</b> <i>{ ... }</i> או <b>מספר מודולים</b> <i>[ {...}, {...} ]</i> (כמו הקובץ המלא). כל מודול יתווסף כטאב נפרד. ניתן גם לטעון קובץ JSON ישירות מהמחשב.
             </div>
 
             <div class="json-btn-bar">
@@ -797,10 +797,10 @@
                 <button class="json-action-btn" onclick="copyJSONInputText()">📋 העתק JSON</button>
             </div>
 
-            <textarea id="json-input" placeholder="הדבק כאן את קוד ה-JSON..."></textarea>
+            <textarea id="json-input" placeholder="הדבק כאן קוד JSON של מודול בודד { ... } או מערך מודולים [ {...}, {...} ] ..."></textarea>
             <div id="json-status" class="status-msg"></div>
 
-            <button class="load-btn" onclick="loadCustomJSON()">🚀 טען והוסף מודול כטאב חדש</button>
+            <button class="load-btn" onclick="loadJSON()">🚀 טען והוסף כטאב חדש</button>
         </details>
     </div>
 
@@ -1420,44 +1420,116 @@
             }
         }
 
-        function loadCustomJSON() {
-            const inputEl = document.getElementById('json-input');
+        // ── Shared helper: validates, assigns defaults, persists and navigates ──
+        function _commitModules(modulesToAdd, statusEl) {
+            if (!modulesToAdd || modulesToAdd.length === 0) {
+                throw new Error('יש לכלול לפחות מודול אחד עם שדה "cards".');
+            }
+
+            modulesToAdd.forEach((mod, i) => {
+                if (!mod.cards || !Array.isArray(mod.cards) || mod.cards.length === 0) {
+                    throw new Error(`מודול מס׳ ${i + 1} אינו תקין — חייב להכיל מערך "cards" עם לפחות מילה אחת.`);
+                }
+                if (!mod.id)      mod.id      = 'custom_' + Date.now() + '_' + i;
+                if (!mod.tabName) mod.tabName = mod.title ? mod.title.split(':')[0] : `מודול ${modulesData.length + i + 1}`;
+            });
+
+            const firstNewIndex = modulesData.length;
+            modulesToAdd.forEach(mod => modulesData.push(mod));
+            saveModulesToStorage();
+
+            const count = modulesToAdd.length;
+            if (statusEl) {
+                statusEl.textContent = count === 1
+                    ? '✓ המודול נוסף כטאב בהצלחה! מעביר לטאב החדש...'
+                    : `✓ ${count} מודולים נוספו כטאבים בהצלחה! מעביר לטאב הראשון שנוסף...`;
+                statusEl.className = 'status-msg msg-success';
+                statusEl.style.display = 'block';
+            }
+
+            setTimeout(() => selectModule(firstNewIndex), 800);
+        }
+
+        // ── Public entry point: auto-detects single object or array ──
+        function loadJSON() {
+            const inputEl  = document.getElementById('json-input');
             const statusEl = document.getElementById('json-status');
-            const rawVal = inputEl ? inputEl.value.trim() : '';
+            const rawVal   = inputEl ? inputEl.value.trim() : '';
 
             if (statusEl) statusEl.style.display = 'none';
 
             try {
                 if (!rawVal) throw new Error('תיבת ה-JSON ריקה. אנא הדבק קוד JSON תקין.');
-
                 const parsed = JSON.parse(rawVal);
-                if (!parsed.cards || !Array.isArray(parsed.cards) || parsed.cards.length === 0) {
-                    throw new Error('פורמט JSON לא תקין. חייב להכיל מערך "cards" עם לפחות מילה אחת.');
+                if (Array.isArray(parsed)) {
+                    loadMultipleModules();
+                } else {
+                    loadSingleModule();
                 }
-
-                if (!parsed.id) parsed.id = 'custom_' + Date.now();
-                if (!parsed.tabName) parsed.tabName = parsed.title ? parsed.title.split(':')[0] : `מודול ${modulesData.length + 1}`;
-
-                modulesData.push(parsed);
-                saveModulesToStorage();
-
+            } catch (e) {
                 if (statusEl) {
-                    statusEl.textContent = '✓ המודול החדש נוסף כטאב בהצלחה! מעביר לטאב החדש...';
-                    statusEl.className = 'status-msg msg-success';
+                    statusEl.textContent = '❌ שגיאה: ' + e.message;
+                    statusEl.className = 'status-msg msg-error';
                     statusEl.style.display = 'block';
                 }
+            }
+        }
 
-                setTimeout(() => {
-                    selectModule(modulesData.length - 1);
-                }, 800);
+        // ── Load a single module object  { id, tabName, title, rule, cards } ──
+        function loadSingleModule() {
+            const inputEl  = document.getElementById('json-input');
+            const statusEl = document.getElementById('json-status');
+            const rawVal   = inputEl ? inputEl.value.trim() : '';
+
+            if (statusEl) statusEl.style.display = 'none';
+
+            try {
+                if (!rawVal) throw new Error('תיבת ה-JSON ריקה. אנא הדבק אובייקט מודול בודד.');
+
+                const parsed = JSON.parse(rawVal);
+
+                if (Array.isArray(parsed)) {
+                    throw new Error('זוהה מערך [ ... ]. לטעינת מספר מודולים יש להשתמש בכפתור "טען מספר מודולים".');
+                }
+                if (!parsed || typeof parsed !== 'object') {
+                    throw new Error('פורמט לא תקין. נדרש אובייקט מודול בודד { ... }.');
+                }
+
+                _commitModules([parsed], statusEl);
 
             } catch (e) {
                 if (statusEl) {
                     statusEl.textContent = '❌ שגיאה: ' + e.message;
                     statusEl.className = 'status-msg msg-error';
                     statusEl.style.display = 'block';
-                } else {
-                    alert('❌ שגיאה: ' + e.message);
+                }
+            }
+        }
+
+        // ── Load an array of module objects  [ {...}, {...}, ... ] ──
+        function loadMultipleModules() {
+            const inputEl  = document.getElementById('json-input');
+            const statusEl = document.getElementById('json-status');
+            const rawVal   = inputEl ? inputEl.value.trim() : '';
+
+            if (statusEl) statusEl.style.display = 'none';
+
+            try {
+                if (!rawVal) throw new Error('תיבת ה-JSON ריקה. אנא הדבק מערך מודולים [ {...}, {...} ].');
+
+                const parsed = JSON.parse(rawVal);
+
+                if (!Array.isArray(parsed)) {
+                    throw new Error('זוהה אובייקט בודד { ... }. לטעינת מודול יחיד יש להשתמש בכפתור "טען מודול בודד".');
+                }
+
+                _commitModules(parsed, statusEl);
+
+            } catch (e) {
+                if (statusEl) {
+                    statusEl.textContent = '❌ שגיאה: ' + e.message;
+                    statusEl.className = 'status-msg msg-error';
+                    statusEl.style.display = 'block';
                 }
             }
         }
