@@ -27,6 +27,43 @@ test("prefers the modern neural families over legacy voices", () => {
   expect(pickBestVoice(voices, "en")?.name).toBe("Google US English")
 })
 
+describe("Windows", () => {
+  test("prefers a cloud Natural voice over the legacy Microsoft default", () => {
+    const voices = [
+      voice("Microsoft David - English (United States)"),
+      voice(
+        "Microsoft Ava Online (Natural) - English (United States)",
+        "en-US",
+        { localService: false },
+      ),
+    ]
+
+    expect(pickBestVoice(voices, "en")?.name).toBe(
+      "Microsoft Ava Online (Natural) - English (United States)",
+    )
+  })
+})
+
+describe("Android", () => {
+  // Android/Chrome TTS voices have no readable name at all -- see the comment
+  // in `utils/voices.ts` -- so quality has to be read off the `-network` /
+  // `-local` suffix instead.
+  test("prefers the -network variant over the -local variant of the same voice", () => {
+    const voices = [voice("en-us-x-iol-local"), voice("en-us-x-iol-network")]
+
+    expect(pickBestVoice(voices, "en")?.name).toBe("en-us-x-iol-network")
+  })
+
+  test("still falls back to the OS default when neither suffix is present", () => {
+    const voices = [
+      voice("en-us-x-iol"),
+      voice("en-us-x-sfg", "en-US", { default: true }),
+    ]
+
+    expect(pickBestVoice(voices, "en")?.name).toBe("en-us-x-sfg")
+  })
+})
+
 describe("novelty voices", () => {
   // macOS mixes joke voices into getVoices() with no flag to identify them.
   test("are never selected, even when they are the only alternative to nothing", () => {

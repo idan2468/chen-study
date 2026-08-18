@@ -76,6 +76,17 @@ const isNovelty = (voice: SpeechSynthesisVoice) =>
   NOVELTY_VOICES.has(voice.name.trim().toLowerCase())
 
 /**
+ * Android's speech engines (Google/Samsung TTS) don't give voices a readable
+ * name at all -- `getVoices()` returns codes like `en-us-x-iol-local` or
+ * `en-us-x-iol-network` (the separator is sometimes an underscore instead,
+ * see the Samsung/Chrome discrepancy noted in `readium/speech`'s WebSpeech.md).
+ * `-network` is the cloud-backed variant of the same voice and is consistently
+ * reported as the better-sounding one; `-local` is the on-device fallback.
+ */
+const ANDROID_NETWORK_SUFFIX = /-network$/i
+const ANDROID_LOCAL_SUFFIX = /-local$/i
+
+/**
  * Higher is better. The families scored here are the modern neural voice sets;
  * the unscored remainder are the legacy formant voices that tend to be the
  * default.
@@ -83,7 +94,9 @@ const isNovelty = (voice: SpeechSynthesisVoice) =>
  * On macOS the Enhanced/Premium variants only appear at all once the user has
  * downloaded them in System Settings → Accessibility → Spoken Content — on a
  * machine without them, every voice scores near zero and the OS default wins,
- * which is the correct outcome.
+ * which is the correct outcome. The same "score near zero, OS default wins"
+ * fallback applies on Windows and Android when neither platform's own
+ * higher-quality signal (below) is present.
  */
 const qualityScore = (voice: SpeechSynthesisVoice) => {
   // Never a sensible choice for reading a lesson, whatever else it scores.
@@ -100,7 +113,10 @@ const qualityScore = (voice: SpeechSynthesisVoice) => {
     score += 90
   }
 
-  if (name.includes("natural")) {
+  // Covers both macOS's "Ava (Enhanced)"-style naming and Windows Edge/Chrome's
+  // cloud voices, named e.g. "Microsoft Ava Online (Natural) - English (United
+  // States)" -- the highest-quality tier Windows exposes.
+  if (name.includes("natural") || name.includes("neural")) {
     score += 80
   }
   if (name.startsWith("google")) {
@@ -109,13 +125,25 @@ const qualityScore = (voice: SpeechSynthesisVoice) => {
   if (name.includes("microsoft")) {
     score += 40
   }
-  // Network-backed voices are generally the higher-quality ones.
+  // Android/Chrome TTS voices carry their quality signal in a `-network` /
+  // `-local` suffix rather than a readable name (see the comment above) --
+  // `-network` is the cloud-backed, better-sounding variant.
+  if (ANDROID_NETWORK_SUFFIX.test(name)) {
+    score += 30
+  } else if (ANDROID_LOCAL_SUFFIX.test(name)) {
+    score += 5
+  }
+  // Network-backed voices are generally the higher-quality ones. Distinct from
+  // the Android-specific suffix check above: this is `localService`, the one
+  // signal every platform reports consistently, so it still adds a small
+  // signal even where a platform-specific naming convention already matched.
   if (!voice.localService) {
     score += 10
   }
   // Weighted well above the "no signal at all" case: when nothing scores -- a
-  // stock macOS install -- the OS default is a real, intelligible voice, and is
-  // a far better fallback than whichever name happens to sort first.
+  // stock install with no enhanced/natural/cloud voices -- the OS default is a
+  // real, intelligible voice, and is a far better fallback than whichever name
+  // happens to sort first.
   if (voice.default) {
     score += 20
   }
