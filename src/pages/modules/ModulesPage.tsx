@@ -1,4 +1,13 @@
-import { Accordion, Button, Container, Stack, Text, Title } from "@mantine/core"
+import {
+  Accordion,
+  Alert,
+  Button,
+  Container,
+  Group,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import { importErrorMessage } from "@/i18n/importErrorMessage"
 import { confirmDanger, notifyCannotDelete } from "@/utils/confirmModal"
@@ -212,6 +221,37 @@ export const ModulesPage = () => {
                 </>
               }
             />
+
+            {currentModule &&
+            currentModule.cards.length > 0 &&
+            stats.known + stats.unknown === currentModule.cards.length ? (
+              <Alert
+                color={stats.unknown === 0 ? "success" : "brand"}
+                variant="light"
+                w="100%"
+              >
+                {stats.unknown === 0 ? (
+                  t("modules.moduleCompleteAllKnown")
+                ) : (
+                  <Group justify="space-between" wrap="wrap" gap="xs">
+                    <span>
+                      {t("modules.moduleCompletePartial", {
+                        count: stats.unknown,
+                      })}
+                    </span>
+                    <Button
+                      size="xs"
+                      variant="light"
+                      onClick={() => dispatch(toggleMissedReview())}
+                    >
+                      {t("modules.missedReviewButton", {
+                        count: missedWords.length,
+                      })}
+                    </Button>
+                  </Group>
+                )}
+              </Alert>
+            ) : null}
           </>
         )}
 

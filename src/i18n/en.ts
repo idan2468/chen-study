@@ -105,6 +105,9 @@ export const en: Messages = {
     missedReviewTitle: "Practice missed words",
     missedReviewSubtitle: "{{count}} words left from every module",
     backToModules: "🔙 Back to modules",
+    moduleCompleteAllKnown: "🎉 Every word in this module is known!",
+    moduleCompletePartial:
+      "✅ You've gone through every word in this module. {{count}} still need practice",
   },
 
   unseen: {

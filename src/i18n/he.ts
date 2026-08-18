@@ -98,6 +98,9 @@ export const he = {
     missedReviewTitle: "תרגול מילים שטעיתי",
     missedReviewSubtitle: "נשארו {{count}} מילים מכל המודולים",
     backToModules: "🔙 חזרה למודולים",
+    moduleCompleteAllKnown: "🎉 כל המילים במודול הזה ידועות!",
+    moduleCompletePartial:
+      "✅ עברתם על כל המילים במודול הזה. {{count}} עדיין דורשות תרגול",
   },
 
   unseen: {
