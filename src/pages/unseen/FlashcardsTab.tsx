@@ -5,6 +5,7 @@ import { AssessmentButtons } from "@/components/AssessmentButtons/AssessmentButt
 import { CardNavigation } from "@/components/CardNavigation/CardNavigation"
 import { confirmDanger } from "@/utils/confirmModal"
 import { FlipCard } from "@/components/FlipCard/FlipCard"
+import { FlipHint } from "@/components/FlipHint/FlipHint"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import { StatCounts } from "@/components/StatCounts/StatCounts"
 import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
@@ -125,9 +126,7 @@ export const FlashcardsTab = () => {
             >
               {card.en}
             </Text>
-            <Text size="xs" c="dimmed">
-              {t("common.flipHint")}
-            </Text>
+            <FlipHint />
           </>
         }
         back={

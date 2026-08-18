@@ -16,8 +16,6 @@ import {
 
 export type SpeakOptions = {
   lang?: string
-  /** Overrides the user's speech-rate setting (the Modules page used a fixed 0.75). */
-  rate?: number
 }
 
 /**
@@ -100,7 +98,7 @@ export const useSpeech = () => {
   }, [dispatch])
 
   const speakSequence = useCallback(
-    (items: readonly SpeechItem[], id: string, options?: SpeakOptions) => {
+    (items: readonly SpeechItem[], id: string) => {
       if (!isSpeechSupported()) {
         return
       }
@@ -111,7 +109,7 @@ export const useSpeech = () => {
       speakQueue(
         items,
         {
-          rate: options?.rate ?? current.speechRate,
+          rate: current.speechRate,
           resolveVoice: lang =>
             resolveVoice(currentVoices(), lang, current.systemVoiceUri),
         },
@@ -131,7 +129,7 @@ export const useSpeech = () => {
 
   const speak = useCallback(
     (text: string, id: string, options?: SpeakOptions) => {
-      speakSequence([{ text, lang: options?.lang }], id, options)
+      speakSequence([{ text, lang: options?.lang }], id)
     },
     [speakSequence],
   )
@@ -149,11 +147,11 @@ export const useSpeech = () => {
   )
 
   const toggleSequence = useCallback(
-    (items: readonly SpeechItem[], id: string, options?: SpeakOptions) => {
+    (items: readonly SpeechItem[], id: string) => {
       if (ownerId === id) {
         stop()
       } else {
-        speakSequence(items, id, options)
+        speakSequence(items, id)
       }
     },
     [ownerId, speakSequence, stop],

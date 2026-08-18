@@ -117,8 +117,6 @@ export const en: Messages = {
     cannotDeleteBody: "At least one exercise must remain in the library.",
     playAll: "Read the whole passage",
     playAllLabel: "Read the whole passage aloud",
-    speechRate: "Reading speed: {{rate}}x",
-    speechRateLabel: "Reading speed",
     readingHint:
       "💡 Click a word to hear it • Double-click to highlight it • Emphasised words also appear in the vocabulary cards",
     paragraphPlay: "Read from paragraph {{number}} onwards",
@@ -148,6 +146,8 @@ export const en: Messages = {
       "Browsers default to a basic voice. On a Mac you can download enhanced voices in System Settings.",
     bestAvailable: "Best available",
     test: "Play a sample",
+    speechRate: "Reading speed: {{rate}}x",
+    speechRateLabel: "Reading speed",
   },
 
   importErrors: {

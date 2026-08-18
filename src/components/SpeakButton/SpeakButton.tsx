@@ -13,8 +13,6 @@ export type SpeakButtonProps = {
   label: string
   size?: "xs" | "sm" | "md" | "lg"
   variant?: "filled" | "light" | "default" | "subtle"
-  /** Overrides the user's speech-rate setting. */
-  rate?: number
 }
 
 /**
@@ -35,7 +33,6 @@ export const SpeakButton = ({
   label,
   size = "md",
   variant = "light",
-  rate,
 }: SpeakButtonProps) => {
   const { t } = useTranslation()
   const { ownerId: activeOwnerId, toggleSequence } = useSpeech()
@@ -52,7 +49,7 @@ export const SpeakButton = ({
     // Speak buttons often sit inside clickable cards (the flashcard flips on
     // click), so they must not bubble.
     event.stopPropagation()
-    toggleSequence(items, ownerId, { rate })
+    toggleSequence(items, ownerId)
   }
 
   return (

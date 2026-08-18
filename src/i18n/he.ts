@@ -110,8 +110,6 @@ export const he = {
     cannotDeleteBody: "חייב להישאר לפחות תרגיל אחד בספרייה.",
     playAll: "הקראת הקטע כולו",
     playAllLabel: "הקראת כל הקטע",
-    speechRate: "מהירות ההקראה: {{rate}}x",
-    speechRateLabel: "מהירות ההקראה",
     readingHint:
       "💡 לחיצה על מילה תשמיע אותה • לחיצה כפולה תסמן אותה בצבע • מילים מודגשות מופיעות גם בכרטיסיות",
     paragraphPlay: "הקראה מהפסקה {{number}} והלאה",
@@ -140,6 +138,8 @@ export const he = {
       "הדפדפן בוחר כברירת מחדל קול בסיסי. במק אפשר להוריד קולות משופרים בהגדרות המערכת.",
     bestAvailable: "הקול הטוב ביותר שזמין",
     test: "השמעת דוגמה",
+    speechRate: "מהירות ההקראה: {{rate}}x",
+    speechRateLabel: "מהירות ההקראה",
   },
 
   /** Validation failures from the JSON importers. */

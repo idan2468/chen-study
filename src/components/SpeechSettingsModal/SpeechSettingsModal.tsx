@@ -1,10 +1,23 @@
-import { Button, Group, Modal, Select, Stack, Text } from "@mantine/core"
+import {
+  Button,
+  Group,
+  Modal,
+  Select,
+  Slider,
+  Stack,
+  Text,
+} from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import { useSystemVoices } from "@/hooks/useSpeech"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
+  DEFAULT_SPEECH_RATE,
+  MAX_SPEECH_RATE,
+  MIN_SPEECH_RATE,
+  selectSpeechRate,
   selectSystemVoiceUri,
+  setSpeechRate,
   setSystemVoiceUri,
 } from "@/store/slices/settingsSlice"
 import { voicesForLanguage } from "@/utils/voices"
@@ -33,6 +46,7 @@ export const SpeechSettingsModal = ({
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const systemVoiceUri = useAppSelector(selectSystemVoiceUri)
+  const speechRate = useAppSelector(selectSpeechRate)
   const voices = useSystemVoices()
 
   // English only: the passage, tapped words and both flashcard decks are all
@@ -65,6 +79,22 @@ export const SpeechSettingsModal = ({
           allowDeselect={false}
           searchable
         />
+
+        <Stack gap={2}>
+          <Text size="sm" c="dimmed">
+            {t("speech.speechRate", { rate: speechRate.toFixed(2) })}
+          </Text>
+          <Slider
+            value={speechRate}
+            onChange={value => dispatch(setSpeechRate(value))}
+            min={MIN_SPEECH_RATE}
+            max={MAX_SPEECH_RATE}
+            step={0.05}
+            defaultValue={DEFAULT_SPEECH_RATE}
+            label={value => `${value.toFixed(2)}x`}
+            aria-label={t("speech.speechRateLabel")}
+          />
+        </Stack>
 
         <Group justify="space-between" mt="sm">
           <Group gap="xs">

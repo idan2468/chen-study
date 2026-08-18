@@ -4,13 +4,11 @@ import { useTranslation } from "react-i18next"
 import { AssessmentButtons } from "@/components/AssessmentButtons/AssessmentButtons"
 import { CardNavigation } from "@/components/CardNavigation/CardNavigation"
 import { FlipCard } from "@/components/FlipCard/FlipCard"
+import { FlipHint } from "@/components/FlipHint/FlipHint"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
 import { useSpeech } from "@/hooks/useSpeech"
 import type { CardStatus, ModuleCard } from "@/types/module"
-
-/** The Modules page read words at a fixed rate rather than off a slider. */
-const MODULE_SPEECH_RATE = 0.75
 
 /** The original auto-advanced 250ms after marking a card. */
 const AUTO_ADVANCE_MS = 250
@@ -55,7 +53,7 @@ export const ModuleFlashcard = ({
   )
 
   const speakCard = () => {
-    speak(card.en, ownerId, { lang: "en-US", rate: MODULE_SPEECH_RATE })
+    speak(card.en, ownerId, { lang: "en-US" })
   }
 
   const handleMark = (isKnown: boolean) => {
@@ -98,16 +96,7 @@ export const ModuleFlashcard = ({
             >
               {card.en}
             </Text>
-            <SpeakButton
-              ownerId={ownerId}
-              text={card.en}
-              label={t("common.speakWord", { word: card.en })}
-              rate={MODULE_SPEECH_RATE}
-              size="lg"
-            />
-            <Text size="xs" c="dimmed">
-              {t("common.flipHint")}
-            </Text>
+            <FlipHint />
           </>
         }
         back={
@@ -119,6 +108,12 @@ export const ModuleFlashcard = ({
             <Text c="dimmed" size="lg">
               {card.meaning}
             </Text>
+            <SpeakButton
+              ownerId={ownerId}
+              text={card.en}
+              label={t("common.speakWord", { word: card.en })}
+              size="lg"
+            />
           </div>
         }
       />
