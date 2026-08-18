@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import type { FlashcardKeyHandlers } from "./useFlashcardKeys"
 import { useFlashcardKeys } from "./useFlashcardKeys"
 
 /** A minimal host, since `useFlashcardKeys` itself has no rendered output. */
@@ -17,14 +18,14 @@ const Host = ({ onFlip = vi.fn() }: { onFlip?: () => void }) => {
 
 describe("useFlashcardKeys", () => {
   test.each([
-    ["Space" as const, "onFlip", " "],
-    ["ArrowLeft" as const, "onPrev", "{ArrowLeft}"],
-    ["ArrowRight" as const, "onNext", "{ArrowRight}"],
-    ["S" as const, "onSpeak", "s"],
-    ["1" as const, "onKnown", "1"],
-    ["2" as const, "onUnknown", "2"],
+    ["Space" as const, "onFlip" as const, " "],
+    ["ArrowLeft" as const, "onPrev" as const, "{ArrowLeft}"],
+    ["ArrowRight" as const, "onNext" as const, "{ArrowRight}"],
+    ["S" as const, "onSpeak" as const, "s"],
+    ["1" as const, "onKnown" as const, "1"],
+    ["2" as const, "onUnknown" as const, "2"],
   ])("%s calls %s", async (_key, handlerName, keys) => {
-    const handlers = {
+    const handlers: FlashcardKeyHandlers = {
       onFlip: vi.fn(),
       onNext: vi.fn(),
       onPrev: vi.fn(),

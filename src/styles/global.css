@@ -27,6 +27,18 @@ body.dyslexiaFont {
 }
 
 /*
+ * The `pills` Tabs variant (`UnseenPage`, `DeletableTabs`) paints unselected
+ * tabs with `background-color: transparent` by default, which leaves them
+ * indistinguishable from whatever is behind them. Targets Mantine's own
+ * `role`/`data-*` attributes rather than a hashed CSS-Module class name, since
+ * this needs to apply to every `Tabs` instance across the app, not one
+ * component's styles.
+ */
+[role="tab"][data-variant="pills"] {
+  --tab-bg: var(--mantine-color-default);
+}
+
+/*
  * Module `rule` fields are author-supplied HTML strings containing these class
  * names (see `Modules Practice.html:820-827`), so they cannot be hashed CSS
  * Module classes -- `RuleBox` renders them with `dangerouslySetInnerHTML` and
