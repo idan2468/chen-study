@@ -40,11 +40,12 @@ export const ModuleFlashcard = ({
 
   const ownerId = `modcard:${card.en}`
 
-  // A new card always starts face-down and silent.
+  // Each card gets a fresh mount (keyed by word in ModulesPage), so
+  // `flipped`'s `useState(false)` already starts face-down -- only the
+  // speech side effect (silencing the previous card) belongs here.
   useEffect(() => {
-    setFlipped(false)
     stop()
-  }, [card.en, stop])
+  }, [stop])
 
   useEffect(
     () => () => {

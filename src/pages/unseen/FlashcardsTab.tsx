@@ -39,8 +39,18 @@ export const FlashcardsTab = () => {
   const status = card ? progress[card.en] : undefined
   const cardOwnerId = card ? `vocab:${card.en}` : "vocab:none"
 
-  useEffect(() => {
+  // Unlike ModuleFlashcard, this component isn't remounted per card (no
+  // `key` upstream -- it owns its own navigation), so resetting `flipped`
+  // on card change is adjusted during render rather than via an effect,
+  // avoiding an extra render pass. `stop()` is a real side effect (touches
+  // `speechSynthesis` and dispatches), so it stays in an effect.
+  const [prevCardEn, setPrevCardEn] = useState(card?.en)
+  if (card?.en !== prevCardEn) {
+    setPrevCardEn(card?.en)
     setFlipped(false)
+  }
+
+  useEffect(() => {
     stop()
   }, [card?.en, stop])
 

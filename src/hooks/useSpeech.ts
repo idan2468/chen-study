@@ -82,9 +82,13 @@ export const useSpeech = () => {
   const systemVoiceUri = useAppSelector(selectSystemVoiceUri)
 
   // Read at call time, so changing a setting mid-session takes effect on the
-  // next utterance without every caller re-creating its handlers.
+  // next utterance without every caller re-creating its handlers. Written
+  // from an effect (not during render) since mutating a ref is a side
+  // effect; no dependency array, so it re-syncs after every commit.
   const settingsRef = useRef({ speechRate, systemVoiceUri })
-  settingsRef.current = { speechRate, systemVoiceUri }
+  useEffect(() => {
+    settingsRef.current = { speechRate, systemVoiceUri }
+  })
 
   // Warm the voice list so the first utterance already has a good voice rather
   // than falling back to the browser default.
