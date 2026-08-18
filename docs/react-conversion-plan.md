@@ -574,6 +574,18 @@ file from its new `setupFiles` location.
 
 ## Step 12 — Deploy to GitHub Pages (final step)
 
+> **Outcome: the workflow and config are done and verified; the actual go-live
+> is not yet triggered.** `base: "/chen-study/"` added to `vite.config.ts`,
+> `.github/workflows/deploy.yml` added (checkout → `configure-pages` →
+> build → `upload-pages-artifact` → `deploy-pages`, triggered on push to
+> `main` plus a manual `workflow_dispatch`). Verified locally with
+> `vite preview` (which serves at the configured `base`): assets resolve
+> under `/chen-study/`, deep links (`/chen-study/#/modules`) are correct, and
+> a generated sync link came back as `http://localhost:4173/chen-study/?sync=...`
+> — the exact shape expected. Committed on `convert-to-react`; the workflow
+> only fires once this reaches `main` (or is run manually there), which
+> hasn't happened yet — see the note below.
+
 Target repo: `idan2468/chen-study`, so the site lands at
 `https://idan2468.github.io/chen-study/`.
 
