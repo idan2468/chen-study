@@ -1,4 +1,4 @@
-import type { ModuleCard, PracticeModule } from "../../types/module"
+import type { ModuleCard, PracticeModule } from "@/types/module"
 
 /**
  * Why a code and not a message: these parsers are pure and locale-agnostic, so

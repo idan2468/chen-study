@@ -1,6 +1,6 @@
-import { defaultExercise } from "../../data/defaultExercise"
-import type { Exercise } from "../../types/exercise"
-import { makeStore } from "../store"
+import { defaultExercise } from "@/data/defaultExercise"
+import type { Exercise } from "@/types/exercise"
+import { makeStore } from "@/store/store"
 import type { UnseenState } from "./unseenSlice"
 import {
   addExercise,

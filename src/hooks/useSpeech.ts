@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { SpeechItem } from "../utils/speech"
-import { cancelSpeech, isSpeechSupported, speakQueue } from "../utils/speech"
-import { loadVoices, resolveVoice } from "../utils/voices"
-import { useAppDispatch, useAppSelector } from "../store/hooks"
+import type { SpeechItem } from "@/utils/speech"
+import { cancelSpeech, isSpeechSupported, speakQueue } from "@/utils/speech"
+import { loadVoices, resolveVoice } from "@/utils/voices"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   selectSpeechRate,
   selectSystemVoiceUri,
-} from "../store/slices/settingsSlice"
+} from "@/store/slices/settingsSlice"
 import {
   selectSpeechOwnerId,
   speechAdvanced,
   speechStarted,
   speechStopped,
-} from "../store/slices/speechSlice"
+} from "@/store/slices/speechSlice"
 
 export type SpeakOptions = {
   lang?: string

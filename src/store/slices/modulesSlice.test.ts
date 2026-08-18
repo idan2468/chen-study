@@ -1,7 +1,7 @@
-import { builtInModuleIds, defaultModules } from "../../data/defaultModules"
-import { at } from "../../utils/test-helpers"
-import type { PracticeModule } from "../../types/module"
-import { makeStore } from "../store"
+import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
+import { at } from "@test/helpers"
+import type { PracticeModule } from "@/types/module"
+import { makeStore } from "@/store/store"
 import type { ModulesState } from "./modulesSlice"
 import {
   addModules,

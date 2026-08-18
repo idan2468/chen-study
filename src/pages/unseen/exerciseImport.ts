@@ -1,4 +1,4 @@
-import type { Exercise, Question, QuestionOption } from "../../types/exercise"
+import type { Exercise, Question, QuestionOption } from "@/types/exercise"
 
 /** Locale-agnostic failure codes; the caller maps these to `importErrors.*`. */
 export type ExerciseImportError =

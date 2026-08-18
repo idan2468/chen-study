@@ -1,19 +1,19 @@
 import { Group, Paper, Slider, Stack, Text } from "@mantine/core"
 import { useTranslation } from "react-i18next"
-import { SpeakButton } from "../../components/SpeakButton/SpeakButton"
-import { useAppDispatch, useAppSelector } from "../../store/hooks"
+import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   DEFAULT_SPEECH_RATE,
   MAX_SPEECH_RATE,
   MIN_SPEECH_RATE,
   selectSpeechRate,
   setSpeechRate,
-} from "../../store/slices/settingsSlice"
+} from "@/store/slices/settingsSlice"
 import {
   answerQuestion,
   selectAnswers,
   selectCurrentExercise,
-} from "../../store/slices/unseenSlice"
+} from "@/store/slices/unseenSlice"
 import { MAIN_READER_OWNER, ParagraphReader } from "./ParagraphReader"
 import { QuestionCard } from "./QuestionCard"
 

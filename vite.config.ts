@@ -7,6 +7,13 @@ import packageJson from "./package.json" with { type: "json" }
 export default defineConfig({
   plugins: [react()],
 
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "src"),
+      "@test": path.resolve(import.meta.dirname, "test"),
+    },
+  },
+
   server: {
     open: true,
   },
@@ -23,6 +30,6 @@ export default defineConfig({
 
     globals: true,
     watch: false,
-    setupFiles: ["./src/setupTests.ts"],
+    setupFiles: ["./test/setup.ts"],
   },
 })

@@ -1,7 +1,7 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
-import { createAppSlice } from "../createAppSlice"
-import { readFlag, readString, removeKey } from "../storage"
-import { StorageKeys } from "../../utils/storageKeys"
+import { createAppSlice } from "@/store/createAppSlice"
+import { readFlag, readString, removeKey } from "@/store/storage"
+import { StorageKeys } from "@/utils/storageKeys"
 
 /**
  * Cross-page user preferences.

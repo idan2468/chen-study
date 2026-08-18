@@ -1,4 +1,4 @@
-import { at, expectFailure, expectOk, omitKey } from "../../utils/test-helpers"
+import { at, expectFailure, expectOk, omitKey } from "@test/helpers"
 import { parseModulesJson } from "./moduleImport"
 
 const NOW = 1_700_000_000_000

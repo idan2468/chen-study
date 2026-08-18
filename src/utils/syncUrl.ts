@@ -7,7 +7,7 @@
  * keep those key names stable.
  */
 import { isSyncableKey } from "./storageKeys"
-import { listKeys, readString } from "../store/storage"
+import { listKeys, readString } from "@/store/storage"
 
 export type SyncPayload = Record<string, string>
 

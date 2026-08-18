@@ -1,8 +1,8 @@
 import { useCallback } from "react"
 import { useDirection } from "@mantine/core"
 import { useTranslation } from "react-i18next"
-import { writeString } from "../store/storage"
-import { StorageKeys } from "../utils/storageKeys"
+import { writeString } from "@/store/storage"
+import { StorageKeys } from "@/utils/storageKeys"
 import type { Locale } from "."
 import { applyDocumentLocale, directionFor, DEFAULT_LOCALE } from "."
 

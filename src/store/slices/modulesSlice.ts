@@ -1,15 +1,15 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createSelector } from "@reduxjs/toolkit"
-import { createAppSlice } from "../createAppSlice"
-import { deleteEntry } from "../records"
-import { readJson } from "../storage"
-import { StorageKeys } from "../../utils/storageKeys"
-import { builtInModuleIds, defaultModules } from "../../data/defaultModules"
+import { createAppSlice } from "@/store/createAppSlice"
+import { deleteEntry } from "@/store/records"
+import { readJson } from "@/store/storage"
+import { StorageKeys } from "@/utils/storageKeys"
+import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
 import type {
   ModuleCard,
   ModulesProgress,
   PracticeModule,
-} from "../../types/module"
+} from "@/types/module"
 
 export type ModulesState = {
   modules: PracticeModule[]

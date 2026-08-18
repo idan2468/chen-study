@@ -1,17 +1,17 @@
 import { Paper, Stack } from "@mantine/core"
 import { useCallback, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { SpeakButton } from "../../components/SpeakButton/SpeakButton"
-import { useSpeech } from "../../hooks/useSpeech"
-import { useAppDispatch, useAppSelector } from "../../store/hooks"
-import { selectSpeechQueueIndex } from "../../store/slices/speechSlice"
+import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
+import { useSpeech } from "@/hooks/useSpeech"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { selectSpeechQueueIndex } from "@/store/slices/speechSlice"
 import {
   selectCurrentMarkedWords,
   selectVocabSet,
   toggleMarkedWord,
-} from "../../store/slices/unseenSlice"
-import { cleanWord } from "../../utils/speech"
-import { cx } from "../../utils/cx"
+} from "@/store/slices/unseenSlice"
+import { cleanWord } from "@/utils/speech"
+import { cx } from "@/utils/cx"
 import classes from "./ParagraphReader.module.css"
 
 /** Long enough to tell a single click from a double click, as in the original. */

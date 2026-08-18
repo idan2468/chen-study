@@ -11,13 +11,13 @@ import {
   Tooltip,
 } from "@mantine/core"
 import { useTranslation } from "react-i18next"
-import { importErrorMessage } from "../../i18n/importErrorMessage"
-import { confirmDanger, notifyCannotDelete } from "../../utils/confirmModal"
-import type { JsonParseResult } from "../../components/JsonLoader/JsonLoader"
-import { JsonLoader } from "../../components/JsonLoader/JsonLoader"
-import { StatCounts } from "../../components/StatCounts/StatCounts"
-import { TopBar } from "../../components/TopBar/TopBar"
-import { useAppDispatch, useAppSelector } from "../../store/hooks"
+import { importErrorMessage } from "@/i18n/importErrorMessage"
+import { confirmDanger, notifyCannotDelete } from "@/utils/confirmModal"
+import type { JsonParseResult } from "@/components/JsonLoader/JsonLoader"
+import { JsonLoader } from "@/components/JsonLoader/JsonLoader"
+import { StatCounts } from "@/components/StatCounts/StatCounts"
+import { TopBar } from "@/components/TopBar/TopBar"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   addExercise,
   deleteExercise,
@@ -26,8 +26,8 @@ import {
   selectExerciseOptions,
   selectFlashcardStats,
   switchExercise,
-} from "../../store/slices/unseenSlice"
-import { defaultExercise } from "../../data/defaultExercise"
+} from "@/store/slices/unseenSlice"
+import { defaultExercise } from "@/data/defaultExercise"
 import { FlashcardsTab } from "./FlashcardsTab"
 import { ReadingTab } from "./ReadingTab"
 import { parseExerciseJson } from "./exerciseImport"

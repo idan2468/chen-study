@@ -1,7 +1,7 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit"
 import type { AppDispatch, RootState } from "./store"
 import { removeKey, writeFlag, writeJson, writeString } from "./storage"
-import { flashcardStatusKey, StorageKeys } from "../utils/storageKeys"
+import { flashcardStatusKey, StorageKeys } from "@/utils/storageKeys"
 import {
   setDyslexiaFont,
   setSpeechRate,

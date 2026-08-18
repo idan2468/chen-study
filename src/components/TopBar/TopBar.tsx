@@ -9,14 +9,14 @@ import {
 import { useDisclosure } from "@mantine/hooks"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
-import { useLocale } from "../../i18n/useLocale"
-import { useAppDispatch, useAppSelector } from "../../store/hooks"
+import { useLocale } from "@/i18n/useLocale"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   selectDyslexiaFont,
   toggleDyslexiaFont,
-} from "../../store/slices/settingsSlice"
-import { SpeechSettingsModal } from "../SpeechSettingsModal/SpeechSettingsModal"
-import { SyncModal } from "../SyncModal/SyncModal"
+} from "@/store/slices/settingsSlice"
+import { SpeechSettingsModal } from "@/components/SpeechSettingsModal/SpeechSettingsModal"
+import { SyncModal } from "@/components/SyncModal/SyncModal"
 
 export type TopBarProps = {
   /** Page-specific controls, e.g. the Unseen page's exercise picker. */

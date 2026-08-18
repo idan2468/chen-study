@@ -81,7 +81,10 @@ my-app/
 ```
 
 Conventions kept from the template: co-located `X.tsx` + `X.module.css`, **named exports only**,
-arrow-function components, no barrel files, relative imports (there is no `@/*` alias).
+arrow-function components, no barrel files. **Updated after the repo root move:** the app switched
+from relative imports to `@/*` (→ `src/*`) and `@test/*` (→ `test/*`) aliases, configured in
+`tsconfig.app.json`'s `paths` and `vite.config.ts`'s `resolve.alias` — see Step 13. Same-directory
+`./` imports are kept relative; only imports that crossed a directory boundary (`../`) were converted.
 
 Lint/format constraints to respect while writing: `type` not `interface`; `import type` on its own
 line; **no semicolons**, `arrowParens: "avoid"`; Redux hooks only from `store/hooks.ts`
@@ -453,6 +456,12 @@ once, not the line count.
 
 ## Step 10 — CSS Modules: SCSS extension, or typed codegen to drop `cx`
 
+> **Outcome: decided — do neither.** The user chose to keep `cx` as-is: it's 8
+> lines, already exercised indirectly by every component that uses it, and
+> costs nothing to keep. No `.module.scss` migration, no typed-codegen plugin.
+> The investigation below stays as the record of why, in case the question
+> comes up again after more CSS Modules are added.
+
 Added at the user's request, sequenced after the refactor pass (so it sees the
 final component shape) and before deploy (so Pages gets the final CSS pipeline,
 not an interim one).
@@ -490,24 +499,26 @@ signature. `classes.paraRow` then resolves to a real, always-defined property, a
 `cx`'s only remaining job (joining several classes with a truthy filter) could
 still be worth keeping — that part has nothing to do with `undefined`.
 
-**Decision needed before implementing (ask the user):** three independent
-options, not mutually exclusive:
-1. Adopt `.module.scss` for its own sake (nesting/mixins syntax preference) —
-   cosmetic only here, `cx` stays.
-2. Add a typed-CSS-Modules codegen — this is what actually removes the
-   `string | undefined` problem `cx` exists for.
-3. Do neither; `cx` is 8 lines, already tested indirectly through every component
-   that uses it, and costs nothing to keep.
-
-Whichever is chosen, re-run the same verification as every prior CSS-touching step:
-`npm run build` (confirm class name hashing still matches between component and
-`.module.*` file), `npm run dupes`, and a visual pass over the three existing
-module-CSS components (Hub cards, flip animation, paragraph highlighting) in both
-colour schemes and both RTL/LTR directions.
+**Decision (confirmed with the user):** do neither. Three independent options
+were on the table — (1) adopt `.module.scss` for its own sake, cosmetic only
+here; (2) add a typed-CSS-Modules codegen, which is what would actually remove
+the `string | undefined` problem `cx` exists for; (3) do neither. The user
+picked (3); `cx` stays untouched.
 
 ---
 
 ## Step 11 — Move test infrastructure out of `src/`
+
+> **Outcome: done, exactly as designed below.** `setupTests.ts` → `test/setup.ts`,
+> `utils/test-utils.tsx` → `test/render.tsx`, `utils/test-helpers.ts` →
+> `test/helpers.ts`. The two moved files' own relative imports (`../store/store`,
+> `../theme`, `./i18n`) needed an extra `../src/` hop since `test/` is now a
+> sibling of `src/` rather than nested inside it — not called out below since
+> the plan predates the later root-level restructuring (see the note at the top
+> of this doc). The 4 `test-helpers` importers and `vite.config.ts`/
+> `tsconfig.app.json` were updated as planned. Full gate re-run clean: 75/75
+> tests (discovered from the new `setupFiles` location), lint, type-check,
+> 0 `dupes` clones, build.
 
 Added at the user's request, sequenced after the CSS decision and before deploy so
 the final `src/` tree — the thing actually worth calling "the app" — is settled
@@ -585,6 +596,36 @@ Target repo: `idan2468/chen-study`, so the site lands at
   real-world testing rejected its audio quality; see `docs/remove-neural-tts.md`.
   No WASM/WebGPU/COOP/COEP consideration applies to speech anymore -- the app
   speaks through `window.speechSynthesis` only, which has no such constraints.
+
+---
+
+## Step 13 — Path aliases instead of relative imports
+
+> **Outcome: done.** Reverses the Step 1-era convention that explicitly ruled
+> out a `@/*` alias, at the user's later request.
+
+Added two aliases: `@/*` → `src/*` and `@test/*` → `test/*`, configured in both
+places that need to agree on them independently — `tsconfig.app.json`'s
+`compilerOptions.paths` (for the type checker and editor IntelliSense) and
+`vite.config.ts`'s `resolve.alias` (for the actual bundler/dev-server/vitest
+resolution, which does not read `tsconfig.json` on its own). No third config
+needed: there is no `eslint-plugin-import` resolver in `eslint.config.js`,
+so lint has nothing to update.
+
+**Scope rule:** every import that crossed a directory boundary (started with
+`../`) was rewritten to the alias form; imports within the same directory
+(`./sibling`) were left alone. Same-directory imports are already short and
+don't churn on file moves the way multi-level `../../../` chains do, so
+converting them would add noise without fixing anything.
+
+Applied mechanically across the whole tree — 116 import specifiers rewritten
+across 35 files (both `src/` and `test/`, including the two files moved in
+Step 11 whose own relative imports had grown a `../src/` hop:
+`test/render.tsx`, `test/setup.ts`). Verified with the same gate as every prior
+step: `type-check`, `lint`, `dupes` (0 clones), all 75 tests (setup and helper
+files resolve correctly via `@test/*` too), and `build` — which produced
+byte-identical output hashes to the pre-refactor build, confirming this was a
+pure import-path change with no behavioural difference.
 
 ---
 

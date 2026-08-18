@@ -26,7 +26,12 @@
        id, cards by index, progress by word), where a miss is a real runtime
        case -- so indexed access must be typed as possibly undefined. */
     "noUncheckedIndexedAccess": true,
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@test/*": ["./test/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "test"]
 }

@@ -1,5 +1,5 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
-import { createAppSlice } from "../createAppSlice"
+import { createAppSlice } from "@/store/createAppSlice"
 
 /**
  * Which control currently owns `window.speechSynthesis`.

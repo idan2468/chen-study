@@ -1,15 +1,15 @@
 import { Badge, Button, Group, Stack, Text } from "@mantine/core"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { AssessmentButtons } from "../../components/AssessmentButtons/AssessmentButtons"
-import { CardNavigation } from "../../components/CardNavigation/CardNavigation"
-import { confirmDanger } from "../../utils/confirmModal"
-import { FlipCard } from "../../components/FlipCard/FlipCard"
-import { SpeakButton } from "../../components/SpeakButton/SpeakButton"
-import { StatCounts } from "../../components/StatCounts/StatCounts"
-import { useFlashcardKeys } from "../../hooks/useFlashcardKeys"
-import { useSpeech } from "../../hooks/useSpeech"
-import { useAppDispatch, useAppSelector } from "../../store/hooks"
+import { AssessmentButtons } from "@/components/AssessmentButtons/AssessmentButtons"
+import { CardNavigation } from "@/components/CardNavigation/CardNavigation"
+import { confirmDanger } from "@/utils/confirmModal"
+import { FlipCard } from "@/components/FlipCard/FlipCard"
+import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
+import { StatCounts } from "@/components/StatCounts/StatCounts"
+import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
+import { useSpeech } from "@/hooks/useSpeech"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   markFlashcard,
   nextFlashcard,
@@ -20,7 +20,7 @@ import {
   selectCurrentProgress,
   selectFlashcardIndex,
   selectFlashcardStats,
-} from "../../store/slices/unseenSlice"
+} from "@/store/slices/unseenSlice"
 
 export const FlashcardsTab = () => {
   const { t } = useTranslation()

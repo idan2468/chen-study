@@ -1,15 +1,15 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createSelector } from "@reduxjs/toolkit"
-import { createAppSlice } from "../createAppSlice"
-import { deleteEntry } from "../records"
-import { readJson, readString } from "../storage"
-import { flashcardStatusKey, StorageKeys } from "../../utils/storageKeys"
-import { defaultExercise } from "../../data/defaultExercise"
+import { createAppSlice } from "@/store/createAppSlice"
+import { deleteEntry } from "@/store/records"
+import { readJson, readString } from "@/store/storage"
+import { flashcardStatusKey, StorageKeys } from "@/utils/storageKeys"
+import { defaultExercise } from "@/data/defaultExercise"
 import type {
   AnswerRecord,
   Exercise,
   FlashcardProgress,
-} from "../../types/exercise"
+} from "@/types/exercise"
 
 export type UnseenState = {
   library: Record<string, Exercise>

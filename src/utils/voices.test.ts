@@ -1,4 +1,4 @@
-import { at } from "./test-helpers"
+import { at } from "@test/helpers"
 import { pickBestVoice, resolveVoice, voicesForLanguage } from "./voices"
 
 /** `SpeechSynthesisVoice` is exactly these five fields, so no cast is needed. */

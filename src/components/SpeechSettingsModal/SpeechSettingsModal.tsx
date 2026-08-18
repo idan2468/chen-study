@@ -1,13 +1,13 @@
 import { Button, Group, Modal, Select, Stack, Text } from "@mantine/core"
 import { useTranslation } from "react-i18next"
-import { SpeakButton } from "../SpeakButton/SpeakButton"
-import { useSystemVoices } from "../../hooks/useSpeech"
-import { useAppDispatch, useAppSelector } from "../../store/hooks"
+import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
+import { useSystemVoices } from "@/hooks/useSpeech"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   selectSystemVoiceUri,
   setSystemVoiceUri,
-} from "../../store/slices/settingsSlice"
-import { voicesForLanguage } from "../../utils/voices"
+} from "@/store/slices/settingsSlice"
+import { voicesForLanguage } from "@/utils/voices"
 
 export type SpeechSettingsModalProps = {
   opened: boolean

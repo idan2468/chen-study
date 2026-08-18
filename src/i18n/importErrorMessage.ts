@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next"
-import type { ModuleImportError } from "../pages/modules/moduleImport"
-import type { ExerciseImportError } from "../pages/unseen/exerciseImport"
+import type { ModuleImportError } from "@/pages/modules/moduleImport"
+import type { ExerciseImportError } from "@/pages/unseen/exerciseImport"
 
 /**
  * Turns a parser's locale-agnostic error code into a message for the user.

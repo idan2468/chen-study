@@ -1,13 +1,13 @@
 import { Stack, Text } from "@mantine/core"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { AssessmentButtons } from "../../components/AssessmentButtons/AssessmentButtons"
-import { CardNavigation } from "../../components/CardNavigation/CardNavigation"
-import { FlipCard } from "../../components/FlipCard/FlipCard"
-import { SpeakButton } from "../../components/SpeakButton/SpeakButton"
-import { useFlashcardKeys } from "../../hooks/useFlashcardKeys"
-import { useSpeech } from "../../hooks/useSpeech"
-import type { CardStatus, ModuleCard } from "../../types/module"
+import { AssessmentButtons } from "@/components/AssessmentButtons/AssessmentButtons"
+import { CardNavigation } from "@/components/CardNavigation/CardNavigation"
+import { FlipCard } from "@/components/FlipCard/FlipCard"
+import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
+import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
+import { useSpeech } from "@/hooks/useSpeech"
+import type { CardStatus, ModuleCard } from "@/types/module"
 
 /** The Modules page read words at a fixed rate rather than off a slider. */
 const MODULE_SPEECH_RATE = 0.75

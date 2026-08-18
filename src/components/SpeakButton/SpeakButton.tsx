@@ -1,9 +1,9 @@
 import { ActionIcon, Tooltip } from "@mantine/core"
 import type { MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
-import type { SpeechItem } from "../../utils/speech"
-import { isSpeechSupported } from "../../utils/speech"
-import { useSpeech } from "../../hooks/useSpeech"
+import type { SpeechItem } from "@/utils/speech"
+import { isSpeechSupported } from "@/utils/speech"
+import { useSpeech } from "@/hooks/useSpeech"
 
 export type SpeakButtonProps = {
   /** Unique per control, e.g. `"main"`, `"para:3"`, `"opt:q2:1"`. */

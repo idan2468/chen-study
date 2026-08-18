@@ -1,13 +1,13 @@
 import { Accordion, Button, Container, Stack, Text, Title } from "@mantine/core"
 import { useTranslation } from "react-i18next"
-import { importErrorMessage } from "../../i18n/importErrorMessage"
-import { confirmDanger, notifyCannotDelete } from "../../utils/confirmModal"
-import type { JsonParseResult } from "../../components/JsonLoader/JsonLoader"
-import { JsonLoader } from "../../components/JsonLoader/JsonLoader"
-import { DeletableTabs } from "../../components/DeletableTabs/DeletableTabs"
-import { StatCounts } from "../../components/StatCounts/StatCounts"
-import { TopBar } from "../../components/TopBar/TopBar"
-import { useAppDispatch, useAppSelector } from "../../store/hooks"
+import { importErrorMessage } from "@/i18n/importErrorMessage"
+import { confirmDanger, notifyCannotDelete } from "@/utils/confirmModal"
+import type { JsonParseResult } from "@/components/JsonLoader/JsonLoader"
+import { JsonLoader } from "@/components/JsonLoader/JsonLoader"
+import { DeletableTabs } from "@/components/DeletableTabs/DeletableTabs"
+import { StatCounts } from "@/components/StatCounts/StatCounts"
+import { TopBar } from "@/components/TopBar/TopBar"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   addModules,
   deleteModule,
@@ -26,8 +26,8 @@ import {
   selectModulesProgress,
   selectModule as selectModuleAction,
   toggleFilterMissed,
-} from "../../store/slices/modulesSlice"
-import { sampleModule } from "../../data/defaultModules"
+} from "@/store/slices/modulesSlice"
+import { sampleModule } from "@/data/defaultModules"
 import { ModuleFlashcard } from "./ModuleFlashcard"
 import { RuleBox } from "./RuleBox"
 import { parseModulesJson } from "./moduleImport"

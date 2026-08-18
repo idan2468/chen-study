@@ -1,7 +1,7 @@
 import { Alert, Button, Group, Paper, Stack, Text } from "@mantine/core"
 import { useTranslation } from "react-i18next"
-import { SpeakButton } from "../../components/SpeakButton/SpeakButton"
-import type { AnswerRecord, Question } from "../../types/exercise"
+import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
+import type { AnswerRecord, Question } from "@/types/exercise"
 
 export type QuestionCardProps = {
   question: Question

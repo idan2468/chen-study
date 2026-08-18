@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode } from "react"
-import { cx } from "../../utils/cx"
+import { cx } from "@/utils/cx"
 import classes from "./FlipCard.module.css"
 
 export type FlipCardStatus = "known" | "unknown" | "none"
