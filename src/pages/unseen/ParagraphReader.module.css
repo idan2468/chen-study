@@ -11,6 +11,14 @@
   padding: var(--mantine-spacing-xs);
   border-radius: var(--mantine-radius-md);
   transition: background-color 0.2s ease;
+  /*
+   * Flexbox's "row" axis follows `dir`, not a fixed screen side -- in the
+   * Hebrew (RTL) UI this would otherwise put the play button on the right,
+   * ahead of the (always-LTR, see `.paragraph` below) passage text. The play
+   * button is a fixed control, not RTL content, so it stays on the left in
+   * both locales rather than mirroring with the interface language.
+   */
+  direction: ltr;
 }
 
 /* The paragraph currently being read aloud. */
