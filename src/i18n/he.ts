@@ -94,6 +94,10 @@ export const he = {
     jsonInstructions:
       "הדביקו כאן אובייקט JSON של מודול, או מערך של כמה מודולים. שדה cards הוא חובה; id ו-tabName יושלמו אוטומטית אם חסרים.",
     jsonAdded: "נוספו {{count}} מודולים בהצלחה.",
+    missedReviewButton: "🔁 תרגול מילים שטעיתי ({{count}})",
+    missedReviewTitle: "תרגול מילים שטעיתי",
+    missedReviewSubtitle: "נשארו {{count}} מילים מכל המודולים",
+    backToModules: "🔙 חזרה למודולים",
   },
 
   unseen: {

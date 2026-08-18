@@ -10,10 +10,12 @@ import {
   mergeModules,
   resetCurrentModuleProgress,
   selectActiveCards,
+  selectMissedWordsAcrossModules,
   selectModuleStats,
   selectModules,
   selectModulesProgress,
   toggleFilterMissed,
+  toggleMissedReview,
 } from "./modulesSlice"
 
 const customModule: PracticeModule = {
@@ -32,6 +34,7 @@ const baseState = (overrides: Partial<ModulesState> = {}): ModulesState => ({
   currentModuleId: "mod1",
   cardIndex: 0,
   filterMissed: false,
+  reviewingMissed: false,
   progress: {},
   deletedBuiltInIds: [],
   ...overrides,
@@ -150,6 +153,56 @@ describe("filterMissed", () => {
     const state = store.getState()
     expect(selectActiveCards(state).map(card => card.en)).toStrictEqual(["HAT"])
     expect(state.modules.cardIndex).toBe(0)
+  })
+})
+
+describe("selectMissedWordsAcrossModules", () => {
+  test("pools unknown words from every module, deduplicated by word", () => {
+    const store = makeStore({
+      modules: baseState({
+        modules: [...defaultModules, customModule],
+        progress: { HAT: "unknown", ZAP: "known" },
+      }),
+    })
+
+    // HAT appears in mod1, rev1_2 and rev1_3 -- must be pooled once, not 3x.
+    const missed = selectMissedWordsAcrossModules(store.getState())
+    expect(missed.filter(card => card.en === "HAT")).toHaveLength(1)
+    expect(missed.map(card => card.en)).not.toContain("ZAP")
+  })
+
+  test("excludes pending (never marked) words, not just known ones", () => {
+    const store = makeStore({
+      modules: baseState({ modules: [customModule], progress: {} }),
+    })
+
+    expect(selectMissedWordsAcrossModules(store.getState())).toStrictEqual([])
+  })
+})
+
+describe("toggleMissedReview", () => {
+  test("switches selectActiveCards to the cross-module missed pool and resets the index", () => {
+    const store = makeStore({
+      modules: baseState({
+        currentModuleId: "custom_1",
+        modules: [customModule],
+        progress: { ZAP: "unknown" },
+        cardIndex: 1,
+      }),
+    })
+    store.dispatch(toggleMissedReview())
+
+    const state = store.getState()
+    expect(selectActiveCards(state).map(card => card.en)).toStrictEqual(["ZAP"])
+    expect(state.modules.cardIndex).toBe(0)
+    expect(state.modules.reviewingMissed).toBe(true)
+  })
+
+  test("toggles back off", () => {
+    const store = makeStore({ modules: baseState({ reviewingMissed: true }) })
+    store.dispatch(toggleMissedReview())
+
+    expect(store.getState().modules.reviewingMissed).toBe(false)
   })
 })
 

@@ -101,6 +101,10 @@ export const en: Messages = {
     jsonInstructions:
       "Paste a module JSON object here, or an array of several modules. The cards field is required; id and tabName are filled in automatically if missing.",
     jsonAdded: "Added {{count}} modules successfully.",
+    missedReviewButton: "🔁 Practice missed words ({{count}})",
+    missedReviewTitle: "Practice missed words",
+    missedReviewSubtitle: "{{count}} words left from every module",
+    backToModules: "🔙 Back to modules",
   },
 
   unseen: {

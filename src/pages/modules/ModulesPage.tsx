@@ -20,12 +20,15 @@ import {
   selectCurrentModule,
   selectCurrentModuleId,
   selectFilterMissed,
+  selectMissedWordsAcrossModules,
   selectModuleCardIndex,
   selectModules,
   selectModuleStats,
   selectModulesProgress,
   selectModule as selectModuleAction,
+  selectReviewingMissed,
   toggleFilterMissed,
+  toggleMissedReview,
 } from "@/store/slices/modulesSlice"
 import { sampleModule } from "@/data/defaultModules"
 import { ModuleFlashcard } from "./ModuleFlashcard"
@@ -43,6 +46,8 @@ export const ModulesPage = () => {
   const currentCard = useAppSelector(selectCurrentCard)
   const cardIndex = useAppSelector(selectModuleCardIndex)
   const filterMissed = useAppSelector(selectFilterMissed)
+  const reviewingMissed = useAppSelector(selectReviewingMissed)
+  const missedWords = useAppSelector(selectMissedWordsAcrossModules)
   const progress = useAppSelector(selectModulesProgress)
   const stats = useAppSelector(selectModuleStats)
 
@@ -103,71 +108,112 @@ export const ModulesPage = () => {
       <Stack gap="lg" align="center">
         <TopBar />
 
-        <Stack gap={4} align="center" ta="center">
-          {/* Module titles are author-supplied content of unknown language, so
-              direction is derived from the text rather than assumed. */}
-          <Title order={1} c="brand" dir="auto">
-            {currentModule?.title ?? t("modules.fallbackTitle")}
-          </Title>
-          {/* The original never updated this line, despite the title being
-              data-driven (`#module-desc` in Modules Practice.html:714). */}
-          <Text c="dimmed" dir="auto">
-            {currentModule
-              ? t("modules.moduleMeta", {
-                  tabName: currentModule.tabName,
-                  count: currentModule.cards.length,
-                })
-              : t("modules.noModules")}
-          </Text>
-        </Stack>
+        {reviewingMissed ? (
+          <Stack gap={4} align="center" ta="center">
+            <Title order={1} c="brand">
+              {t("modules.missedReviewTitle")}
+            </Title>
+            <Text c="dimmed">
+              {t("modules.missedReviewSubtitle", {
+                count: missedWords.length,
+              })}
+            </Text>
+            <Button
+              size="xs"
+              variant="default"
+              onClick={() => dispatch(toggleMissedReview())}
+            >
+              {t("modules.backToModules")}
+            </Button>
+          </Stack>
+        ) : (
+          <>
+            <Stack gap={4} align="center" ta="center">
+              {/* Module titles are author-supplied content of unknown
+                  language, so direction is derived from the text rather than
+                  assumed. */}
+              <Title order={1} c="brand" dir="auto">
+                {currentModule?.title ?? t("modules.fallbackTitle")}
+              </Title>
+              {/* The original never updated this line, despite the title
+                  being data-driven (`#module-desc` in
+                  Modules Practice.html:714). */}
+              <Text c="dimmed" dir="auto">
+                {currentModule
+                  ? t("modules.moduleMeta", {
+                      tabName: currentModule.tabName,
+                      count: currentModule.cards.length,
+                    })
+                  : t("modules.noModules")}
+              </Text>
+            </Stack>
 
-        <DeletableTabs
-          items={modules.map(module => ({
-            value: module.id,
-            label: module.tabName,
-          }))}
-          value={currentModuleId}
-          onChange={id => dispatch(selectModuleAction(id))}
-          onDelete={handleDeleteModule}
-        />
-
-        {currentModule && currentModule.rule !== "" ? (
-          <RuleBox title={t("modules.ruleTitle")} html={currentModule.rule} />
-        ) : null}
-
-        <StatCounts
-          items={[
-            {
-              label: t("modules.statKnown"),
-              value: stats.known,
-              color: "success",
-            },
-            {
-              label: t("modules.statUnknown"),
-              value: stats.unknown,
-              color: "danger",
-            },
-            {
-              label: t("modules.statPending"),
-              value: stats.pending,
-              color: "gray",
-            },
-          ]}
-          actions={
-            <>
-              <Button
-                size="xs"
-                variant={filterMissed ? "filled" : "default"}
-                onClick={() => dispatch(toggleFilterMissed())}
-              >
-                {filterMissed ? t("modules.filterOn") : t("modules.filterOff")}
+            {missedWords.length > 0 ? (
+              <Button size="xs" onClick={() => dispatch(toggleMissedReview())}>
+                {t("modules.missedReviewButton", {
+                  count: missedWords.length,
+                })}
               </Button>
-              <Button size="xs" variant="default" onClick={handleResetProgress}>
-                {t("modules.resetModule")}
-              </Button>
-            </>
-          }
-        />
+            ) : null}
+
+            <DeletableTabs
+              items={modules.map(module => ({
+                value: module.id,
+                label: module.tabName,
+              }))}
+              value={currentModuleId}
+              onChange={id => dispatch(selectModuleAction(id))}
+              onDelete={handleDeleteModule}
+            />
+
+            {currentModule && currentModule.rule !== "" ? (
+              <RuleBox
+                title={t("modules.ruleTitle")}
+                html={currentModule.rule}
+              />
+            ) : null}
+
+            <StatCounts
+              items={[
+                {
+                  label: t("modules.statKnown"),
+                  value: stats.known,
+                  color: "success",
+                },
+                {
+                  label: t("modules.statUnknown"),
+                  value: stats.unknown,
+                  color: "danger",
+                },
+                {
+                  label: t("modules.statPending"),
+                  value: stats.pending,
+                  color: "gray",
+                },
+              ]}
+              actions={
+                <>
+                  <Button
+                    size="xs"
+                    variant={filterMissed ? "filled" : "default"}
+                    onClick={() => dispatch(toggleFilterMissed())}
+                  >
+                    {filterMissed
+                      ? t("modules.filterOn")
+                      : t("modules.filterOff")}
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="default"
+                    onClick={handleResetProgress}
+                  >
+                    {t("modules.resetModule")}
+                  </Button>
+                </>
+              }
+            />
+          </>
+        )}
 
         {currentCard ? (
           <ModuleFlashcard

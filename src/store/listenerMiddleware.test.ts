@@ -25,6 +25,7 @@ const preloaded = () => ({
     currentModuleId: "mod1",
     cardIndex: 0,
     filterMissed: false,
+    reviewingMissed: false,
     progress: {},
     deletedBuiltInIds: [],
   },

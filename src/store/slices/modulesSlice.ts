@@ -17,6 +17,8 @@ export type ModulesState = {
   cardIndex: number
   /** "Show only the words I got wrong". */
   filterMissed: boolean
+  /** Reviewing missed words pooled from every module, instead of one module. */
+  reviewingMissed: boolean
   progress: ModulesProgress
   /** Built-ins the user deleted, so hydration does not re-seed them. */
   deletedBuiltInIds: string[]
@@ -82,6 +84,7 @@ const readInitialState = (): ModulesState => {
     currentModuleId: resolveCurrentId(modules),
     cardIndex: 0,
     filterMissed: false,
+    reviewingMissed: false,
     progress: readJson<ModulesProgress>(StorageKeys.modulesProgress, {}),
     deletedBuiltInIds,
   }
@@ -115,6 +118,11 @@ export const modulesSlice = createAppSlice({
 
     toggleFilterMissed: create.reducer(state => {
       state.filterMissed = !state.filterMissed
+      state.cardIndex = 0
+    }),
+
+    toggleMissedReview: create.reducer(state => {
+      state.reviewingMissed = !state.reviewingMissed
       state.cardIndex = 0
     }),
 
@@ -189,6 +197,7 @@ export const modulesSlice = createAppSlice({
     selectCurrentModuleId: state => state.currentModuleId,
     selectModuleCardIndex: state => state.cardIndex,
     selectFilterMissed: state => state.filterMissed,
+    selectReviewingMissed: state => state.reviewingMissed,
     selectModulesProgress: state => state.progress,
     selectDeletedBuiltInIds: state => state.deletedBuiltInIds,
   },
@@ -200,6 +209,7 @@ export const {
   nextCard,
   prevCard,
   toggleFilterMissed,
+  toggleMissedReview,
   markCard,
   resetCurrentModuleProgress,
   addModules,
@@ -211,6 +221,7 @@ export const {
   selectCurrentModuleId,
   selectModuleCardIndex,
   selectFilterMissed,
+  selectReviewingMissed,
   selectModulesProgress,
   selectDeletedBuiltInIds,
 } = modulesSlice.selectors
@@ -226,9 +237,47 @@ export const selectCurrentModule = createSelector(
     modules.find(module => module.id === currentId) ?? modules[0],
 )
 
+/**
+ * Every word marked "unknown" in any module, deduplicated by word (the same
+ * word can appear in several modules and shares one status across all of
+ * them -- see `modules.progress`). Powers "practice missed words" across the
+ * whole library rather than one module at a time.
+ */
+export const selectMissedWordsAcrossModules = createSelector(
+  [selectModules, selectModulesProgress],
+  (modules, progress): ModuleCard[] => {
+    const seen = new Set<string>()
+    const missed: ModuleCard[] = []
+    for (const module of modules) {
+      for (const card of module.cards) {
+        if (progress[card.en] === "unknown" && !seen.has(card.en)) {
+          seen.add(card.en)
+          missed.push(card)
+        }
+      }
+    }
+    return missed
+  },
+)
+
 export const selectActiveCards = createSelector(
-  [selectCurrentModule, selectFilterMissed, selectModulesProgress],
-  (module, filterMissed, progress): ModuleCard[] => {
+  [
+    selectCurrentModule,
+    selectFilterMissed,
+    selectModulesProgress,
+    selectReviewingMissed,
+    selectMissedWordsAcrossModules,
+  ],
+  (
+    module,
+    filterMissed,
+    progress,
+    reviewingMissed,
+    missedAcrossModules,
+  ): ModuleCard[] => {
+    if (reviewingMissed) {
+      return missedAcrossModules
+    }
     const cards = module?.cards ?? []
     if (!filterMissed) {
       return cards
