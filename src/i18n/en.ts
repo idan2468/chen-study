@@ -16,7 +16,7 @@ type Messages = {
 
 export const en: Messages = {
   common: {
-    home: "⌂ Home",
+    home: "🏠 Home",
     dyslexiaFont: "🔠 Readable font",
     dyslexiaFontTooltip: "Dyslexia-friendly font",
     dayMode: "☀️ Light mode",

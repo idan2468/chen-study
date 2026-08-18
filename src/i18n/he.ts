@@ -10,7 +10,7 @@
  */
 export const he = {
   common: {
-    home: "⌂ דף הבית",
+    home: "🏠 דף הבית",
     dyslexiaFont: "🔠 גופן נגיש",
     dyslexiaFontTooltip: "גופן מותאם לדיסלקציה",
     dayMode: "☀️ מצב יום",

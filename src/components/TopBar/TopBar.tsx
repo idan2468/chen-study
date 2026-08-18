@@ -46,6 +46,12 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
     <Paper withBorder p="xs" radius="md" w="100%">
       <Group justify="space-between" gap="xs" wrap="wrap">
         <Group gap="xs" wrap="wrap">
+          {withHomeLink ? (
+            <Button size="xs" variant="subtle" component={Link} to="/">
+              {t("common.home")}
+            </Button>
+          ) : null}
+
           <Tooltip label={t("common.dyslexiaFontTooltip")}>
             <Button
               size="xs"
@@ -81,12 +87,6 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
           <Button size="xs" variant="default" onClick={syncHandlers.open}>
             {t("common.syncDevices")}
           </Button>
-
-          {withHomeLink ? (
-            <Button size="xs" variant="subtle" component={Link} to="/">
-              {t("common.home")}
-            </Button>
-          ) : null}
         </Group>
 
         {children ? <Group gap="xs">{children}</Group> : null}
