@@ -1,5 +1,5 @@
 import { Badge, Button, Group, Stack, Text } from "@mantine/core"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AssessmentButtons } from "@/components/AssessmentButtons/AssessmentButtons"
 import { CardNavigation } from "@/components/CardNavigation/CardNavigation"
@@ -24,6 +24,9 @@ import {
 } from "@/store/slices/unseenSlice"
 import classes from "./FlashcardsTab.module.css"
 
+/** Matches `ModuleFlashcard`'s auto-advance, which the original also used. */
+const AUTO_ADVANCE_MS = 250
+
 export const FlashcardsTab = () => {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
@@ -35,6 +38,7 @@ export const FlashcardsTab = () => {
   const { speak, stop } = useSpeech()
 
   const [flipped, setFlipped] = useState(false)
+  const advanceTimer = useRef<number | undefined>(undefined)
   const total = exercise?.flashcards.length ?? 0
   const status = card ? progress[card.en] : undefined
   const cardOwnerId = card ? `vocab:${card.en}` : "vocab:none"
@@ -53,6 +57,25 @@ export const FlashcardsTab = () => {
   useEffect(() => {
     stop()
   }, [card?.en, stop])
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(advanceTimer.current)
+    },
+    [],
+  )
+
+  const handleMark = (isKnown: boolean) => {
+    if (!card) {
+      return
+    }
+    dispatch(markFlashcard({ word: card.en, isKnown }))
+    window.clearTimeout(advanceTimer.current)
+    advanceTimer.current = window.setTimeout(
+      () => dispatch(nextFlashcard(total)),
+      AUTO_ADVANCE_MS,
+    )
+  }
 
   const handleReset = () => {
     confirmDanger(t, {
@@ -75,14 +98,10 @@ export const FlashcardsTab = () => {
       }
     },
     onKnown: () => {
-      if (card) {
-        dispatch(markFlashcard({ word: card.en, isKnown: true }))
-      }
+      handleMark(true)
     },
     onUnknown: () => {
-      if (card) {
-        dispatch(markFlashcard({ word: card.en, isKnown: false }))
-      }
+      handleMark(false)
     },
   })
 
@@ -155,9 +174,7 @@ export const FlashcardsTab = () => {
 
       <AssessmentButtons
         isKnown={status}
-        onMark={isKnown => {
-          dispatch(markFlashcard({ word: card.en, isKnown }))
-        }}
+        onMark={handleMark}
         knownLabel={t("unseen.markKnown")}
         unknownLabel={t("unseen.markUnknown")}
       />

@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react"
+import { screen, waitFor } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
 import type { Exercise } from "@/types/exercise"
 import type { RootState } from "@/store/store"
@@ -88,6 +88,40 @@ describe("FlashcardsTab", () => {
     // component's own render-time reset, not by React re-mounting it.
     expect(flip).toHaveAttribute("aria-pressed", "false")
     expect(screen.getByText("Challenging")).toBeInTheDocument()
+  })
+
+  test.each([["✔ Known" as const], ["✖ Not known" as const]])(
+    "clicking %s auto-advances to the next card after a short delay",
+    async label => {
+      const { user } = renderWithProviders(<FlashcardsTab />, {
+        preloadedState: baseState(),
+      })
+
+      await user.click(screen.getByRole("button", { name: label }))
+
+      // Not yet -- the advance is deliberately delayed, not immediate.
+      expect(screen.getByText("Delicate")).toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(screen.getByText("Challenging")).toBeInTheDocument()
+      })
+    },
+  )
+
+  test("marking the last card does not advance past the end", async () => {
+    const { user, store } = renderWithProviders(<FlashcardsTab />, {
+      preloadedState: baseState({ cardIndex: exercise.flashcards.length - 1 }),
+    })
+
+    await user.click(screen.getByRole("button", { name: "✔ Known" }))
+
+    // Give the auto-advance timer a chance to fire, then confirm it was a
+    // no-op: `nextFlashcard` already clamps at the last index, same as
+    // clicking "Next" directly would.
+    await new Promise(resolve => setTimeout(resolve, 300))
+    expect(store.getState().unseen.cardIndex).toBe(
+      exercise.flashcards.length - 1,
+    )
   })
 
   test("known/unknown counts update in the stats bar as cards are marked", async () => {
