@@ -1,0 +1,68 @@
+/*
+ * The interactive passage. Ported from `Unseen New.html`'s `.para-row`,
+ * `.para-row.para-reading`, `.word`, `.word.vocab`, `.word.marked` and
+ * `.word.speaking` rules (`:657-720`).
+ */
+
+.paraRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mantine-spacing-xs);
+  padding: var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-md);
+  transition: background-color 0.2s ease;
+}
+
+/* The paragraph currently being read aloud. */
+.paraReading {
+  background-color: var(--mantine-color-default-hover);
+  box-shadow: inset 3px 0 0 0 var(--mantine-color-brand-filled);
+}
+
+.paragraph {
+  flex: 1;
+  margin: 0;
+  /* English text inside an otherwise right-to-left page. */
+  direction: ltr;
+  text-align: left;
+  font-size: 1.05rem;
+}
+
+.word {
+  padding: 1px 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.word:hover {
+  background-color: var(--mantine-color-default-hover);
+}
+
+/* A word that also appears in this exercise's flashcards. */
+.vocab {
+  color: var(--mantine-color-brand-filled);
+  font-weight: 600;
+  border-bottom: 2px dotted var(--mantine-color-brand-filled);
+}
+
+/*
+ * Compound selectors, so these survive `:hover`. `.word:hover` has specificity
+ * (0,2,0) and would otherwise win over a bare `.marked` (0,1,0) -- leaving a
+ * highlighted word un-highlighted, with dark text on the dark hover background,
+ * for as long as the pointer rested on it.
+ */
+
+/* Double-click highlighter. Now persisted, unlike in the original. */
+.word.marked {
+  background-color: var(--mantine-color-yellow-3);
+  color: var(--mantine-color-black);
+}
+
+/* The single word currently being spoken. */
+.word.speaking {
+  background-color: var(--mantine-color-brand-filled);
+  color: var(--mantine-color-brand-contrast);
+}

@@ -1,0 +1,85 @@
+import { Button, Group, Modal, Select, Stack, Text } from "@mantine/core"
+import { useTranslation } from "react-i18next"
+import { SpeakButton } from "../SpeakButton/SpeakButton"
+import { useSystemVoices } from "../../hooks/useSpeech"
+import { useAppDispatch, useAppSelector } from "../../store/hooks"
+import {
+  selectSystemVoiceUri,
+  setSystemVoiceUri,
+} from "../../store/slices/settingsSlice"
+import { voicesForLanguage } from "../../utils/voices"
+
+export type SpeechSettingsModalProps = {
+  opened: boolean
+  onClose: () => void
+}
+
+/** Spoken when the user presses "test", so the sample is always in English. */
+const SAMPLE_TEXT = "The quick brown fox jumps over the lazy dog."
+
+/**
+ * Choosing a *specific* system voice: the browser's default for a language is
+ * often the lowest-quality one installed (see `utils/voices.ts`), so this lets
+ * the user override it.
+ *
+ * A local neural engine (kokoro-js) used to live alongside this picker but was
+ * removed after real-world testing rejected its audio quality; see
+ * `docs/remove-neural-tts.md` for the full account. This is what remained.
+ */
+export const SpeechSettingsModal = ({
+  opened,
+  onClose,
+}: SpeechSettingsModalProps) => {
+  const { t } = useTranslation()
+  const dispatch = useAppDispatch()
+  const systemVoiceUri = useAppSelector(selectSystemVoiceUri)
+  const voices = useSystemVoices()
+
+  // English only: the passage, tapped words and both flashcard decks are all
+  // spoken in English -- Hebrew content auto-detects its own voice instead.
+  const englishVoices = voicesForLanguage(voices, "en")
+
+  return (
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={t("speech.title")}
+      centered
+      size="lg"
+    >
+      <Stack gap="md">
+        <Select
+          label={t("speech.systemVoiceLabel")}
+          description={t("speech.systemVoiceHint")}
+          data={[
+            { value: "", label: t("speech.bestAvailable") },
+            ...englishVoices.map(voice => ({
+              value: voice.voiceURI,
+              label: `${voice.name} (${voice.lang})`,
+            })),
+          ]}
+          value={systemVoiceUri ?? ""}
+          onChange={value => {
+            dispatch(setSystemVoiceUri(value === "" ? null : value))
+          }}
+          allowDeselect={false}
+          searchable
+        />
+
+        <Group justify="space-between" mt="sm">
+          <Group gap="xs">
+            <SpeakButton
+              ownerId="speech-sample"
+              text={SAMPLE_TEXT}
+              label={t("speech.test")}
+            />
+            <Text size="sm">{t("speech.test")}</Text>
+          </Group>
+          <Button variant="default" onClick={onClose}>
+            {t("common.close")}
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+  )
+}

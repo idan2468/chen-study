@@ -1,0 +1,56 @@
+/*
+ * Only the styles Mantine's theme cannot own. Everything else that was global
+ * CSS in the original HTML files (`*`, `body`, `header`, `h1`,
+ * `input[type=range]`, `details summary`, `textarea`, the `@media (max-width:
+ * 640px)` blocks and the ~35 `body.dark-mode .x` overrides) is now expressed
+ * through Mantine components and `src/theme.ts`.
+ */
+
+body {
+  line-height: 1.8;
+}
+
+/*
+ * Dyslexia-friendly mode. Overriding the Mantine font variable in one rule
+ * replaces the whole duplicated `body.dyslexia-font` cascade that both original
+ * pages carried (`Unseen New.html:630-652`, `Modules Practice.html:561-577`).
+ * The class is toggled from `settingsSlice` state, see `App.tsx`.
+ */
+body.dyslexiaFont {
+  --mantine-font-family: "Lexend", "Segoe UI", Tahoma, Arial, sans-serif;
+  --mantine-font-family-headings:
+    "Lexend", "Segoe UI", Tahoma, Arial, sans-serif;
+
+  letter-spacing: 0.5px;
+  word-spacing: 3px;
+  line-height: 2;
+}
+
+/*
+ * Module `rule` fields are author-supplied HTML strings containing these class
+ * names (see `Modules Practice.html:820-827`), so they cannot be hashed CSS
+ * Module classes -- `RuleBox` renders them with `dangerouslySetInnerHTML` and
+ * they have to resolve against global selectors.
+ */
+.rule-section {
+  margin-bottom: var(--mantine-spacing-sm);
+}
+
+.rule-section:last-child {
+  margin-bottom: 0;
+}
+
+.rule-examples {
+  margin-top: var(--mantine-spacing-xs);
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border-inline-start: 3px solid var(--mantine-color-brand-filled);
+  border-radius: var(--mantine-radius-sm);
+  background-color: var(--mantine-color-default-hover);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+}
+
+.rule-text b,
+.rule-section b {
+  color: var(--mantine-color-brand-filled);
+}

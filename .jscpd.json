@@ -1,0 +1,16 @@
+{
+  "threshold": 1,
+  "reporters": ["consoleFull"],
+  "absolute": false,
+  "gitignore": true,
+  "minLines": 8,
+  "minTokens": 60,
+  "format": ["typescript", "tsx", "css"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "src/data/**",
+    "src/i18n/he.ts",
+    "src/i18n/en.ts"
+  ]
+}
