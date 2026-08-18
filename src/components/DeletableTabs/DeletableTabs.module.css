@@ -1,5 +1,13 @@
 .deleteButton {
-  cursor: pointer;
   opacity: 0.7;
-  line-height: 1;
+  color: var(--mantine-color-danger-5);
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.deleteButton:hover {
+  opacity: 1;
+  background-color: var(--mantine-color-danger-5);
+  color: var(--mantine-color-white);
 }

@@ -1,12 +1,12 @@
 import type { KeyboardEvent, MouseEvent } from "react"
-import { Box, Tabs } from "@mantine/core"
+import { CloseButton, Tabs } from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import classes from "./DeletableTabs.module.css"
 
 export type TabItem = {
   value: string
   label: string
-  /** Shows a ✕ on the tab. Ignored when `onDelete` is not supplied. */
+  /** Shows a delete icon on the tab. Ignored when `onDelete` is not supplied. */
   deletable?: boolean
 }
 
@@ -26,8 +26,9 @@ export type DeletableTabsProps = {
  * which `renderTabButtons()` (`:1121-1143`) rebuilt imperatively on every
  * change.
  *
- * The ✕ is a `span` with `role="button"` rather than a real button, because
- * Mantine renders `Tabs.Tab` as a `<button>` and nesting buttons is invalid.
+ * The delete icon is a `CloseButton` rendered as a `span` with
+ * `role="button"` rather than a real button, because Mantine renders
+ * `Tabs.Tab` as a `<button>` and nesting buttons is invalid.
  */
 export const DeletableTabs = ({
   items,
@@ -66,10 +67,11 @@ export const DeletableTabs = ({
               value={item.value}
               rightSection={
                 showDelete ? (
-                  <Box
+                  <CloseButton
                     component="span"
                     role="button"
                     tabIndex={0}
+                    size="xs"
                     aria-label={t("common.deleteItem", { name: item.label })}
                     onClick={handleDelete}
                     onKeyDown={event => {
@@ -79,9 +81,7 @@ export const DeletableTabs = ({
                       }
                     }}
                     className={classes.deleteButton}
-                  >
-                    ✕
-                  </Box>
+                  />
                 ) : null
               }
             >
