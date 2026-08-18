@@ -21,7 +21,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    // TS 6.0 defaults an unset `types` to `[]` (previously implicit
+    // "include everything under @types"); this config needs Node's ambient
+    // globals (`process`, etc.) for vite.config.ts/eslint.config.js.
+    "types": ["node"]
   },
   "include": ["vite.config.ts", "eslint.config.js", "postcss.config.cjs"]
 }

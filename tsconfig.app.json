@@ -27,7 +27,6 @@
        case -- so indexed access must be typed as possibly undefined. */
     "noUncheckedIndexedAccess": true,
     "types": ["vitest/globals"],
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@test/*": ["./test/*"]
