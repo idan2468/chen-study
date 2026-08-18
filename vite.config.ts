@@ -5,6 +5,10 @@ import packageJson from "./package.json" with { type: "json" }
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Pages serves from https://idan2468.github.io/chen-study/, a sub-path --
+  // without this every asset request 404s.
+  base: "/chen-study/",
+
   plugins: [react()],
 
   resolve: {
