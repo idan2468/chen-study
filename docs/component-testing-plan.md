@@ -18,6 +18,44 @@ slice/selector logic is already well covered by the existing `*.test.ts` files
 those tests don't reach: components wiring hooks, dispatch, and rendered output
 together.
 
+## Testing principles
+
+Two references shaped how these tests should be written, not just what they
+cover ([Vitest: writing tests with AI](https://vitest.dev/guide/learn/writing-tests-with-ai.html),
+[Vitest: browser-mode component testing](https://vitest.dev/guide/browser/component-testing.html)):
+
+- **Assert on behavior, not implementation.** Check rendered output,
+  dispatched actions, and callback calls — not internal component state,
+  private methods, or CSS class selectors. A refactor that keeps behavior
+  identical shouldn't break the test.
+- **Query like a user would.** Prefer `getByRole`/`getByLabelText`/`getByText`
+  over test IDs or DOM structure; fall back to `getByTestId` only when no
+  semantic query fits. Drive interaction through `@testing-library/user-event`
+  (already installed), not direct state manipulation.
+- **Make every assertion mean something.** No bare `toBeDefined()` or
+  "doesn't throw" checks — assert on the actual rendered text/attribute/action
+  shape (`toMatchObject` where useful). Use `test.each` for paired cases
+  (known/unknown, correct/incorrect, prev/next-disabled) instead of
+  duplicating near-identical tests.
+- **Mock at the API boundary only.** The `speechSynthesis`/`clipboard` stubs
+  in "Gaps to close" below are boundary mocks — the right level. Don't extend
+  that pattern to mocking Redux dispatch, hooks, or child components. Enable
+  `restoreMocks: true` in the Vitest config so those stubs don't leak call
+  history between tests.
+- **Add the edge case alongside the happy path**, not as a follow-up — e.g.
+  an empty/malformed paste for `JsonLoader`, index-boundary cases for
+  `CardNavigation`, not just the primary flow.
+- **Keyboard and ARIA are first-class.** Where a workflow exposes keyboard
+  activation or an `aria-*` attribute, assert on that directly (not just the
+  resulting visual class) — this is exactly the kind of thing a manual click-
+  through skips re-checking.
+
+Browser-mode component testing would also close two of the "Gaps to close"
+items below for free — real `speechSynthesis`/`clipboard` objects exist in an
+actual browser, no stub needed — at the cost of a slower, heavier test run.
+Staying on jsdom for now; worth revisiting if the stubs become a maintenance
+burden.
+
 ## What already exists
 
 - `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`,
@@ -135,6 +173,8 @@ much it costs to break silently.
    one-time changes — a speechSynthesis stub, a clipboard stub, adding
    `<Notifications />` to the wrapper, documenting the `localStorage.clear()`
    convention for component tests alongside the existing one for logic tests).
+   Also enable `restoreMocks: true` in `vite.config.ts`'s test block while
+   here, per the mocking principle above.
 2. Phase 1 first, since it's both the highest-value target and the smallest gap
    between "components already exist and are stable" and "test written."
 3. Each subsequent phase only once the previous one's tests are green and reviewed
