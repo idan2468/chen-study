@@ -34,6 +34,9 @@ export const StorageKeys = {
   /** `Record<questionId, {selected, correct}>` for the active exercise. New:
    *  in-progress quiz answers used to be wiped on every reload. */
   quizAnswers: "english_quiz_answers",
+  /** Flashcard deck position for the active exercise. New: the originals
+   *  always reopened on the first card. */
+  flashcardIndex: "english_flashcard_index",
 
   /** `Module[]` */
   allModules: "english_reading_all_modules_v4",
@@ -41,6 +44,9 @@ export const StorageKeys = {
   modulesProgress: "english_reading_practice_progress_v3",
   /** Ids of built-in modules the user deleted, so they are not re-seeded. */
   deletedBuiltInModules: "english_reading_deleted_builtins_v1",
+  /** Module deck position for the active module. New: the originals always
+   *  reopened on the first card. */
+  moduleCardIndex: "english_module_card_index",
 } as const
 
 /** `flashcards_status_<exerciseId>` -> `Record<word, boolean>` (true = known). */

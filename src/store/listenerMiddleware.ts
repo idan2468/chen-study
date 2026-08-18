@@ -14,7 +14,10 @@ import {
   answerQuestion,
   deleteExercise,
   markFlashcard,
+  nextFlashcard,
+  prevFlashcard,
   resetFlashcardProgress,
+  setFlashcardIndex,
   switchExercise,
   toggleMarkedWord,
 } from "./slices/unseenSlice"
@@ -22,8 +25,13 @@ import {
   addModules,
   deleteModule,
   markCard,
+  nextCard,
+  prevCard,
   resetCurrentModuleProgress,
   selectModule,
+  setCardIndex,
+  toggleFilterMissed,
+  toggleMissedReview,
 } from "./slices/modulesSlice"
 
 /**
@@ -102,12 +110,15 @@ const persistMarkedWords = (previous: UnseenState, next: UnseenState) => {
 }
 
 /**
- * Only meaningful for the exercise it belongs to, so it's written
+ * Only meaningful for the exercise they belong to, so both are written
  * unconditionally rather than diffed per-exercise the way `progress` is --
- * the reducers already reset it to `{}` on every exercise switch, so a stale
- * value here would only ever belong to whatever is still current.
+ * the reducers already reset both to 0/`{}` on every exercise switch, so a
+ * stale value here would only ever belong to whatever is still current.
  */
-const persistQuizAnswers = (previous: UnseenState, next: UnseenState) => {
+const persistReadingProgress = (previous: UnseenState, next: UnseenState) => {
+  if (previous.cardIndex !== next.cardIndex) {
+    writeJson(StorageKeys.flashcardIndex, next.cardIndex)
+  }
   if (previous.answers !== next.answers) {
     writeJson(StorageKeys.quizAnswers, next.answers)
   }
@@ -143,6 +154,9 @@ startListening({
     resetFlashcardProgress,
     toggleMarkedWord,
     answerQuestion,
+    setFlashcardIndex,
+    nextFlashcard,
+    prevFlashcard,
   ),
   effect: (_action, api) => {
     const previous = api.getOriginalState().unseen
@@ -151,7 +165,7 @@ startListening({
     persistLibrary(previous, next)
     persistMarkedWords(previous, next)
     persistFlashcardProgress(previous, next)
-    persistQuizAnswers(previous, next)
+    persistReadingProgress(previous, next)
   },
 })
 
@@ -164,6 +178,16 @@ startListening({
     markCard,
     resetCurrentModuleProgress,
     selectModule,
+    setCardIndex,
+    nextCard,
+    prevCard,
+    // Not to persist `filterMissed`/`reviewingMissed` themselves (see
+    // `docs/persistence-gaps.md` -- reset-on-every-context-switch is treated
+    // as intentional there), only included so the `cardIndex` reset that
+    // both of these also perform is captured below like any other
+    // `cardIndex` change.
+    toggleFilterMissed,
+    toggleMissedReview,
   ),
   effect: (_action, api) => {
     const previous = api.getOriginalState().modules
@@ -179,6 +203,10 @@ startListening({
 
     if (previous.deletedBuiltInIds !== next.deletedBuiltInIds) {
       writeJson(StorageKeys.deletedBuiltInModules, next.deletedBuiltInIds)
+    }
+
+    if (previous.cardIndex !== next.cardIndex) {
+      writeJson(StorageKeys.moduleCardIndex, next.cardIndex)
     }
   },
 })

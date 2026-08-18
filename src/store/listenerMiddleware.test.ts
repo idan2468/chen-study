@@ -1,11 +1,13 @@
 import { defaultExercise } from "@/data/defaultExercise"
 import { defaultModules } from "@/data/defaultModules"
+import { at } from "@test/helpers"
 import { flashcardStatusKey, StorageKeys } from "@/utils/storageKeys"
 import { makeStore } from "./store"
-import { markCard } from "./slices/modulesSlice"
+import { markCard, nextCard } from "./slices/modulesSlice"
 import {
   answerQuestion,
   markFlashcard,
+  nextFlashcard,
   toggleMarkedWord,
 } from "./slices/unseenSlice"
 import { setSpeechRate, toggleDyslexiaFont } from "./slices/settingsSlice"
@@ -108,4 +110,20 @@ test("answering a question writes only the quiz-answers key", () => {
   expect(localStorage.getItem(StorageKeys.quizAnswers)).toBe(
     JSON.stringify({ q1: { selected: 0, correct: true } }),
   )
+})
+
+test("advancing a flashcard writes only the flashcard-index key", () => {
+  const store = makeStore(preloaded())
+  store.dispatch(nextFlashcard(defaultExercise.flashcards.length))
+
+  expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.flashcardIndex])
+  expect(localStorage.getItem(StorageKeys.flashcardIndex)).toBe("1")
+})
+
+test("advancing a module card writes only the module-card-index key", () => {
+  const store = makeStore(preloaded())
+  store.dispatch(nextCard(at(defaultModules, 0).cards.length))
+
+  expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.moduleCardIndex])
+  expect(localStorage.getItem(StorageKeys.moduleCardIndex)).toBe("1")
 })

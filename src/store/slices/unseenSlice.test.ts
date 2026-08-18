@@ -1,5 +1,6 @@
 import { defaultExercise } from "@/data/defaultExercise"
 import type { Exercise } from "@/types/exercise"
+import { StorageKeys } from "@/utils/storageKeys"
 import { makeStore } from "@/store/store"
 import type { UnseenState } from "./unseenSlice"
 import {
@@ -10,6 +11,7 @@ import {
   resetFlashcardProgress,
   selectAnswers,
   selectCurrentProgress,
+  selectFlashcardIndex,
   selectFlashcardStats,
   selectLibrary,
   selectVocabSet,
@@ -200,6 +202,20 @@ describe("answerQuestion", () => {
     expect(selectAnswers(store.getState())).toStrictEqual({
       q1: { selected: 1, correct: true },
     })
+  })
+})
+
+describe("hydration", () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  test("reopens on the stored flashcard index", () => {
+    localStorage.setItem(StorageKeys.flashcardIndex, "2")
+
+    const store = makeStore()
+
+    expect(selectFlashcardIndex(store.getState())).toBe(2)
   })
 })
 

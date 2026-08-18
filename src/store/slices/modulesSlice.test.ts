@@ -1,6 +1,7 @@
 import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
 import { at } from "@test/helpers"
 import type { PracticeModule } from "@/types/module"
+import { StorageKeys } from "@/utils/storageKeys"
 import { makeStore } from "@/store/store"
 import type { ModulesState } from "./modulesSlice"
 import {
@@ -10,6 +11,7 @@ import {
   mergeModules,
   resetCurrentModuleProgress,
   selectActiveCards,
+  selectModuleCardIndex,
   selectMissedWordsAcrossModules,
   selectModuleStats,
   selectModules,
@@ -233,6 +235,33 @@ describe("toggleMissedReview", () => {
     store.dispatch(toggleMissedReview())
 
     expect(store.getState().modules.reviewingMissed).toBe(false)
+  })
+})
+
+describe("hydration", () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  test("reopens on the stored card index for the current module", () => {
+    localStorage.setItem(StorageKeys.moduleCardIndex, "3")
+
+    const store = makeStore()
+
+    expect(selectModuleCardIndex(store.getState())).toBe(3)
+  })
+
+  test("clamps a stored index that no longer fits the module's deck", () => {
+    localStorage.setItem(StorageKeys.moduleCardIndex, "9999")
+
+    const store = makeStore()
+    const state = store.getState()
+    const current = selectModules(state).find(
+      module => module.id === state.modules.currentModuleId,
+    )
+
+    expect(current).toBeDefined()
+    expect(selectModuleCardIndex(state)).toBe((current?.cards.length ?? 1) - 1)
   })
 })
 

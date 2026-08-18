@@ -78,11 +78,24 @@ const readInitialState = (): ModulesState => {
     [],
   )
   const modules = mergeModules(stored, deletedBuiltInIds)
+  const currentModuleId = resolveCurrentId(modules)
+
+  // The stored index is only meaningful for the module it was saved
+  // against -- if that module's deck has since shrunk, clamp rather than
+  // risk an out-of-range index.
+  const currentModule = modules.find(module => module.id === currentModuleId)
+  const storedCardIndex = readJson<number>(StorageKeys.moduleCardIndex, 0)
+  const cardIndex = currentModule
+    ? Math.min(
+        Math.max(storedCardIndex, 0),
+        Math.max(currentModule.cards.length - 1, 0),
+      )
+    : 0
 
   return {
     modules,
-    currentModuleId: resolveCurrentId(modules),
-    cardIndex: 0,
+    currentModuleId,
+    cardIndex,
     filterMissed: false,
     reviewingMissed: false,
     progress: readJson<ModulesProgress>(StorageKeys.modulesProgress, {}),
