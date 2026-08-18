@@ -71,7 +71,7 @@ export const DeletableTabs = ({
                     component="span"
                     role="button"
                     tabIndex={0}
-                    size="xs"
+                    size="md"
                     aria-label={t("common.deleteItem", { name: item.label })}
                     onClick={handleDelete}
                     onKeyDown={event => {
