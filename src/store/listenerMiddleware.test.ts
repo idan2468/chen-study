@@ -3,7 +3,7 @@ import { defaultModules } from "@/data/defaultModules"
 import { at } from "@test/helpers"
 import { flashcardStatusKey, StorageKeys } from "@/utils/storageKeys"
 import { makeStore } from "./store"
-import { markCard, nextCard } from "./slices/modulesSlice"
+import { markCard, nextCard, selectModule } from "./slices/modulesSlice"
 import {
   answerQuestion,
   markFlashcard,
@@ -28,7 +28,7 @@ const preloaded = () => ({
   },
   modules: {
     modules: [...defaultModules],
-    currentModuleId: "mod1",
+    currentModuleId: at(defaultModules, 0).id,
     cardIndex: 0,
     filterMissed: false,
     reviewingMissed: false,
@@ -126,4 +126,13 @@ test("advancing a module card writes only the module-card-index key", () => {
 
   expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.moduleCardIndex])
   expect(localStorage.getItem(StorageKeys.moduleCardIndex)).toBe("1")
+})
+
+test("switching modules writes only the current-module-id key", () => {
+  const store = makeStore(preloaded())
+  const secondModuleId = at(defaultModules, 1).id
+  store.dispatch(selectModule(secondModuleId))
+
+  expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.currentModuleId])
+  expect(localStorage.getItem(StorageKeys.currentModuleId)).toBe(secondModuleId)
 })

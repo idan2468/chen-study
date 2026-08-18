@@ -208,5 +208,9 @@ startListening({
     if (previous.cardIndex !== next.cardIndex) {
       writeJson(StorageKeys.moduleCardIndex, next.cardIndex)
     }
+
+    if (previous.currentModuleId !== next.currentModuleId) {
+      writeString(StorageKeys.currentModuleId, next.currentModuleId)
+    }
   },
 })

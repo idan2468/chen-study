@@ -47,6 +47,9 @@ export const StorageKeys = {
   /** Module deck position for the active module. New: the originals always
    *  reopened on the first card. */
   moduleCardIndex: "english_module_card_index",
+  /** Plain module id string. New: the originals always reopened on a
+   *  hardcoded module regardless of what the user was last practising. */
+  currentModuleId: "english_current_module_id",
 } as const
 
 /** `flashcards_status_<exerciseId>` -> `Record<word, boolean>` (true = known). */

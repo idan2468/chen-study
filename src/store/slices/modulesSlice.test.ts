@@ -11,6 +11,7 @@ import {
   mergeModules,
   resetCurrentModuleProgress,
   selectActiveCards,
+  selectCurrentModuleId,
   selectModuleCardIndex,
   selectMissedWordsAcrossModules,
   selectModuleStats,
@@ -241,6 +242,23 @@ describe("toggleMissedReview", () => {
 describe("hydration", () => {
   beforeEach(() => {
     localStorage.clear()
+  })
+
+  test("reopens on the stored module id rather than the hardcoded default", () => {
+    localStorage.setItem(StorageKeys.currentModuleId, thirdBuiltInId)
+
+    const store = makeStore()
+
+    expect(selectCurrentModuleId(store.getState())).toBe(thirdBuiltInId)
+  })
+
+  test("falls back to the preferred default when the stored id no longer exists", () => {
+    localStorage.setItem(StorageKeys.currentModuleId, "no-such-module")
+
+    const store = makeStore()
+
+    // The third built-in (`mod3_short_i`) is the hardcoded preferred default.
+    expect(selectCurrentModuleId(store.getState())).toBe(thirdBuiltInId)
   })
 
   test("reopens on the stored card index for the current module", () => {

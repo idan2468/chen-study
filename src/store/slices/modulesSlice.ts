@@ -2,7 +2,7 @@ import type { PayloadAction } from "@reduxjs/toolkit"
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { deleteEntry } from "@/store/records"
-import { readJson } from "@/store/storage"
+import { readJson, readString } from "@/store/storage"
 import { StorageKeys } from "@/utils/storageKeys"
 import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
 import type {
@@ -24,8 +24,13 @@ export type ModulesState = {
   deletedBuiltInIds: string[]
 }
 
-/** The original app opened on the fourth module (`currentModuleIndex = 3`). */
-const PREFERRED_DEFAULT_MODULE_ID = "mod3"
+/**
+ * The original app opened on the fourth module (`currentModuleIndex = 3`).
+ * Bug fix: `defaultModules.ts`'s ids were renamed (`mod3` -> `mod3_short_i`)
+ * without updating this constant, so it never matched and this fallback
+ * silently always resolved to `modules[0]` instead.
+ */
+const PREFERRED_DEFAULT_MODULE_ID = "mod3_short_i"
 
 /**
  * Merges stored modules with the built-ins.
@@ -64,7 +69,15 @@ export const mergeModules = (
   return merged
 }
 
-const resolveCurrentId = (modules: readonly PracticeModule[]) => {
+/** Prefers the stored module id; falls back to the preferred default, then
+ *  the first module, when nothing is stored or the id no longer exists. */
+const resolveCurrentId = (
+  modules: readonly PracticeModule[],
+  storedId: string,
+) => {
+  if (storedId && modules.some(module => module.id === storedId)) {
+    return storedId
+  }
   const preferred = modules.find(
     module => module.id === PREFERRED_DEFAULT_MODULE_ID,
   )
@@ -78,7 +91,10 @@ const readInitialState = (): ModulesState => {
     [],
   )
   const modules = mergeModules(stored, deletedBuiltInIds)
-  const currentModuleId = resolveCurrentId(modules)
+  const currentModuleId = resolveCurrentId(
+    modules,
+    readString(StorageKeys.currentModuleId, ""),
+  )
 
   // The stored index is only meaningful for the module it was saved
   // against -- if that module's deck has since shrunk, clamp rather than
