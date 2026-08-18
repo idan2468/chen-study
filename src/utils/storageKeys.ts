@@ -31,6 +31,9 @@ export const StorageKeys = {
   /** `Record<exerciseId, string[]>`. New: the originals highlighted words in
    *  the DOM only, so the marks were lost on every re-render. */
   markedWords: "english_marked_words",
+  /** `Record<questionId, {selected, correct}>` for the active exercise. New:
+   *  in-progress quiz answers used to be wiped on every reload. */
+  quizAnswers: "english_quiz_answers",
 
   /** `Module[]` */
   allModules: "english_reading_all_modules_v4",

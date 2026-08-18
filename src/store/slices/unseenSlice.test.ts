@@ -4,9 +4,11 @@ import { makeStore } from "@/store/store"
 import type { UnseenState } from "./unseenSlice"
 import {
   addExercise,
+  answerQuestion,
   deleteExercise,
   markFlashcard,
   resetFlashcardProgress,
+  selectAnswers,
   selectCurrentProgress,
   selectFlashcardStats,
   selectLibrary,
@@ -171,6 +173,33 @@ describe("library", () => {
     expect(state.unseen.currentId).toBe(defaultExercise.exerciseId)
     expect(state.unseen.progress.other_1).toBeUndefined()
     expect(state.unseen.markedWords.other_1).toBeUndefined()
+  })
+})
+
+describe("answerQuestion", () => {
+  test("records the selected option and whether it was correct", () => {
+    const store = makeStore({ unseen: baseState() })
+    store.dispatch(
+      answerQuestion({ questionId: "q1", selected: 2, correct: false }),
+    )
+
+    expect(selectAnswers(store.getState())).toStrictEqual({
+      q1: { selected: 2, correct: false },
+    })
+  })
+
+  test("re-answering the same question overwrites rather than accumulating", () => {
+    const store = makeStore({ unseen: baseState() })
+    store.dispatch(
+      answerQuestion({ questionId: "q1", selected: 0, correct: false }),
+    )
+    store.dispatch(
+      answerQuestion({ questionId: "q1", selected: 1, correct: true }),
+    )
+
+    expect(selectAnswers(store.getState())).toStrictEqual({
+      q1: { selected: 1, correct: true },
+    })
   })
 })
 

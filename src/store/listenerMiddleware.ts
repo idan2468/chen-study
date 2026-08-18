@@ -11,6 +11,7 @@ import {
 import type { UnseenState } from "./slices/unseenSlice"
 import {
   addExercise,
+  answerQuestion,
   deleteExercise,
   markFlashcard,
   resetFlashcardProgress,
@@ -101,6 +102,18 @@ const persistMarkedWords = (previous: UnseenState, next: UnseenState) => {
 }
 
 /**
+ * Only meaningful for the exercise it belongs to, so it's written
+ * unconditionally rather than diffed per-exercise the way `progress` is --
+ * the reducers already reset it to `{}` on every exercise switch, so a stale
+ * value here would only ever belong to whatever is still current.
+ */
+const persistQuizAnswers = (previous: UnseenState, next: UnseenState) => {
+  if (previous.answers !== next.answers) {
+    writeJson(StorageKeys.quizAnswers, next.answers)
+  }
+}
+
+/**
  * One key per exercise: writes only the ones whose contents changed, and
  * drops keys for exercises that were deleted.
  */
@@ -129,6 +142,7 @@ startListening({
     markFlashcard,
     resetFlashcardProgress,
     toggleMarkedWord,
+    answerQuestion,
   ),
   effect: (_action, api) => {
     const previous = api.getOriginalState().unseen
@@ -137,6 +151,7 @@ startListening({
     persistLibrary(previous, next)
     persistMarkedWords(previous, next)
     persistFlashcardProgress(previous, next)
+    persistQuizAnswers(previous, next)
   },
 })
 

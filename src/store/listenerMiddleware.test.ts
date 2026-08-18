@@ -3,7 +3,11 @@ import { defaultModules } from "@/data/defaultModules"
 import { flashcardStatusKey, StorageKeys } from "@/utils/storageKeys"
 import { makeStore } from "./store"
 import { markCard } from "./slices/modulesSlice"
-import { markFlashcard, toggleMarkedWord } from "./slices/unseenSlice"
+import {
+  answerQuestion,
+  markFlashcard,
+  toggleMarkedWord,
+} from "./slices/unseenSlice"
 import { setSpeechRate, toggleDyslexiaFont } from "./slices/settingsSlice"
 
 const otherId = "other_1"
@@ -92,4 +96,16 @@ test("speech rate is clamped before being persisted", () => {
   store.dispatch(setSpeechRate(99))
 
   expect(localStorage.getItem(StorageKeys.speechRate)).toBe("1")
+})
+
+test("answering a question writes only the quiz-answers key", () => {
+  const store = makeStore(preloaded())
+  store.dispatch(
+    answerQuestion({ questionId: "q1", selected: 0, correct: true }),
+  )
+
+  expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.quizAnswers])
+  expect(localStorage.getItem(StorageKeys.quizAnswers)).toBe(
+    JSON.stringify({ q1: { selected: 0, correct: true } }),
+  )
 })

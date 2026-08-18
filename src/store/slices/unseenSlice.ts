@@ -71,7 +71,14 @@ const readInitialState = (): UnseenState => {
     library,
     currentId,
     cardIndex: 0,
-    answers: {},
+    // Only meaningful for whichever exercise was current when it was
+    // written; the reducers already clear `answers` on every exercise
+    // switch/add/delete (same as they always have), so a stale value here
+    // would only ever belong to whatever is still current.
+    answers: readJson<Record<string, AnswerRecord>>(
+      StorageKeys.quizAnswers,
+      {},
+    ),
     markedWords: readJson<Record<string, string[]>>(
       StorageKeys.markedWords,
       {},
