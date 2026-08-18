@@ -25,13 +25,32 @@ const customModule: PracticeModule = {
   rule: "",
   cards: [
     { en: "ZAP", he: "זַפ", meaning: "זפ" },
-    { en: "HAT", he: "הַט", meaning: "כובע" },
+    { en: "QUIZ", he: "קְוִיז", meaning: "מבחן" },
   ],
 }
 
+/**
+ * A second custom module sharing `QUIZ` with `customModule`, standing in for
+ * the real content's now-unique words -- `defaultModules` no longer repeats a
+ * word across modules, so cross-module sharing has to be constructed
+ * explicitly rather than relied upon from the built-in data.
+ */
+const otherCustomModule: PracticeModule = {
+  id: "custom_2",
+  tabName: "שלי 2",
+  title: "מודול שלי 2",
+  rule: "",
+  cards: [{ en: "QUIZ", he: "קְוִיז", meaning: "מבחן" }],
+}
+
+const firstBuiltInId = at(builtInModuleIds, 0)
+const secondBuiltInId = at(builtInModuleIds, 1)
+const thirdBuiltInId = at(builtInModuleIds, 2)
+const firstCard = at(at(defaultModules, 0).cards, 0)
+
 const baseState = (overrides: Partial<ModulesState> = {}): ModulesState => ({
   modules: [...defaultModules],
-  currentModuleId: "mod1",
+  currentModuleId: firstBuiltInId,
   cardIndex: 0,
   filterMissed: false,
   reviewingMissed: false,
@@ -47,7 +66,8 @@ describe("mergeModules", () => {
 
   test("re-seeds built-ins missing from stored data, fixing the original's bug", () => {
     // The original replaced the built-in list wholesale with whatever was
-    // stored, so a user who had only `mod1` never saw the other four again.
+    // stored, so a user who had only the first built-in never saw the rest
+    // again.
     const stored = [at(defaultModules, 0), customModule]
     const merged = mergeModules(stored, [])
 
@@ -65,9 +85,9 @@ describe("mergeModules", () => {
   })
 
   test("honours deleted built-ins instead of re-seeding them", () => {
-    const merged = mergeModules([], ["mod2"])
+    const merged = mergeModules([], [secondBuiltInId])
 
-    expect(merged.map(m => m.id)).not.toContain("mod2")
+    expect(merged.map(m => m.id)).not.toContain(secondBuiltInId)
     expect(merged).toHaveLength(builtInModuleIds.length - 1)
   })
 })
@@ -75,49 +95,57 @@ describe("mergeModules", () => {
 describe("progress", () => {
   test("marks a card, keyed globally by word", () => {
     const store = makeStore({ modules: baseState() })
-    store.dispatch(markCard({ word: "HAT", isKnown: true }))
+    store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
 
     expect(selectModulesProgress(store.getState())).toStrictEqual({
-      HAT: "known",
+      [firstCard.en]: "known",
     })
   })
 
   test("re-marking overwrites rather than toggling off", () => {
     // Deliberately unlike the Unseen flashcards, which do toggle.
     const store = makeStore({ modules: baseState() })
-    store.dispatch(markCard({ word: "HAT", isKnown: true }))
-    store.dispatch(markCard({ word: "HAT", isKnown: true }))
+    store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
+    store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
 
-    expect(selectModulesProgress(store.getState()).HAT).toBe("known")
+    expect(selectModulesProgress(store.getState())[firstCard.en]).toBe("known")
   })
 
   test("a word shared across modules shares one status", () => {
-    // HAT appears in mod1, rev1_2 and rev1_3 -- inherited behaviour.
-    const store = makeStore({ modules: baseState({ currentModuleId: "mod1" }) })
-    store.dispatch(markCard({ word: "HAT", isKnown: true }))
+    // QUIZ appears in both custom modules here -- inherited behaviour from
+    // the original data, where the same word could appear in several
+    // modules and shared one status across all of them.
+    const store = makeStore({
+      modules: baseState({
+        currentModuleId: "custom_1",
+        modules: [customModule, otherCustomModule],
+      }),
+    })
+    store.dispatch(markCard({ word: "QUIZ", isKnown: true }))
 
     const state = store.getState()
     const sharing = selectModules(state).filter(module =>
-      module.cards.some(card => card.en === "HAT"),
+      module.cards.some(card => card.en === "QUIZ"),
     )
 
     expect(sharing.length).toBeGreaterThan(1)
-    expect(selectModulesProgress(state).HAT).toBe("known")
+    expect(selectModulesProgress(state).QUIZ).toBe("known")
   })
 
   test("resetting clears only the current module's words", () => {
+    const secondCard = at(at(defaultModules, 1).cards, 0)
     const store = makeStore({
       modules: baseState({
         currentModuleId: "custom_1",
         modules: [...defaultModules, customModule],
-        progress: { ZAP: "known", BIG: "unknown" },
+        progress: { ZAP: "known", [secondCard.en]: "unknown" },
       }),
     })
     store.dispatch(resetCurrentModuleProgress())
 
-    // ZAP and HAT are in custom_1; BIG belongs to mod3 and must survive.
+    // ZAP is in custom_1; the second built-in's word must survive.
     expect(selectModulesProgress(store.getState())).toStrictEqual({
-      BIG: "unknown",
+      [secondCard.en]: "unknown",
     })
   })
 
@@ -151,7 +179,9 @@ describe("filterMissed", () => {
     store.dispatch(toggleFilterMissed())
 
     const state = store.getState()
-    expect(selectActiveCards(state).map(card => card.en)).toStrictEqual(["HAT"])
+    expect(selectActiveCards(state).map(card => card.en)).toStrictEqual([
+      "QUIZ",
+    ])
     expect(state.modules.cardIndex).toBe(0)
   })
 })
@@ -160,14 +190,14 @@ describe("selectMissedWordsAcrossModules", () => {
   test("pools unknown words from every module, deduplicated by word", () => {
     const store = makeStore({
       modules: baseState({
-        modules: [...defaultModules, customModule],
-        progress: { HAT: "unknown", ZAP: "known" },
+        modules: [customModule, otherCustomModule],
+        progress: { QUIZ: "unknown", ZAP: "known" },
       }),
     })
 
-    // HAT appears in mod1, rev1_2 and rev1_3 -- must be pooled once, not 3x.
+    // QUIZ appears in both custom modules -- must be pooled once, not twice.
     const missed = selectMissedWordsAcrossModules(store.getState())
-    expect(missed.filter(card => card.en === "HAT")).toHaveLength(1)
+    expect(missed.filter(card => card.en === "QUIZ")).toHaveLength(1)
     expect(missed.map(card => card.en)).not.toContain("ZAP")
   })
 
@@ -209,11 +239,11 @@ describe("toggleMissedReview", () => {
 describe("deleteModule", () => {
   test("records a deleted built-in so it is not re-seeded", () => {
     const store = makeStore({ modules: baseState() })
-    store.dispatch(deleteModule("mod2"))
+    store.dispatch(deleteModule(secondBuiltInId))
 
     const state = store.getState()
-    expect(selectModules(state).map(m => m.id)).not.toContain("mod2")
-    expect(state.modules.deletedBuiltInIds).toStrictEqual(["mod2"])
+    expect(selectModules(state).map(m => m.id)).not.toContain(secondBuiltInId)
+    expect(state.modules.deletedBuiltInIds).toStrictEqual([secondBuiltInId])
   })
 
   test("refuses to delete the last remaining module", () => {
@@ -229,16 +259,19 @@ describe("deleteModule", () => {
   })
 
   test("selects a neighbour when the active module is deleted", () => {
-    const store = makeStore({ modules: baseState({ currentModuleId: "mod2" }) })
-    store.dispatch(deleteModule("mod2"))
+    const store = makeStore({
+      modules: baseState({ currentModuleId: secondBuiltInId }),
+    })
+    store.dispatch(deleteModule(secondBuiltInId))
 
-    // mod2 was at index 1, so the module that shifted into index 1 is selected.
-    expect(store.getState().modules.currentModuleId).toBe("rev1_2")
+    // The second built-in was at index 1, so the module that shifted into
+    // index 1 (the third built-in) is selected.
+    expect(store.getState().modules.currentModuleId).toBe(thirdBuiltInId)
   })
 
   test("re-adding a deleted built-in clears its deletion record", () => {
     const store = makeStore({ modules: baseState() })
-    store.dispatch(deleteModule("mod2"))
+    store.dispatch(deleteModule(secondBuiltInId))
     store.dispatch(addModules([at(defaultModules, 1)]))
 
     expect(store.getState().modules.deletedBuiltInIds).toStrictEqual([])

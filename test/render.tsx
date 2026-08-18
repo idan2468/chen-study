@@ -5,6 +5,7 @@ import type { PropsWithChildren, ReactElement } from "react"
 import { Provider } from "react-redux"
 import { DirectionProvider, MantineProvider } from "@mantine/core"
 import { ModalsProvider } from "@mantine/modals"
+import { Notifications } from "@mantine/notifications"
 import { MemoryRouter } from "react-router-dom"
 import type { AppStore, RootState } from "@/store/store"
 import { makeStore } from "@/store/store"
@@ -57,12 +58,14 @@ export const renderWithProviders = (
   } = extendedRenderOptions
 
   // Mirrors the provider stack in `src/main.tsx`, so components under test get
-  // the theme, direction context, modals and router they expect.
+  // the theme, direction context, modals, notifications portal and router
+  // they expect.
   const Wrapper = ({ children }: PropsWithChildren) => (
     <Provider store={store}>
       <DirectionProvider>
         <MantineProvider theme={theme} defaultColorScheme="dark">
           <ModalsProvider>
+            <Notifications />
             <MemoryRouter>{children}</MemoryRouter>
           </ModalsProvider>
         </MantineProvider>

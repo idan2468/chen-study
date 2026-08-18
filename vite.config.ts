@@ -35,5 +35,9 @@ export default defineConfig({
     globals: true,
     watch: false,
     setupFiles: ["./test/setup.ts"],
+    // The speechSynthesis/clipboard stubs in test/setup.ts are shared mock
+    // objects; without this their call history (`toHaveBeenCalled...`) would
+    // leak between tests instead of resetting each time.
+    restoreMocks: true,
   },
 })
