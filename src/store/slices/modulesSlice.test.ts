@@ -257,7 +257,7 @@ describe("hydration", () => {
 
     const store = makeStore()
 
-    // The third built-in (`mod3_short_i`) is the hardcoded preferred default.
+    // Third built-in (mod3_short_i) is the hardcoded preferred default.
     expect(selectCurrentModuleId(store.getState())).toBe(thirdBuiltInId)
   })
 

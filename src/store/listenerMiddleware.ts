@@ -109,12 +109,8 @@ const persistMarkedWords = (previous: UnseenState, next: UnseenState) => {
   }
 }
 
-/**
- * Only meaningful for the exercise they belong to, so both are written
- * unconditionally rather than diffed per-exercise the way `progress` is --
- * the reducers already reset both to 0/`{}` on every exercise switch, so a
- * stale value here would only ever belong to whatever is still current.
- */
+/** Written unconditionally (not diffed per-exercise like `progress`) since
+ *  the reducers already reset both on every exercise switch. */
 const persistReadingProgress = (previous: UnseenState, next: UnseenState) => {
   if (previous.cardIndex !== next.cardIndex) {
     writeJson(StorageKeys.flashcardIndex, next.cardIndex)
@@ -181,11 +177,9 @@ startListening({
     setCardIndex,
     nextCard,
     prevCard,
-    // Not to persist `filterMissed`/`reviewingMissed` themselves (see
-    // `docs/persistence-gaps.md` -- reset-on-every-context-switch is treated
-    // as intentional there), only included so the `cardIndex` reset that
-    // both of these also perform is captured below like any other
-    // `cardIndex` change.
+    // Included only to capture the `cardIndex` reset these also perform,
+    // not to persist `filterMissed`/`reviewingMissed` (see
+    // docs/persistence-gaps.md).
     toggleFilterMissed,
     toggleMissedReview,
   ),

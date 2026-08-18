@@ -26,9 +26,8 @@ export type ModulesState = {
 
 /**
  * The original app opened on the fourth module (`currentModuleIndex = 3`).
- * Bug fix: `defaultModules.ts`'s ids were renamed (`mod3` -> `mod3_short_i`)
- * without updating this constant, so it never matched and this fallback
- * silently always resolved to `modules[0]` instead.
+ * Was stuck at the stale id `"mod3"` after `defaultModules.ts` renamed its
+ * ids to `mod3_short_i` etc, silently falling back to `modules[0]` always.
  */
 const PREFERRED_DEFAULT_MODULE_ID = "mod3_short_i"
 
@@ -96,9 +95,7 @@ const readInitialState = (): ModulesState => {
     readString(StorageKeys.currentModuleId, ""),
   )
 
-  // The stored index is only meaningful for the module it was saved
-  // against -- if that module's deck has since shrunk, clamp rather than
-  // risk an out-of-range index.
+  // Clamp in case the module's deck has shrunk since the index was saved.
   const currentModule = modules.find(module => module.id === currentModuleId)
   const storedCardIndex = readJson<number>(StorageKeys.moduleCardIndex, 0)
   const cardIndex = currentModule

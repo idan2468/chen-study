@@ -31,11 +31,9 @@ export const StorageKeys = {
   /** `Record<exerciseId, string[]>`. New: the originals highlighted words in
    *  the DOM only, so the marks were lost on every re-render. */
   markedWords: "english_marked_words",
-  /** `Record<questionId, {selected, correct}>` for the active exercise. New:
-   *  in-progress quiz answers used to be wiped on every reload. */
+  /** `Record<questionId, {selected, correct}>` for the active exercise. */
   quizAnswers: "english_quiz_answers",
-  /** Flashcard deck position for the active exercise. New: the originals
-   *  always reopened on the first card. */
+  /** Flashcard deck position for the active exercise. */
   flashcardIndex: "english_flashcard_index",
 
   /** `Module[]` */
@@ -44,11 +42,9 @@ export const StorageKeys = {
   modulesProgress: "english_reading_practice_progress_v3",
   /** Ids of built-in modules the user deleted, so they are not re-seeded. */
   deletedBuiltInModules: "english_reading_deleted_builtins_v1",
-  /** Module deck position for the active module. New: the originals always
-   *  reopened on the first card. */
+  /** Module deck position for the active module. */
   moduleCardIndex: "english_module_card_index",
-  /** Plain module id string. New: the originals always reopened on a
-   *  hardcoded module regardless of what the user was last practising. */
+  /** Plain module id string. */
   currentModuleId: "english_current_module_id",
 } as const
 

@@ -70,10 +70,8 @@ const readInitialState = (): UnseenState => {
   return {
     library,
     currentId,
-    // Only meaningful for whichever exercise was current when it was
-    // written; the reducers already clear `cardIndex`/`answers` on every
-    // exercise switch/add/delete (same as they always have), so a stale
-    // value here would only ever belong to whatever is still current.
+    // Reducers already reset both on exercise switch/add/delete, so a
+    // stale value here only ever belongs to whatever is still current.
     cardIndex: readJson<number>(StorageKeys.flashcardIndex, 0),
     answers: readJson<Record<string, AnswerRecord>>(
       StorageKeys.quizAnswers,
