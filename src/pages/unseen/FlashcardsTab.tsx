@@ -3,9 +3,9 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AssessmentButtons } from "@/components/AssessmentButtons/AssessmentButtons"
 import { CardNavigation } from "@/components/CardNavigation/CardNavigation"
+import { CardWord } from "@/components/CardWord/CardWord"
 import { confirmDanger } from "@/utils/confirmModal"
 import { FlipCard } from "@/components/FlipCard/FlipCard"
-import { FlipHint } from "@/components/FlipHint/FlipHint"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import { StatCounts } from "@/components/StatCounts/StatCounts"
 import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
@@ -22,6 +22,7 @@ import {
   selectFlashcardIndex,
   selectFlashcardStats,
 } from "@/store/slices/unseenSlice"
+import classes from "./FlashcardsTab.module.css"
 
 export const FlashcardsTab = () => {
   const { t } = useTranslation()
@@ -119,20 +120,13 @@ export const FlashcardsTab = () => {
                 {status ? t("unseen.statKnown") : t("unseen.statUnknown")}
               </Badge>
             ) : null}
-            <Text
-              dir="ltr"
-              fw={700}
-              style={{ fontSize: "2.8rem", letterSpacing: "2px" }}
-            >
-              {card.en}
-            </Text>
-            <FlipHint />
+            <CardWord text={card.en} className={classes.word} />
           </>
         }
         back={
           /* Card content: direction derived from the text, not the UI language. */
           <div dir="auto">
-            <Text fw={700} style={{ fontSize: "2rem" }}>
+            <Text fw={700} className={classes.translation}>
               {card.trans}
             </Text>
             <Text c="dimmed" size="lg" mb="sm">

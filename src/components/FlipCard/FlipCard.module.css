@@ -9,6 +9,7 @@
 .wrapper {
   perspective: 1000px;
   width: 100%;
+  min-height: var(--flip-card-min-height);
   cursor: pointer;
   background: none;
   border: none;

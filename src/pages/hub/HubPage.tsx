@@ -54,7 +54,7 @@ export const HubPage = () => {
               <Stack gap="sm" h="100%">
                 <Text className={classes.icon}>{link.icon}</Text>
                 <Title order={3}>{t(link.titleKey)}</Title>
-                <Text c="dimmed" size="sm" style={{ flex: 1 }}>
+                <Text c="dimmed" size="sm" className={classes.description}>
                   {t(link.descriptionKey)}
                 </Text>
                 <Text
@@ -65,7 +65,6 @@ export const HubPage = () => {
                   px="md"
                   bg="brand.7"
                   c="white"
-                  style={{ borderRadius: "var(--mantine-radius-md)" }}
                 >
                   {t(link.ctaKey)}
                 </Text>

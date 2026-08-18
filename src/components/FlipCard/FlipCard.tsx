@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from "react"
+import type { CSSProperties, KeyboardEvent, ReactNode } from "react"
 import { cx } from "@/utils/cx"
 import classes from "./FlipCard.module.css"
 
@@ -50,7 +50,11 @@ export const FlipCard = ({
   return (
     <div
       className={classes.wrapper}
-      style={{ minHeight }}
+      style={
+        {
+          "--flip-card-min-height": `${String(minHeight)}px`,
+        } as CSSProperties
+      }
       role="button"
       tabIndex={0}
       aria-pressed={flipped}
@@ -58,10 +62,8 @@ export const FlipCard = ({
       onClick={onToggle}
       onKeyDown={handleKeyDown}
     >
-      <div
-        className={cx(classes.inner, flipped && classes.flipped)}
-        style={{ minHeight }}
-      >
+      {/* `.inner`'s min-height comes from `.wrapper` via `min-height: inherit`. */}
+      <div className={cx(classes.inner, flipped && classes.flipped)}>
         <div className={faceClass}>{front}</div>
         <div className={cx(faceClass, classes.back)}>{back}</div>
       </div>

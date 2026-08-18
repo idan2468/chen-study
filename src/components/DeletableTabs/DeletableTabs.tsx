@@ -1,6 +1,7 @@
 import type { KeyboardEvent, MouseEvent } from "react"
 import { Box, Tabs } from "@mantine/core"
 import { useTranslation } from "react-i18next"
+import classes from "./DeletableTabs.module.css"
 
 export type TabItem = {
   value: string
@@ -77,7 +78,7 @@ export const DeletableTabs = ({
                         handleDelete(event)
                       }
                     }}
-                    style={{ cursor: "pointer", opacity: 0.7, lineHeight: 1 }}
+                    className={classes.deleteButton}
                   >
                     ✕
                   </Box>

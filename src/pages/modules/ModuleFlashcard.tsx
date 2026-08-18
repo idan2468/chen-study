@@ -3,12 +3,13 @@ import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AssessmentButtons } from "@/components/AssessmentButtons/AssessmentButtons"
 import { CardNavigation } from "@/components/CardNavigation/CardNavigation"
+import { CardWord } from "@/components/CardWord/CardWord"
 import { FlipCard } from "@/components/FlipCard/FlipCard"
-import { FlipHint } from "@/components/FlipHint/FlipHint"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
 import { useSpeech } from "@/hooks/useSpeech"
 import type { CardStatus, ModuleCard } from "@/types/module"
+import classes from "./ModuleFlashcard.module.css"
 
 /** The original auto-advanced 250ms after marking a card. */
 const AUTO_ADVANCE_MS = 250
@@ -86,23 +87,11 @@ export const ModuleFlashcard = ({
         }}
         status={status ?? "none"}
         label={t("common.cardAriaLabel")}
-        front={
-          <>
-            <Text
-              dir="ltr"
-              ff="Arial, sans-serif"
-              fw={700}
-              style={{ fontSize: "3.6rem", letterSpacing: "4px" }}
-            >
-              {card.en}
-            </Text>
-            <FlipHint />
-          </>
-        }
+        front={<CardWord text={card.en} className={classes.word} />}
         back={
           /* Card content: direction derived from the text, not the UI language. */
           <div dir="auto">
-            <Text fw={700} style={{ fontSize: "2.4rem" }}>
+            <Text fw={700} className={classes.translation}>
               {card.he}
             </Text>
             <Text c="dimmed" size="lg">

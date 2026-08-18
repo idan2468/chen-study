@@ -2,6 +2,7 @@ import { Alert, Button, Group, Paper, Stack, Text } from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import type { AnswerRecord, Question } from "@/types/exercise"
+import classes from "./QuestionCard.module.css"
 
 export type QuestionCardProps = {
   question: Question
@@ -37,7 +38,7 @@ export const QuestionCard = ({
             size="sm"
           />
           {/* Question text is author-supplied; direction comes from the text. */}
-          <Text dir="auto" fw={600} style={{ flex: 1 }}>
+          <Text dir="auto" fw={600} className={classes.questionText}>
             {question.title}
           </Text>
         </Group>
@@ -67,7 +68,7 @@ export const QuestionCard = ({
                   justify="flex-start"
                   fullWidth
                   dir="ltr"
-                  styles={{ label: { whiteSpace: "normal" } }}
+                  classNames={{ label: classes.optionLabel }}
                   onClick={() => {
                     onAnswer(index, option.isCorrect)
                   }}

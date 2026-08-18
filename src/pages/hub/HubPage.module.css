@@ -26,6 +26,14 @@
   line-height: 1;
 }
 
+.description {
+  flex: 1;
+}
+
+.cta {
+  border-radius: var(--mantine-radius-md);
+}
+
 /* The original swapped the CTA's colour when the whole card was hovered. */
 .card .cta {
   transition:
