@@ -2,17 +2,73 @@ import {
   Button,
   CopyButton,
   Group,
+  Loader,
   Modal,
   Text,
   TextInput,
 } from "@mantine/core"
-import { useMemo } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { buildSyncUrl } from "@/utils/syncUrl"
 
 export type SyncModalProps = {
   opened: boolean
   onClose: () => void
+}
+
+/**
+ * Separate from `SyncModal` so that closing unmounts it, which is what keeps a
+ * previous open's snapshot from being on screen and copyable while the current
+ * one is still being built.
+ */
+const SyncLink = ({ onClose }: Pick<SyncModalProps, "onClose">) => {
+  const { t } = useTranslation()
+  const [syncUrl, setSyncUrl] = useState<string | null>(null)
+  const building = syncUrl === null
+
+  useEffect(() => {
+    let current = true
+    void buildSyncUrl().then(url => {
+      if (current) {
+        setSyncUrl(url)
+      }
+    })
+    return () => {
+      current = false
+    }
+  }, [])
+
+  return (
+    <>
+      <TextInput
+        value={syncUrl ?? ""}
+        readOnly
+        onFocus={event => {
+          event.currentTarget.select()
+        }}
+        aria-label={t("sync.linkLabel")}
+        rightSection={building ? <Loader size="xs" /> : null}
+        styles={{ input: { direction: "ltr", textAlign: "left" } }}
+      />
+
+      <Group justify="flex-end" mt="lg">
+        <CopyButton value={syncUrl ?? ""} timeout={2000}>
+          {({ copied, copy }) => (
+            <Button
+              onClick={copy}
+              disabled={building}
+              color={copied ? "success" : undefined}
+            >
+              {copied ? t("sync.copied") : t("sync.copyLink")}
+            </Button>
+          )}
+        </CopyButton>
+        <Button variant="default" onClick={onClose}>
+          {t("common.close")}
+        </Button>
+      </Group>
+    </>
+  )
 }
 
 /**
@@ -24,9 +80,6 @@ export type SyncModalProps = {
  */
 export const SyncModal = ({ opened, onClose }: SyncModalProps) => {
   const { t } = useTranslation()
-
-  // Rebuilt each time the modal opens so it reflects the latest progress.
-  const syncUrl = useMemo(() => (opened ? buildSyncUrl() : ""), [opened])
 
   return (
     <Modal
@@ -40,28 +93,7 @@ export const SyncModal = ({ opened, onClose }: SyncModalProps) => {
         {t("sync.description")}
       </Text>
 
-      <TextInput
-        value={syncUrl}
-        readOnly
-        onFocus={event => {
-          event.currentTarget.select()
-        }}
-        aria-label={t("sync.linkLabel")}
-        styles={{ input: { direction: "ltr", textAlign: "left" } }}
-      />
-
-      <Group justify="flex-end" mt="lg">
-        <CopyButton value={syncUrl} timeout={2000}>
-          {({ copied, copy }) => (
-            <Button onClick={copy} color={copied ? "success" : undefined}>
-              {copied ? t("sync.copied") : t("sync.copyLink")}
-            </Button>
-          )}
-        </CopyButton>
-        <Button variant="default" onClick={onClose}>
-          {t("common.close")}
-        </Button>
-      </Group>
+      <SyncLink onClose={onClose} />
     </Modal>
   )
 }

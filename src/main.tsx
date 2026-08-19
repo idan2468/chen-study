@@ -20,43 +20,48 @@ import { makeStore } from "./store/store"
 import { colorSchemeManager, cssVariablesResolver, theme } from "./theme"
 import { importSyncFromUrl } from "./utils/syncUrl"
 
-// Order matters: a shared-link payload has to land in localStorage *before* the
-// store is created and before the locale is read, because both hydrate from it.
-// Expressed as explicit statements rather than relying on module import order.
-const importedKeyCount = importSyncFromUrl()
-const store = makeStore()
+/** A function rather than top-level `await`, which the build target may not allow. */
+const bootstrap = async () => {
+  // Order matters: a shared-link payload has to land in localStorage *before* the
+  // store is created and before the locale is read, because both hydrate from it.
+  // Expressed as explicit statements rather than relying on module import order.
+  const importedKeyCount = await importSyncFromUrl()
+  const store = makeStore()
 
-const locale = readStoredLocale()
-// Set `lang`/`dir` before mounting: Mantine's DirectionProvider reads `dir` off
-// the html element on mount to decide its initial direction.
-applyDocumentLocale(locale)
-initI18n(locale)
+  const locale = readStoredLocale()
+  // Set `lang`/`dir` before mounting: Mantine's DirectionProvider reads `dir` off
+  // the html element on mount to decide its initial direction.
+  applyDocumentLocale(locale)
+  initI18n(locale)
 
-const container = document.getElementById("root")
-if (!container) {
-  throw new Error(
-    "Root element with id 'root' was not found. Unable to mount the React application.",
+  const container = document.getElementById("root")
+  if (!container) {
+    throw new Error(
+      "Root element with id 'root' was not found. Unable to mount the React application.",
+    )
+  }
+
+  createRoot(container).render(
+    <StrictMode>
+      <Provider store={store}>
+        <DirectionProvider initialDirection={directionFor(locale)}>
+          <MantineProvider
+            theme={theme}
+            colorSchemeManager={colorSchemeManager()}
+            cssVariablesResolver={cssVariablesResolver}
+            defaultColorScheme="dark"
+          >
+            <ModalsProvider>
+              <Notifications position="top-center" />
+              <HashRouter>
+                <App importedKeyCount={importedKeyCount} />
+              </HashRouter>
+            </ModalsProvider>
+          </MantineProvider>
+        </DirectionProvider>
+      </Provider>
+    </StrictMode>,
   )
 }
 
-createRoot(container).render(
-  <StrictMode>
-    <Provider store={store}>
-      <DirectionProvider initialDirection={directionFor(locale)}>
-        <MantineProvider
-          theme={theme}
-          colorSchemeManager={colorSchemeManager()}
-          cssVariablesResolver={cssVariablesResolver}
-          defaultColorScheme="dark"
-        >
-          <ModalsProvider>
-            <Notifications position="top-center" />
-            <HashRouter>
-              <App importedKeyCount={importedKeyCount} />
-            </HashRouter>
-          </ModalsProvider>
-        </MantineProvider>
-      </DirectionProvider>
-    </Provider>
-  </StrictMode>,
-)
+void bootstrap()

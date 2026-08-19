@@ -1,4 +1,11 @@
-import { decodeSyncPayload, encodeSyncPayload, parseSyncUrl } from "./syncUrl"
+import {
+  buildSyncPayload,
+  decodeSyncPayload,
+  encodeSyncPayload,
+  parseSyncUrl,
+  type SyncPayload,
+} from "./syncUrl"
+import { StorageKeys } from "./storageKeys"
 
 const payload = {
   english_reading_practice_progress_v3: JSON.stringify({ HAT: "known" }),
@@ -6,45 +13,96 @@ const payload = {
   dyslexia_font_enabled: "0",
 }
 
-test("encode -> decode round-trips a payload", () => {
-  expect(decodeSyncPayload(encodeSyncPayload(payload))).toStrictEqual(payload)
+/** How the pre-gzip builds encoded a payload. */
+const legacyEncode = (value: SyncPayload) =>
+  btoa(encodeURIComponent(JSON.stringify(value)))
+
+beforeEach(() => {
+  localStorage.clear()
 })
 
-test("decoding survives Hebrew content", () => {
+test("encode -> decode round-trips a payload", async () => {
+  expect(
+    await decodeSyncPayload(await encodeSyncPayload(payload)),
+  ).toStrictEqual(payload)
+})
+
+test("decoding survives Hebrew content", async () => {
   const withHebrew = {
     english_x: JSON.stringify({ he: "הַט", meaning: "כובע" }),
   }
-  expect(decodeSyncPayload(encodeSyncPayload(withHebrew))).toStrictEqual(
-    withHebrew,
+  expect(
+    await decodeSyncPayload(await encodeSyncPayload(withHebrew)),
+  ).toStrictEqual(withHebrew)
+})
+
+test("encodes Hebrew far more compactly than the pre-gzip builds", async () => {
+  const hebrewHeavy = {
+    english_exercise_library: JSON.stringify({
+      title: "📖 תרגול קריאה באנגלית (Reading Practice)",
+      paragraphs: Array.from(
+        { length: 8 },
+        () => "מאיה החליטה לאפות סופלה שוקולד, קינוח עדין ומאתגר במיוחד.",
+      ),
+    }),
+  }
+
+  const encoded = await encodeSyncPayload(hebrewHeavy)
+  expect(encoded.length).toBeLessThan(legacyEncode(hebrewHeavy).length / 4)
+})
+
+test("returns null for garbage rather than throwing", async () => {
+  expect(await decodeSyncPayload("not-base64!!")).toBeNull()
+  // Valid base64, but not gzip.
+  expect(await decodeSyncPayload(btoa("hello"))).toBeNull()
+})
+
+test("returns null for a link from a pre-gzip build", async () => {
+  expect(await decodeSyncPayload(legacyEncode(payload))).toBeNull()
+})
+
+test("drops non-string values, which cannot be localStorage entries", async () => {
+  const encoded = await encodeSyncPayload({
+    a: "1",
+    b: 2,
+  } as unknown as SyncPayload)
+  expect(await decodeSyncPayload(encoded)).toStrictEqual({ a: "1" })
+})
+
+test("parses the `?s=` form", async () => {
+  const url = `https://example.com/app/?s=${await encodeSyncPayload(payload)}`
+  expect(await parseSyncUrl(url)).toStrictEqual(payload)
+})
+
+test("ignores the `?sync=` and `#sync=` forms of pre-gzip builds", async () => {
+  const legacy = legacyEncode(payload)
+  expect(
+    await parseSyncUrl(`https://example.com/app/?sync=${legacy}`),
+  ).toBeNull()
+  expect(
+    await parseSyncUrl(`https://example.com/app/#sync=${legacy}`),
+  ).toBeNull()
+})
+
+test("ignores a HashRouter route, and a URL with no payload at all", async () => {
+  expect(await parseSyncUrl("https://example.com/app/#/modules")).toBeNull()
+  expect(await parseSyncUrl("https://example.com/app/")).toBeNull()
+})
+
+test("returns null for a malformed URL", async () => {
+  expect(await parseSyncUrl("not a url")).toBeNull()
+})
+
+test("collects progress from localStorage, but never the chosen voice", () => {
+  localStorage.setItem(
+    StorageKeys.modulesProgress,
+    JSON.stringify({ HAT: "known" }),
   )
-})
+  localStorage.setItem(StorageKeys.darkMode, "1")
+  localStorage.setItem(StorageKeys.systemVoice, "Microsoft David - English")
 
-test("returns null for garbage rather than throwing", () => {
-  expect(decodeSyncPayload("not-base64!!")).toBeNull()
-  // Valid base64, but not JSON.
-  expect(decodeSyncPayload(btoa("hello"))).toBeNull()
-})
-
-test("drops non-string values, which cannot be localStorage entries", () => {
-  const encoded = btoa(encodeURIComponent(JSON.stringify({ a: "1", b: 2 })))
-  expect(decodeSyncPayload(encoded)).toStrictEqual({ a: "1" })
-})
-
-test("parses the current `?sync=` form", () => {
-  const url = `https://example.com/app/?sync=${encodeSyncPayload(payload)}`
-  expect(parseSyncUrl(url)).toStrictEqual(payload)
-})
-
-test("parses the legacy `#sync=` form shared by the original HTML apps", () => {
-  const url = `https://example.com/app/#sync=${encodeSyncPayload(payload)}`
-  expect(parseSyncUrl(url)).toStrictEqual(payload)
-})
-
-test("ignores a HashRouter route that merely looks like a hash payload", () => {
-  expect(parseSyncUrl("https://example.com/app/#/modules")).toBeNull()
-  expect(parseSyncUrl("https://example.com/app/")).toBeNull()
-})
-
-test("returns null for a malformed URL", () => {
-  expect(parseSyncUrl("not a url")).toBeNull()
+  expect(buildSyncPayload()).toStrictEqual({
+    [StorageKeys.modulesProgress]: JSON.stringify({ HAT: "known" }),
+    [StorageKeys.darkMode]: "1",
+  })
 })

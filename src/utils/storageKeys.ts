@@ -50,9 +50,17 @@ export const StorageKeys = {
 export const flashcardStatusKey = (exerciseId: string) =>
   `flashcards_status_${exerciseId || "default"}`
 
+/**
+ * Persisted, but deliberately never shared: a `voiceURI` names a voice installed
+ * on one machine, and on another `resolveVoice` just falls back to the best
+ * local voice (see `utils/voices.ts`).
+ */
+const DEVICE_LOCAL_KEYS = new Set<string>([StorageKeys.systemVoice])
+
 /** Matches any key the sync feature should carry between devices. */
 export const isSyncableKey = (key: string) =>
-  key.startsWith("flashcards_status_") ||
-  key.startsWith("english_") ||
-  key.includes("dyslexia") ||
-  key.includes("dark_mode")
+  !DEVICE_LOCAL_KEYS.has(key) &&
+  (key.startsWith("flashcards_status_") ||
+    key.startsWith("english_") ||
+    key.includes("dyslexia") ||
+    key.includes("dark_mode"))

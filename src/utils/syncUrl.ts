@@ -5,14 +5,19 @@
  * duplicated verbatim in both original HTML files. The payload is the raw
  * localStorage key/value pairs, which is why `src/utils/storageKeys.ts` must
  * keep those key names stable.
+ *
+ * The payload is gzipped before it is base64'd. Earlier builds instead ran
+ * `encodeURIComponent` before `btoa`, which turned every Hebrew letter into
+ * `%D7%9E` and inflated a 5 KB snapshot into a 14,000-character link. Their
+ * links can no longer be decoded, hence the parameter rename from `sync`: an old
+ * link is now ignored outright rather than failing halfway through an import.
  */
 import { isSyncableKey } from "./storageKeys"
 import { listKeys, readString } from "@/store/storage"
 
 export type SyncPayload = Record<string, string>
 
-/** New links use `?sync=`; `#sync=` is the legacy form (see `parseSyncUrl`). */
-const SYNC_PARAM = "sync"
+const SYNC_PARAM = "s"
 
 export const buildSyncPayload = (): SyncPayload => {
   const payload: SyncPayload = {}
@@ -24,12 +29,54 @@ export const buildSyncPayload = (): SyncPayload => {
   return payload
 }
 
-export const encodeSyncPayload = (payload: SyncPayload) =>
-  btoa(encodeURIComponent(JSON.stringify(payload)))
+/** `+`, `/` and `=` all need escaping in a query string; base64url does not. */
+const toBase64Url = (bytes: Uint8Array) => {
+  let binary = ""
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte)
+  }
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
+}
 
-export const decodeSyncPayload = (encoded: string): SyncPayload | null => {
+const fromBase64Url = (encoded: string) => {
+  const binary = atob(encoded.replace(/-/g, "+").replace(/_/g, "/"))
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+  return bytes
+}
+
+/** `Response` is the terse way to collect a stream back into a buffer. */
+const pipeBytes = async (
+  bytes: Uint8Array<ArrayBuffer>,
+  transform: TransformStream<BufferSource, Uint8Array>,
+) => {
+  const source = new ReadableStream<BufferSource>({
+    start(controller) {
+      controller.enqueue(bytes)
+      controller.close()
+    },
+  })
+  return new Uint8Array(
+    await new Response(source.pipeThrough(transform)).arrayBuffer(),
+  )
+}
+
+export const encodeSyncPayload = async (payload: SyncPayload) => {
+  const json = new TextEncoder().encode(JSON.stringify(payload))
+  return toBase64Url(await pipeBytes(json, new CompressionStream("gzip")))
+}
+
+export const decodeSyncPayload = async (
+  encoded: string,
+): Promise<SyncPayload | null> => {
   try {
-    const parsed: unknown = JSON.parse(decodeURIComponent(atob(encoded)))
+    const bytes = await pipeBytes(
+      fromBase64Url(encoded),
+      new DecompressionStream("gzip"),
+    )
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes))
     if (typeof parsed !== "object" || parsed === null) {
       return null
     }
@@ -46,19 +93,16 @@ export const decodeSyncPayload = (encoded: string): SyncPayload | null => {
   }
 }
 
-export const buildSyncUrl = () => {
+export const buildSyncUrl = async () => {
   const { origin, pathname } = window.location
-  return `${origin}${pathname}?${SYNC_PARAM}=${encodeSyncPayload(buildSyncPayload())}`
+  const encoded = await encodeSyncPayload(buildSyncPayload())
+  return `${origin}${pathname}?${SYNC_PARAM}=${encoded}`
 }
 
-/**
- * Pulls the payload out of a URL.
- *
- * Accepts both `?sync=` (current) and `#sync=` (links shared by the original
- * HTML apps). The hash form has to be handled specially because the app now
- * uses `HashRouter`, so `#` is a route.
- */
-export const parseSyncUrl = (href: string): SyncPayload | null => {
+/** Pulls the payload out of a URL. */
+export const parseSyncUrl = async (
+  href: string,
+): Promise<SyncPayload | null> => {
   let url: URL
   try {
     url = new URL(href)
@@ -66,18 +110,8 @@ export const parseSyncUrl = (href: string): SyncPayload | null => {
     return null
   }
 
-  const fromQuery = url.searchParams.get(SYNC_PARAM)
-  if (fromQuery) {
-    return decodeSyncPayload(fromQuery)
-  }
-
-  // Legacy: `#sync=<base64>`, which HashRouter would otherwise read as a route.
-  const hash = url.hash.startsWith("#") ? url.hash.slice(1) : url.hash
-  if (hash.startsWith(`${SYNC_PARAM}=`)) {
-    return decodeSyncPayload(hash.slice(SYNC_PARAM.length + 1))
-  }
-
-  return null
+  const encoded = url.searchParams.get(SYNC_PARAM)
+  return encoded ? decodeSyncPayload(encoded) : null
 }
 
 /** Writes an imported payload straight into localStorage. Returns the count. */
@@ -101,8 +135,8 @@ export const applySyncPayload = (payload: SyncPayload) => {
  *
  * @returns how many keys were imported, or `null` if the URL had no payload.
  */
-export const importSyncFromUrl = (): number | null => {
-  const payload = parseSyncUrl(window.location.href)
+export const importSyncFromUrl = async (): Promise<number | null> => {
+  const payload = await parseSyncUrl(window.location.href)
   if (!payload) {
     return null
   }
