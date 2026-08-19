@@ -31,6 +31,24 @@ static bundle on GitHub Pages and must stay that way.
 Per-record merging and its `known`/`unknown` conflict rule are therefore out of
 scope.
 
+## Open questions
+
+1. **Should device preferences sync at all?** Dark mode, dyslexia font and speech
+   rate currently travel in share links. `english_system_voice` was deliberately
+   excluded because a `voiceURI` is meaningless on another machine, and reading
+   speed arguably belongs to the device as well.
+2. **Show which account is connected?** Displaying an email address means
+   requesting an extra identity scope. Without it the UI can only say
+   "connected".
+3. **Is the app fully usable with no Google account?** Assumed yes — local-only
+   plus `?s=` links — but the answer decides whether a "Connect" prompt can be
+   dismissed for good.
+4. **Client ID as `VITE_GOOGLE_CLIENT_ID` or a committed constant?** It is public
+   either way, since it ships in the bundle. An env var additionally needs the
+   GitHub Pages workflow to pass it at build time. Worth noting that
+   `idan2468.github.io` is one origin shared by every project you publish there,
+   so any page on it could use this client ID.
+
 ## Why a Google Cloud project is still needed
 
 The file lives in the user's own Drive, but Google will not issue an access token
@@ -95,7 +113,7 @@ Data Access tabs.
      screen is clean before depending on it. Testing mode remains the fallback.
 
 Once step 6 exists, the app's side of the setup is a single value; see the
-client-ID question at the end of this document.
+client-ID question under [Open questions](#open-questions).
 
 ## Why this is possible without a backend
 
@@ -115,15 +133,43 @@ registered as authorized JavaScript origins.
 
 ### What still cannot work without a backend
 
-- **Silent background sync.** Browser-only OAuth issues access tokens that last
-  about an hour and gives **no refresh token**. A new token needs
-  `requestAccessToken()`, which opens a popup and therefore wants a user gesture.
-  It can be re-issued without a consent prompt while the Google session cookie is
-  alive, but it can also be blocked — notably on iOS Safari. So syncing has to be
-  something the user can always trigger by tapping, and the UI has to have an
-  honest "tap to reconnect" state.
+- **A refresh token.** See below — this is the one that keeps getting asked
+  about, so it gets its own explanation.
 - Sharing progress with a second person (a teacher's dashboard), or anything that
   needs to run while nobody has the app open.
+
+### Why there is no way to get a refresh token here
+
+Only Google's **Authorization Code** flow issues a refresh token; the token
+client this plan uses (`initTokenClient`, an implicit-style flow) never does —
+that is not a missing option, it is how that flow is defined.
+
+Switching flows does not help. Getting a refresh token means POSTing the
+authorization code to `https://oauth2.googleapis.com/token` and reading the
+JSON response — containing the refresh token — back into the page's own
+JavaScript. That endpoint does not send CORS headers to a browser `fetch`, so the
+response is simply unreachable from client-side code. This is not a workaround
+away: it is how Google's endpoint behaves, confirmed by Google's own docs, which
+offer a separate `initCodeClient` specifically for apps that _already have a
+backend_ to receive the code, and by consistent reports of that exact call
+being blocked.
+
+Registering the OAuth client as a public "Desktop app" type does not fix this
+either. It only removes the requirement for a confidential client secret (and
+even that inconsistently, per Google's own developer forum) — it changes nothing
+about CORS. The only thing that can read that response is something running
+server-side, even a single stateless function invoked once per sign-in. That is
+a backend by the constraint this whole plan works under, so it is out of scope
+here.
+
+What is left instead: an access token that lasts about an hour, renewed by
+calling `requestAccessToken({ prompt: '' })`. While the browser still holds a
+live Google session, this typically succeeds with no visible prompt; if it
+can't — the session cookie is gone, or the browser blocks the popup it opens
+internally, notably on iOS Safari — it fails, and the UI has to show an honest
+"tap to reconnect" rather than pretend to have synced. That is exactly why the
+plan pairs the 2-minute timer with a manual button rather than relying on the
+timer alone.
 
 ## Design sketch
 
@@ -220,21 +266,3 @@ surface rather than pass silently.
 
 End to end this still needs a real two-device check on one account, including
 progress made on both sides before either syncs.
-
-## Open questions
-
-1. **Should device preferences sync at all?** Dark mode, dyslexia font and speech
-   rate currently travel in share links. `english_system_voice` was deliberately
-   excluded because a `voiceURI` is meaningless on another machine, and reading
-   speed arguably belongs to the device as well.
-2. **Show which account is connected?** Displaying an email address means
-   requesting an extra identity scope. Without it the UI can only say
-   "connected".
-3. **Is the app fully usable with no Google account?** Assumed yes — local-only
-   plus `?s=` links — but the answer decides whether a "Connect" prompt can be
-   dismissed for good.
-4. **Client ID as `VITE_GOOGLE_CLIENT_ID` or a committed constant?** It is public
-   either way, since it ships in the bundle. An env var additionally needs the
-   GitHub Pages workflow to pass it at build time. Worth noting that
-   `idan2468.github.io` is one origin shared by every project you publish there,
-   so any page on it could use this client ID.
