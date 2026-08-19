@@ -6,19 +6,16 @@ import { settingsSlice } from "./slices/settingsSlice"
 import { speechSlice } from "./slices/speechSlice"
 import { unseenSlice } from "./slices/unseenSlice"
 
-// `combineSlices` automatically combines the reducers using
-// their `reducerPath`s, therefore we no longer need to call `combineReducers`.
 const rootReducer = combineSlices(
   settingsSlice,
   speechSlice,
   unseenSlice,
   modulesSlice,
 )
-// Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>
 
-// The store setup is wrapped in `makeStore` to allow reuse
-// when setting up tests that need the same store config
+// Wrapped in a factory so tests can create isolated store instances with the
+// same config instead of sharing one module-scope store.
 export const makeStore = (preloadedState?: Partial<RootState>) => {
   return configureStore({
     reducer: rootReducer,
@@ -34,7 +31,6 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
 // lazy initializer, so the store must not be built until `main.tsx` has had a
 // chance to import a `?sync=` payload first.
 export type AppStore = ReturnType<typeof makeStore>
-// Infer the `AppDispatch` type from the store itself
 export type AppDispatch = AppStore["dispatch"]
 export type AppThunk<ThunkReturnType = void> = ThunkAction<
   ThunkReturnType,

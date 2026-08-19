@@ -172,7 +172,8 @@ export const modulesSlice = createAppSlice({
       state.filterMissed = false
     }),
 
-    /** Appends imported modules and jumps to the first one. */
+    /** Appends imported modules; selecting one is left to the caller (see
+     *  `ModulesPage.tsx`). */
     addModules: create.reducer(
       (state, action: PayloadAction<PracticeModule[]>) => {
         if (action.payload.length === 0) {

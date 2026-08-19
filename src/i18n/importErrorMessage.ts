@@ -5,13 +5,10 @@ import type { ExerciseImportError } from "@/pages/unseen/exerciseImport"
 /**
  * Turns a parser's locale-agnostic error code into a message for the user.
  *
- * Written as an exhaustive `switch` with literal keys rather than a computed
- * `t(\`importErrors.${code}\`, values)`: i18next's typed `t` cannot resolve its
- * overloads against a union of keys *and* a union of interpolation payloads, and
- * the switch buys something better in exchange for the verbosity -- adding a new
- * error code without translating it becomes a compile error.
- *
- * The imports are type-only, so this adds no runtime coupling to the pages.
+ * An exhaustive `switch` rather than a computed `t(\`importErrors.${code}\`)`:
+ * i18next's typed `t` can't resolve a union of keys plus a union of
+ * interpolation payloads, and the switch makes an untranslated new error
+ * code a compile error instead of a silent gap.
  */
 export const importErrorMessage = (
   t: TFunction,

@@ -24,7 +24,6 @@ export const StorageKeys = {
 
   /** `Record<exerciseId, Exercise>` */
   exerciseLibrary: "english_exercise_library",
-  /** Plain exercise id string. */
   currentExerciseId: "english_current_exercise_id",
   /** Legacy mirror of the active exercise object, kept for back-compat. */
   currentExerciseData: "current_english_exercise_data",
@@ -44,7 +43,6 @@ export const StorageKeys = {
   deletedBuiltInModules: "english_reading_deleted_builtins_v1",
   /** Module deck position for the active module. */
   moduleCardIndex: "english_module_card_index",
-  /** Plain module id string. */
   currentModuleId: "english_current_module_id",
 } as const
 

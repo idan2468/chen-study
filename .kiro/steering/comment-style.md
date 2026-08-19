@@ -1,0 +1,10 @@
+# Comment style rules
+
+Apply these rules whenever adding, editing, or reviewing comments in this repo:
+
+1. If a comment exists to explain something that could instead be made self-explanatory through refactoring (renaming a variable/function, extracting a well-named helper), do the refactor and remove the comment rather than keeping both.
+2. If a comment explains a crucial, non-obvious edge case (a real bug fix, a platform quirk, a business rule that isn't visible in the code), keep it — but keep it concise, not verbose. One or two sentences, not a paragraph.
+3. Config files are lower priority for comment cleanup than business logic files. Don't spend effort stripping comments from config; focus on `src/` application code.
+4. Doc comments on functions are worth keeping only if they add real clarity beyond the function signature. Prefer a clearer name or a small refactor over adding/keeping a comment when either would make the comment unnecessary.
+
+Target audience for comments: a mid-level full-stack developer (~4 years experience) working in this repo. Don't over-explain basics; only keep what a competent dev would actually need to safely change the code.

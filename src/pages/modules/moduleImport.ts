@@ -19,7 +19,6 @@ export type ModuleImportResult =
 type CardResult =
   { ok: true; card: ModuleCard } | { ok: false; error: ModuleImportError }
 
-/** Validates and normalizes one card within a module. */
 const normalizeCard = (
   raw: unknown,
   position: number,

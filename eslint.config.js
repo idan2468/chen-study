@@ -20,8 +20,6 @@ const eslintConfig = defineConfig(
       "**/.tmp/",
       "**/.yarn/",
       "**/coverage/",
-      // One-off data-extraction tooling, not part of the app's TS project;
-      // deliberately untyped (`any`/`Function`) to evaluate legacy literals.
       "scripts/",
     ],
   },

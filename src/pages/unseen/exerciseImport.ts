@@ -19,7 +19,6 @@ const isStringArray = (value: unknown): value is string[] =>
 type QuestionResult =
   { ok: true; question: Question } | { ok: false; error: ExerciseImportError }
 
-/** Validates and normalizes one question, including its options. */
 const normalizeQuestion = (raw: unknown, position: number): QuestionResult => {
   const question = raw as Partial<Question>
 

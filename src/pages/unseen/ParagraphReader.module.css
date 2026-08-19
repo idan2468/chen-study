@@ -1,9 +1,3 @@
-/*
- * The interactive passage. Ported from `Unseen New.html`'s `.para-row`,
- * `.para-row.para-reading`, `.word`, `.word.vocab`, `.word.marked` and
- * `.word.speaking` rules (`:657-720`).
- */
-
 .paraRow {
   display: flex;
   align-items: flex-start;
@@ -11,17 +5,11 @@
   padding: var(--mantine-spacing-xs);
   border-radius: var(--mantine-radius-md);
   transition: background-color 0.2s ease;
-  /*
-   * Flexbox's "row" axis follows `dir`, not a fixed screen side -- in the
-   * Hebrew (RTL) UI this would otherwise put the play button on the right,
-   * ahead of the (always-LTR, see `.paragraph` below) passage text. The play
-   * button is a fixed control, not RTL content, so it stays on the left in
-   * both locales rather than mirroring with the interface language.
-   */
+  /* Flexbox's row axis follows `dir`; force ltr so the play button stays on
+   * the left instead of mirroring with the Hebrew UI. */
   direction: ltr;
 }
 
-/* The paragraph currently being read aloud. */
 .paraReading {
   background-color: var(--mantine-color-default-hover);
   box-shadow: inset 3px 0 0 0 var(--mantine-color-brand-filled);
@@ -49,27 +37,19 @@
   background-color: var(--mantine-color-default-hover);
 }
 
-/* A word that also appears in this exercise's flashcards. */
 .vocab {
   color: var(--mantine-color-brand-filled);
   font-weight: 600;
   border-bottom: 2px dotted var(--mantine-color-brand-filled);
 }
 
-/*
- * Compound selectors, so these survive `:hover`. `.word:hover` has specificity
- * (0,2,0) and would otherwise win over a bare `.marked` (0,1,0) -- leaving a
- * highlighted word un-highlighted, with dark text on the dark hover background,
- * for as long as the pointer rested on it.
- */
-
-/* Double-click highlighter. Now persisted, unlike in the original. */
+/* Compound selector so this survives `:hover` -- `.word:hover` alone has
+ * higher specificity than a bare `.marked` and would win over it. */
 .word.marked {
   background-color: var(--mantine-color-yellow-3);
   color: var(--mantine-color-black);
 }
 
-/* The single word currently being spoken. */
 .word.speaking {
   background-color: var(--mantine-color-brand-filled);
   color: var(--mantine-color-brand-contrast);

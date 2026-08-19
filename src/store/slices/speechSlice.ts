@@ -2,19 +2,10 @@ import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 
 /**
- * Which control currently owns `window.speechSynthesis`.
- *
- * The originals tracked this by stashing a **DOM element** in a module global
- * (`currentSpeechBtn`, `Unseen New.html:1776`), comparing by identity, then
- * restoring button labels by sniffing the element's id and class in a five-way
- * branch (`resetSpeechBtnState`, `:1778`). Here it is a plain string id, so any
- * `SpeakButton` anywhere in the tree can derive its own play/stop state.
- *
- * `window.speechSynthesis` is a browser singleton -- exactly one utterance
- * plays app-wide -- which is why this is app-level state and not local to a
- * page. The `SpeechSynthesisUtterance` and the pending queue deliberately stay
- * out of the store (non-serializable, and dispatching per speech event would
- * flood DevTools); they live in `src/utils/speech.ts`.
+ * Which control currently owns `window.speechSynthesis` -- a browser
+ * singleton, so this is app-level state rather than local to one page. The
+ * utterance object and queue stay out of the store (non-serializable) and
+ * live in `src/utils/speech.ts` instead.
  */
 export type SpeechState = {
   /** `null` when nothing is playing. `ownerId !== null` *is* "is speaking". */

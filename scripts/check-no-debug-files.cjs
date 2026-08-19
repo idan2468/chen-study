@@ -17,8 +17,6 @@
 const { execFileSync } = require("node:child_process")
 const path = require("node:path")
 
-// Matched against the file's basename (without extension), case-insensitively.
-// Ordered roughly by how often each has actually shown up in this repo.
 const DEBUG_NAME_PATTERNS = [
   /^__.*check$/, // e.g. __csscheck
   /^probe$/,
@@ -43,8 +41,6 @@ const getStagedFiles = () =>
 
 const isDebugFile = filePath => {
   const base = path.basename(filePath).toLowerCase()
-  // Strip all extensions (handles `.test.tsx`, `.module.css`, etc), not just
-  // the last one, so `__csscheck.test.tsx` matches on `__csscheck`.
   const nameWithoutExt = base.split(".")[0] ?? base
   return DEBUG_NAME_PATTERNS.some(pattern => pattern.test(nameWithoutExt))
 }

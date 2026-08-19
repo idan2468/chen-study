@@ -7,16 +7,11 @@ import type { Locale } from "."
 import { applyDocumentLocale, directionFor, DEFAULT_LOCALE } from "."
 
 /**
- * Reads and switches the UI language.
+ * Reads and switches the UI language: updates i18next, persists the choice,
+ * and flips document direction + Mantine's direction context together.
  *
- * Switching a language here does three things at once, which is why it is a
- * single hook rather than three call sites: it changes i18next's active
- * language, persists the choice, and flips the document plus Mantine's
- * direction context so every Mantine component mirrors.
- *
- * Deliberately *not* Redux state: `react-i18next` already owns it and
- * re-renders subscribers, so duplicating it in a slice would mean keeping two
- * sources of truth in sync.
+ * Not Redux state deliberately -- `react-i18next` already owns and
+ * re-renders on it, so a slice would just be a second source of truth.
  */
 export const useLocale = () => {
   const { i18n } = useTranslation()
