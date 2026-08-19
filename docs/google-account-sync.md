@@ -266,3 +266,72 @@ surface rather than pass silently.
 
 End to end this still needs a real two-device check on one account, including
 progress made on both sides before either syncs.
+
+## Definition of done
+
+Standard checks — full test suite, lint, format, typecheck — cover the code but
+not the parts that only exist once real Google infrastructure is involved. Those
+need to be verified by hand, once, before calling this done:
+
+### Config, not code
+
+- [ ] The client ID authenticates from `https://idan2468.github.io/chen-study/`
+      and from `npm run dev` (`http://localhost:5173`), and from nowhere else.
+- [ ] `Data Access` in the Cloud console lists `drive.appdata` under
+      **non-sensitive**, not sensitive or restricted.
+- [ ] No client secret exists anywhere in the repo, the built `dist/` bundle, or
+      any commit — `git log -p` on the files touched by this feature, and a
+      search of the production bundle for `GOCSPX-` (the secret's standard
+      prefix).
+
+### The write path cannot lose data
+
+- [ ] Editing progress on device A, syncing, then syncing an **untouched**
+      device B does not revert A's write. This is the dirty-check guard,
+      verified concretely rather than trusted on faith.
+- [ ] Editing on both A and B before either syncs, then syncing A followed by B,
+      surfaces the conflict rather than B silently overwriting A — this is the
+      `If-Match` precondition actually firing, not merely present in the code.
+- [ ] Killing the network mid-write leaves the previous Drive revision intact —
+      a half-finished multipart upload does not corrupt the file.
+
+### Auth actually degrades honestly
+
+- [ ] After the access token is left to expire (or is force-cleared), the app
+      re-authenticates silently with no visible prompt, while the browser still
+      holds a live Google session.
+- [ ] With the Google session itself signed out, the app shows "tap to
+      reconnect" — never a silent no-op and never a thrown error in the console.
+- [ ] Disconnecting revokes the token (`google.accounts.oauth2.revoke`) and the
+      app falls back cleanly to local-only, matching whatever
+      [Open questions](#open-questions) #3 ends up deciding.
+
+### Triggers behave as designed
+
+- [ ] The 2-minute timer does not run, or does not push, while the tab is
+      backgrounded/hidden — confirm via the network panel, not assumption.
+- [ ] Closing the tab (not just blurring it) still lands the last change in
+      Drive — the `visibilitychange`/`keepalive` push, checked against the
+      actual Drive revision afterward.
+- [ ] The manual "Sync now" button reflects a real error (offline, revoked
+      access, Drive quota) rather than a generic failure state.
+
+### Cross-device, cross-browser
+
+- [ ] A full round trip on two genuinely different devices — not two tabs on
+      one machine — with real added progress on each before the first sync.
+- [ ] iOS Safari specifically, since it is called out in this plan as the most
+      likely to block the silent popup re-issue; confirm the fallback UI, not
+      just that it "seems to still work".
+
+### Fallback preserved
+
+- [ ] The `?s=` share link (see [Why](#why)) still works independently — Drive
+      sync is additive, not a replacement that could strand a user with no
+      Google account.
+
+### Docs
+
+- [ ] README gained the promised section; `storageKeys.ts` gained the note that
+      its key names are now a wire format for the Drive file, not only for
+      links.
