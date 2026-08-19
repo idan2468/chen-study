@@ -1,9 +1,8 @@
 # Plan: sync progress through the user's own Google account
 
-**Status: proposal, nothing implemented.** Several decisions in
-[Open questions](#open-questions) change the shape of the code and are
-deliberately left unanswered — this document should not be executed until they
-are settled.
+**Status: proposal, nothing implemented.** The storage, merge and trigger
+decisions are settled (see [Decisions taken](#decisions-taken)); the items under
+[Open questions](#open-questions) are not, and none of them is assumed here.
 
 ## Why
 
@@ -21,16 +20,93 @@ The goal is for progress to follow the learner across devices, with the hard
 constraint that **there is no backend and no database on our side**. The app is a
 static bundle on GitHub Pages and must stay that way.
 
+## Decisions taken
+
+| Decision         | Choice                                                                                    |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| Storage location | `drive.appdata` — hidden app-data folder, so the file cannot be edited or deleted by hand |
+| Merge strategy   | whole-file last-write-wins, **guarded** by the dirty check and precondition below         |
+| Sync triggers    | manual "Sync now", a 2-minute timer, and on page hide                                     |
+
+Per-record merging and its `known`/`unknown` conflict rule are therefore out of
+scope.
+
+## Why a Google Cloud project is still needed
+
+The file lives in the user's own Drive, but Google will not issue an access token
+to an anonymous caller. The OAuth client identifies _this app_ — which origin may
+request a token, and what the consent screen names. This is the same arrangement
+WhatsApp uses for chat backups: the backup is in the user's Drive, while WhatsApp
+itself is a registered OAuth client, which is why Android asks "WhatsApp wants to
+access your Google Account".
+
+The project stores no data, runs nothing, and costs nothing. The only truly
+registration-free alternative is the user moving an exported JSON file into Drive
+themselves, which is a manual fallback rather than sync.
+
+### Setting it up by hand
+
+Console navigation was reorganised: the old **APIs & Services → OAuth consent
+screen** page no longer exists, and everything below lives under **APIs &
+Services → Google Auth Platform**, split across Branding, Audience, Clients and
+Data Access tabs.
+
+1. **Create the project.** <https://console.cloud.google.com> → project picker →
+   **New project**. Name it anything (`chen-study`); no billing account is
+   needed.
+2. **Enable the Drive API.** **APIs & Services → Library** → search
+   "Google Drive API" → **Enable**. Easy to miss, and without it every Drive
+   call returns 403 even with a perfectly good token.
+3. **Register the app.** **Google Auth Platform** → **Get started**:
+   - App name — this is what the consent screen shows her, so make it something
+     recognisable rather than the project id.
+   - User support email — your own address.
+   - Audience — **External**. "Internal" only exists for Google Workspace
+     organisations.
+   - Contact email, then accept the User Data Policy and **Create**.
+4. **Declare the scope.** **Data Access** → **Add or remove scopes** → filter for
+   `drive.appdata` and tick
+   `https://www.googleapis.com/auth/drive.appdata`. Confirm it lands in the
+   **non-sensitive** group; if it appears under sensitive or restricted, the
+   wrong scope got selected. Save.
+5. **Create the client.** **Clients** → **Create client** → type **Web
+   application**. Under **Authorized JavaScript origins** add both:
+   - `https://idan2468.github.io`
+   - `http://localhost:5173`
+
+   Origins are scheme, host and port only — no path, so **not**
+   `https://idan2468.github.io/chen-study/`. HTTPS is mandatory except for
+   localhost, which is exempt. Leave **Authorized redirect URIs empty**: the
+   token model used here returns the token to the page itself, so it never
+   redirects.
+
+6. **Copy the client ID** (it ends in `.apps.googleusercontent.com`). Google also
+   issues a client **secret** for this client type — we never use it, and it must
+   not go anywhere near the repo.
+7. **Choose a publishing mode.** Under **Audience**:
+   - **Testing** — only accounts listed under **Audience → Test users** can
+     authorise, capped at 100, so every device's account has to be added there.
+     The usual drawback of this mode, refresh tokens expiring after seven days,
+     does not apply because this flow never issues one — which makes Testing a
+     perfectly viable permanent state for a family app.
+   - **In production** — anyone can authorise. Google's guidance on whether a
+     non-sensitive-scope app is nudged toward basic brand verification is not
+     unambiguous, so publish, then check on a real device whether the consent
+     screen is clean before depending on it. Testing mode remains the fallback.
+
+Once step 6 exists, the app's side of the setup is a single value; see the
+client-ID question at the end of this document.
+
 ## Why this is possible without a backend
 
 Google Drive can act as the store, using the _user's own_ Drive:
 
-| Piece  | Choice                                            | Note                                                                                      |
-| ------ | ------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Auth   | Google Identity Services token client, in-browser | `google.accounts.oauth2.initTokenClient`, implicit flow, no client secret                 |
-| Scope  | `drive.appdata` (or `drive.file`, see Q1)         | Both are **non-sensitive**: no security assessment, and app verification is not mandatory |
-| Store  | one JSON file in the app-data folder              | Read/written with plain `fetch`; no client library needed                                 |
-| Server | none                                              | The browser talks to `googleapis.com` directly                                            |
+| Piece  | Choice                                            | Note                                                                             |
+| ------ | ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Auth   | Google Identity Services token client, in-browser | `google.accounts.oauth2.initTokenClient`, implicit flow, no client secret        |
+| Scope  | `drive.appdata`                                   | **Non-sensitive**: no security assessment, and app verification is not mandatory |
+| Store  | one JSON file in the app-data folder              | Read/written with plain `fetch`; no client library needed                        |
+| Server | none                                              | The browser talks to `googleapis.com` directly                                   |
 
 The OAuth client ID is not a secret — it ships in the bundle by design. The only
 setup outside the repo is a Google Cloud project with an OAuth consent screen and
@@ -65,7 +141,7 @@ that same object, so links and Drive sync cannot drift apart.
 | ------------------------------ | ------------------------------------------------------------------------------------------- |
 | `src/utils/googleAuth.ts`      | load the GIS script, hold the access token in memory, expose `requestToken()` / `signOut()` |
 | `src/utils/driveStore.ts`      | `readSnapshot()` / `writeSnapshot()` against the Drive REST API                             |
-| `src/utils/syncMerge.ts`       | merge a remote snapshot into local storage (see Q2/Q3)                                      |
+| `src/utils/driveSync.ts`       | the policy: dirty check, `If-Match` precondition, triggers, last-synced state               |
 | `src/components/AccountModal/` | connect/disconnect, last-synced time, "Sync now"                                            |
 
 `syncUrl.ts` keeps its current job — the link stays as the no-account fallback.
@@ -83,88 +159,82 @@ Four requests, all with `Authorization: Bearer <token>`:
 
 A `401` means the token aged out: re-request it and retry once.
 
-### The actual hard part: merging
+### Making last-write-wins safe
 
-Everything above is plumbing. The real design problem is that two devices can
-both change progress before either syncs, and the current import strategy
-("overwrite everything") silently destroys one side's work. The data shapes help,
-because nearly all of it is a keyed record where union is the obvious answer:
+Everything above is plumbing. The one part that can destroy data is the write, and
+whole-file last-write-wins combined with a 2-minute timer is unsafe on its own.
+Picture an iPad left open and idle in another room while the laptop is in use: the
+iPad's timer fires, uploads the snapshot it has held since this morning, and the
+laptop's newer progress is gone. Nobody touched the iPad — the timer alone did it.
 
-| Key                                                                  | Shape                                | Natural merge                                  |
-| -------------------------------------------------------------------- | ------------------------------------ | ---------------------------------------------- |
-| `english_reading_practice_progress_v3`                               | `Record<word, "known" \| "unknown">` | union; needs a rule when the two disagree (Q3) |
-| `flashcards_status_*`                                                | `Record<word, boolean>`              | union, same caveat                             |
-| `english_exercise_library`, `english_reading_all_modules_v4`         | `Record<id, …>`                      | union by id; deletions need thought (Q4)       |
-| `english_current_*_id`, deck positions                               | scalar                               | last write wins; arguably device-local         |
-| `dark_mode_enabled`, `dyslexia_font_enabled*`, `english_speech_rate` | scalar                               | last write wins (Q5)                           |
+Two cheap guards remove nearly all of that risk, with none of the machinery that
+per-record merging would need:
 
-Union merging needs no timestamps and no schema change, which is why it is worth
-preferring over stamping every localStorage write with an `updatedAt`.
+1. **Only upload when local data actually changed.** Hash the snapshot and keep
+   the hash from the last successful sync. An idle device then has nothing to
+   push, so its timer becomes a no-op rather than a hazard.
+2. **Refuse to overwrite a revision we have never seen.** Keep the `ETag` from the
+   last read and send it as `If-Match` on update. Drive rejects the write if the
+   remote has moved on since, which converts a silent clobber into a detectable
+   event: pull the remote snapshot and either take the newer one or ask.
+
+Both devices having genuinely changed since the last sync is the only case left,
+and guard 2 means it gets noticed instead of guessed.
+
+### Trigger mechanics
+
+| Trigger          | Mechanism                     | Caveat                                                                                                                                                                                                                              |
+| ---------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Sync now"       | button                        | always available, and the only path guaranteed to carry a user gesture                                                                                                                                                              |
+| Every 2 minutes  | `setInterval`                 | roughly every thirtieth tick lands after the ~1 h token expiry and needs a silent re-issue, which can be popup-blocked. It has to degrade to a visible "tap to reconnect", never a silent failure                                   |
+| Leaving the page | `visibilitychange` → `hidden` | not `beforeunload`, which cannot reliably finish an async request. `fetch(…, { keepalive: true })` survives unload and, unlike `sendBeacon`, can still set the `Authorization` header; its 64 KB body cap dwarfs our ~5 KB snapshot |
 
 ## Rollout
 
-1. **Google Cloud setup** (no code): project, consent screen, OAuth client, both
-   authorized origins. Publish to production so use is not capped at 100 test
-   users — with non-sensitive scopes only, this should not trigger a verification
-   review, but confirm the consent screen is clean on a real device before
-   relying on it.
-2. **`googleAuth.ts` + a Connect button** that proves a token can be obtained,
-   with no Drive calls yet.
-3. **`driveStore.ts`** — write the snapshot, then read it back on a second
-   device, still overwriting on import as the link does today.
-4. **`syncMerge.ts`** — replace overwrite with merge; this is where the tests
-   matter most, since it is the only part that can lose data.
-5. **Trigger policy** (Q6) and the reconnect UI.
-6. **Docs**: README section, and note in `storageKeys.ts` that key names are now
-   also a wire format for the Drive file.
+1. **Google Cloud setup** — no code; see
+   [Setting it up by hand](#setting-it-up-by-hand).
+2. **`googleAuth.ts` and a Connect button** that proves a token can be obtained,
+   with no Drive calls at all yet.
+3. **`driveStore.ts`** — push the snapshot, then read it back on a second device,
+   still overwriting local storage exactly as an imported link does today.
+4. **`driveSync.ts`** — add the dirty check and the `If-Match` precondition, so an
+   idle device can no longer clobber an active one. This is the step that
+   protects data and it deserves the most test attention.
+5. **Triggers and the reconnect UI** — the button, the 2-minute timer, the
+   page-hide push, and the "tap to reconnect" state when a token cannot be
+   obtained silently.
+6. **Docs** — a README section, and a note in `storageKeys.ts` that these key
+   names are now a wire format for the Drive file too, not just for links.
 
-Steps 2–4 are each independently shippable and independently useless, which
-suits the one-commit-at-a-time workflow.
+Steps 2 to 5 are each independently shippable and individually useless, which
+suits committing one at a time.
 
 ## Testing
 
 The auth and Drive layers are thin wrappers over `fetch` and a Google-hosted
-script, so they are worth faking at the boundary rather than unit-testing
-deeply. `syncMerge.ts` is pure and deserves real coverage: two snapshots in, one
-result out, including the conflict cases from Q3 and the deletion case from Q4.
+script, so fake them at the boundary rather than testing them deeply. The
+decision logic in `driveSync.ts` is where real coverage belongs, because it is
+what stands between a stale device and someone's lost progress: unchanged local
+data must not push, a stale `ETag` must abort the write, and a rejected write must
+surface rather than pass silently.
 
-End to end it needs a real device check — two browsers, one account, progress
-made on both before either syncs.
+End to end this still needs a real two-device check on one account, including
+progress made on both sides before either syncs.
 
 ## Open questions
 
-Nothing below is assumed; each answer changes the code.
-
-1. **`drive.appdata` or `drive.file`?** App-data is hidden: the user cannot see,
-   inspect, back up or accidentally delete the file. `drive.file` puts a visible
-   `chen-study-progress.json` in their Drive: transparent and manually
-   recoverable, but it is clutter and it can be deleted or edited by hand. Both
-   are non-sensitive.
-2. **Merge or last-write-wins?** Whole-file LWW is a fraction of the work and is
-   fine if only one device is ever "live" at a time. Per-record union merge is
-   the correct answer if two devices are genuinely used in parallel.
-3. **Conflict rule** when the same word is `known` on one device and `unknown` on
-   the other. Options: "known wins" (optimistic, never re-tests a mastered word),
-   "unknown wins" (conservative, may re-test), or "most recent device wins"
-   (needs timestamps).
-4. **Do deletions propagate?** With union merge, an exercise deleted on one
-   device comes back from the other. Making deletion stick needs tombstones —
-   `english_reading_deleted_builtins_v1` already does this for built-in modules,
-   so the pattern exists.
-5. **Should device preferences sync at all?** Dark mode, dyslexia font and speech
-   rate are currently in share links. `english_system_voice` was deliberately
-   excluded because a `voiceURI` is meaningless on another machine. Screen size
-   and reading speed arguably belong to the device too.
-6. **When does sync run?** Manual "Sync now" only; on every app start when a
-   token can be obtained silently; or debounced after changes. Automatic is
-   nicer, but every attempt can hit the popup-blocked path described above.
-7. **Show which account is connected?** Displaying an email address means asking
-   for an extra identity scope. Otherwise the UI can only say "connected".
-8. **Is the app fully usable with no Google account?** Assumed yes — local-only
-   plus `?s=` links — but this decides whether a "Connect" prompt can be
-   dismissed permanently.
-9. **Client ID: `VITE_GOOGLE_CLIENT_ID` or committed constant?** It is public
-   either way. An env var needs the GitHub Pages workflow to pass it at build
-   time.
-10. **Who owns the Google Cloud project?** It has to be a real account that keeps
-    owning the OAuth client; the app breaks if that project is deleted.
+1. **Should device preferences sync at all?** Dark mode, dyslexia font and speech
+   rate currently travel in share links. `english_system_voice` was deliberately
+   excluded because a `voiceURI` is meaningless on another machine, and reading
+   speed arguably belongs to the device as well.
+2. **Show which account is connected?** Displaying an email address means
+   requesting an extra identity scope. Without it the UI can only say
+   "connected".
+3. **Is the app fully usable with no Google account?** Assumed yes — local-only
+   plus `?s=` links — but the answer decides whether a "Connect" prompt can be
+   dismissed for good.
+4. **Client ID as `VITE_GOOGLE_CLIENT_ID` or a committed constant?** It is public
+   either way, since it ships in the bundle. An env var additionally needs the
+   GitHub Pages workflow to pass it at build time. Worth noting that
+   `idan2468.github.io` is one origin shared by every project you publish there,
+   so any page on it could use this client ID.
