@@ -82,12 +82,13 @@ links and Drive sync can't drift apart.
 
 ### Modules to add
 
-| Path                           | Responsibility                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------------ |
-| `src/utils/googleAuth.ts`      | load the GIS script, hold the access token in memory, `requestToken()` / `signOut()` |
-| `src/utils/driveStore.ts`      | `readSnapshot()` / `writeSnapshot()` against the Drive REST API                      |
-| `src/utils/driveSync.ts`       | the policy: dirty check, triggers, last-synced state                                 |
-| `src/components/AccountModal/` | connect/disconnect, connected email, last-synced time, "Sync now"                    |
+| Path                           | Responsibility                                                                                                   |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `@react-oauth/google`          | the token client: GIS script load, `useGoogleLogin()` hook, popup/consent handling                               |
+| `src/utils/googleAuth.ts`      | what the library doesn't cover -- hold the access token in memory, `signOut()` (revoke), `fetchConnectedEmail()` |
+| `src/utils/driveStore.ts`      | `readSnapshot()` / `writeSnapshot()` against the Drive REST API                                                  |
+| `src/utils/driveSync.ts`       | the policy: dirty check, triggers, last-synced state                                                             |
+| `src/components/AccountModal/` | connect/disconnect, connected email, last-synced time, "Sync now"                                                |
 
 `syncUrl.ts` is unchanged — the link stays as the no-account fallback.
 
@@ -153,8 +154,8 @@ verifying by hand once real Google infrastructure is involved:
 - [ ] Client ID authenticates only from `https://idan2468.github.io/chen-study/`
       and `http://localhost:5173`.
 - [ ] GitHub Pages workflow passes `VITE_GOOGLE_CLIENT_ID` at build time; a
-      local build without it set fails loudly instead of shipping a broken
-      Connect button.
+      local build without it set simply doesn't render the Connect control,
+      rather than shipping a broken one.
 - [ ] `Data Access` lists both `drive.appdata` and `userinfo.email` as
       **non-sensitive**.
 - [ ] No client secret anywhere in the repo, `dist/`, or history (search for

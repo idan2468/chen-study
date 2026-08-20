@@ -5,6 +5,8 @@ import "./styles/global.css"
 import { DirectionProvider, MantineProvider } from "@mantine/core"
 import { ModalsProvider } from "@mantine/modals"
 import { Notifications } from "@mantine/notifications"
+import { GoogleOAuthProvider } from "@react-oauth/google"
+import type { ReactNode } from "react"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { Provider } from "react-redux"
@@ -18,7 +20,18 @@ import {
 } from "./i18n"
 import { makeStore } from "./store/store"
 import { colorSchemeManager, cssVariablesResolver, theme } from "./theme"
+import { GOOGLE_CLIENT_ID } from "./utils/googleAuth"
 import { importSyncFromUrl } from "./utils/syncUrl"
+
+/** No-op when unset, so a build without `VITE_GOOGLE_CLIENT_ID` doesn't load GIS at all. */
+const GoogleAuthGate = ({ children }: { children: ReactNode }) =>
+  GOOGLE_CLIENT_ID ? (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      {children}
+    </GoogleOAuthProvider>
+  ) : (
+    children
+  )
 
 /** A function rather than top-level `await`, which the build target may not allow. */
 const bootstrap = async () => {
@@ -53,9 +66,11 @@ const bootstrap = async () => {
           >
             <ModalsProvider>
               <Notifications position="top-center" />
-              <HashRouter>
-                <App importedKeyCount={importedKeyCount} />
-              </HashRouter>
+              <GoogleAuthGate>
+                <HashRouter>
+                  <App importedKeyCount={importedKeyCount} />
+                </HashRouter>
+              </GoogleAuthGate>
             </ModalsProvider>
           </MantineProvider>
         </DirectionProvider>

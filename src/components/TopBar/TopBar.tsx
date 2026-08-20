@@ -9,12 +9,14 @@ import {
 import { useDisclosure } from "@mantine/hooks"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
+import { useGoogleConnect } from "@/hooks/useGoogleConnect"
 import { useLocale } from "@/i18n/useLocale"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   selectDyslexiaFont,
   toggleDyslexiaFont,
 } from "@/store/slices/settingsSlice"
+import { isGoogleSyncAvailable } from "@/utils/googleAuth"
 import { SpeechSettingsModal } from "@/components/SpeechSettingsModal/SpeechSettingsModal"
 import { SyncModal } from "@/components/SyncModal/SyncModal"
 
@@ -39,6 +41,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
   const { locale, toggleLocale } = useLocale()
   const [syncOpened, syncHandlers] = useDisclosure(false)
   const [speechOpened, speechHandlers] = useDisclosure(false)
+  const googleConnect = useGoogleConnect()
 
   const isDark = colorScheme === "dark"
 
@@ -87,6 +90,25 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
           <Button size="xs" variant="default" onClick={syncHandlers.open}>
             {t("common.syncDevices")}
           </Button>
+
+          {isGoogleSyncAvailable() ? (
+            <Button
+              size="xs"
+              variant="default"
+              loading={googleConnect.connecting}
+              onClick={
+                googleConnect.connectedEmail
+                  ? googleConnect.disconnect
+                  : googleConnect.connect
+              }
+            >
+              {googleConnect.connectedEmail
+                ? t("common.googleConnected", {
+                    email: googleConnect.connectedEmail,
+                  })
+                : t("common.connectGoogle")}
+            </Button>
+          ) : null}
         </Group>
 
         {children ? <Group gap="xs">{children}</Group> : null}

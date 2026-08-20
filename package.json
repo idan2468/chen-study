@@ -22,6 +22,7 @@
     "@mantine/hooks": "^9.5.1",
     "@mantine/modals": "^9.5.1",
     "@mantine/notifications": "^9.5.1",
+    "@react-oauth/google": "^0.13.5",
     "@reduxjs/toolkit": "^2.6.1",
     "i18next": "^26.3.6",
     "react": "^19.1.0",

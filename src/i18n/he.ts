@@ -32,6 +32,9 @@ export const he = {
     stopSpeaking: "עצירת ההקראה: {{label}}",
     deleteItem: "מחיקת {{name}}",
     voiceSettings: "🎙️ הגדרות קול",
+    connectGoogle: "🔐 חיבור לחשבון Google",
+    googleConnected: "{{email}} · התנתקות",
+    googleConnectError: "החיבור לחשבון Google נכשל. נסו שוב.",
   },
 
   hub: {
