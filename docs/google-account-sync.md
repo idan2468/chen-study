@@ -1,8 +1,7 @@
 # Plan: sync progress through the user's own Google account
 
-**Status: proposal, nothing implemented.** The storage, merge and trigger
-decisions are settled (see [Decisions taken](#decisions-taken)); the items under
-[Open questions](#open-questions) are not, and none of them is assumed here.
+**Status: proposal, nothing implemented.** All design decisions are settled —
+see [Decisions taken](#decisions-taken).
 
 ## Why
 
@@ -22,32 +21,27 @@ static bundle on GitHub Pages and must stay that way.
 
 ## Decisions taken
 
-| Decision         | Choice                                                                                    |
-| ---------------- | ----------------------------------------------------------------------------------------- |
-| Storage location | `drive.appdata` — hidden app-data folder, so the file cannot be edited or deleted by hand |
-| Merge strategy   | whole-file last-write-wins, **guarded** by the dirty check and precondition below         |
-| Sync triggers    | manual "Sync now", a 2-minute timer, and on page hide                                     |
+| Decision                  | Choice                                                                                         |
+| ------------------------- | ---------------------------------------------------------------------------------------------- |
+| Storage location          | `drive.appdata` — hidden app-data folder, so the file cannot be edited or deleted by hand      |
+| Merge strategy            | whole-file last-write-wins, with only the dirty-check guard below                              |
+| Sync triggers             | manual "Sync now", a 2-minute timer, and on page hide                                          |
+| No-account usage          | fully usable without one — local-only storage plus `?s=` links                                 |
+| Connected-account display | show the signed-in email, via an added `userinfo.email` scope                                  |
+| Device preferences        | dark mode, dyslexia font and speech rate keep syncing; only `english_system_voice` stays local |
+| Client ID storage         | `VITE_GOOGLE_CLIENT_ID` env var, injected at build time by the GitHub Pages workflow           |
+| Browser/platform support  | Chrome only, on macOS, Windows and Android — no iOS Safari support required                    |
 
-Per-record merging and its `known`/`unknown` conflict rule are therefore out of
-scope.
+The Google account is additive, never required. Nothing in the app degrades or
+nags if the user never connects one: the "Connect" prompt can be dismissed for
+good, not just snoozed.
 
-## Open questions
-
-1. **Should device preferences sync at all?** Dark mode, dyslexia font and speech
-   rate currently travel in share links. `english_system_voice` was deliberately
-   excluded because a `voiceURI` is meaningless on another machine, and reading
-   speed arguably belongs to the device as well.
-2. **Show which account is connected?** Displaying an email address means
-   requesting an extra identity scope. Without it the UI can only say
-   "connected".
-3. **Is the app fully usable with no Google account?** Assumed yes — local-only
-   plus `?s=` links — but the answer decides whether a "Connect" prompt can be
-   dismissed for good.
-4. **Client ID as `VITE_GOOGLE_CLIENT_ID` or a committed constant?** It is public
-   either way, since it ships in the bundle. An env var additionally needs the
-   GitHub Pages workflow to pass it at build time. Worth noting that
-   `idan2468.github.io` is one origin shared by every project you publish there,
-   so any page on it could use this client ID.
+Two devices that both edit before either syncs are not detected and not merged —
+whichever syncs second simply overwrites the other, with no alert. Simpler to
+build and to reason about, and reasonable for how this app is actually used: a
+single learner, rarely editing the same content on two devices in the same few
+minutes. Detecting that case, and per-record merging generally, are both
+deferred — see [Possible future additions](#possible-future-additions).
 
 ## Why a Google Cloud project is still needed
 
@@ -82,10 +76,11 @@ Data Access tabs.
    - Audience — **External**. "Internal" only exists for Google Workspace
      organisations.
    - Contact email, then accept the User Data Policy and **Create**.
-4. **Declare the scope.** **Data Access** → **Add or remove scopes** → filter for
-   `drive.appdata` and tick
-   `https://www.googleapis.com/auth/drive.appdata`. Confirm it lands in the
-   **non-sensitive** group; if it appears under sensitive or restricted, the
+4. **Declare the scopes.** **Data Access** → **Add or remove scopes** → tick both
+   `https://www.googleapis.com/auth/drive.appdata` and
+   `https://www.googleapis.com/auth/userinfo.email` (the second is what lets the
+   UI show which account is connected). Confirm both land in the
+   **non-sensitive** group; if either appears under sensitive or restricted, the
    wrong scope got selected. Save.
 5. **Create the client.** **Clients** → **Create client** → type **Web
    application**. Under **Authorized JavaScript origins** add both:
@@ -98,9 +93,14 @@ Data Access tabs.
    token model used here returns the token to the page itself, so it never
    redirects.
 
-6. **Copy the client ID** (it ends in `.apps.googleusercontent.com`). Google also
-   issues a client **secret** for this client type — we never use it, and it must
-   not go anywhere near the repo.
+6. **Copy the client ID** (it ends in `.apps.googleusercontent.com`) into
+   `VITE_GOOGLE_CLIENT_ID`. It is public either way, since it ships in the
+   bundle — but as an env var it needs the GitHub Pages workflow to pass it at
+   build time, rather than being committed as a constant. Worth noting that
+   `idan2468.github.io` is one origin shared by every project published there,
+   so any page on it could use this client ID. Google also issues a client
+   **secret** for this client type — we never use it, and it must not go
+   anywhere near the repo.
 7. **Choose a publishing mode.** Under **Audience**:
    - **Testing** — only accounts listed under **Audience → Test users** can
      authorise, capped at 100, so every device's account has to be added there.
@@ -112,19 +112,19 @@ Data Access tabs.
      unambiguous, so publish, then check on a real device whether the consent
      screen is clean before depending on it. Testing mode remains the fallback.
 
-Once step 6 exists, the app's side of the setup is a single value; see the
-client-ID question under [Open questions](#open-questions).
+Once step 6 exists, the app's side of the setup is a single env var; see
+[Client ID storage](#decisions-taken).
 
 ## Why this is possible without a backend
 
 Google Drive can act as the store, using the _user's own_ Drive:
 
-| Piece  | Choice                                            | Note                                                                             |
-| ------ | ------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Auth   | Google Identity Services token client, in-browser | `google.accounts.oauth2.initTokenClient`, implicit flow, no client secret        |
-| Scope  | `drive.appdata`                                   | **Non-sensitive**: no security assessment, and app verification is not mandatory |
-| Store  | one JSON file in the app-data folder              | Read/written with plain `fetch`; no client library needed                        |
-| Server | none                                              | The browser talks to `googleapis.com` directly                                   |
+| Piece  | Choice                                            | Note                                                                           |
+| ------ | ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Auth   | Google Identity Services token client, in-browser | `google.accounts.oauth2.initTokenClient`, implicit flow, no client secret      |
+| Scopes | `drive.appdata` and `userinfo.email`              | Both **non-sensitive**: no security assessment, app verification not mandatory |
+| Store  | one JSON file in the app-data folder              | Read/written with plain `fetch`; no client library needed                      |
+| Server | none                                              | The browser talks to `googleapis.com` directly                                 |
 
 The OAuth client ID is not a secret — it ships in the bundle by design. The only
 setup outside the repo is a Google Cloud project with an OAuth consent screen and
@@ -165,11 +165,10 @@ here.
 What is left instead: an access token that lasts about an hour, renewed by
 calling `requestAccessToken({ prompt: '' })`. While the browser still holds a
 live Google session, this typically succeeds with no visible prompt; if it
-can't — the session cookie is gone, or the browser blocks the popup it opens
-internally, notably on iOS Safari — it fails, and the UI has to show an honest
-"tap to reconnect" rather than pretend to have synced. That is exactly why the
-plan pairs the 2-minute timer with a manual button rather than relying on the
-timer alone.
+can't — the session cookie is gone, or Chrome blocks the popup it opens
+internally — it fails, and the UI has to show an honest "tap to reconnect"
+rather than pretend to have synced. That is exactly why the plan pairs the
+2-minute timer with a manual button rather than relying on the timer alone.
 
 ## Design sketch
 
@@ -187,8 +186,8 @@ that same object, so links and Drive sync cannot drift apart.
 | ------------------------------ | ------------------------------------------------------------------------------------------- |
 | `src/utils/googleAuth.ts`      | load the GIS script, hold the access token in memory, expose `requestToken()` / `signOut()` |
 | `src/utils/driveStore.ts`      | `readSnapshot()` / `writeSnapshot()` against the Drive REST API                             |
-| `src/utils/driveSync.ts`       | the policy: dirty check, `If-Match` precondition, triggers, last-synced state               |
-| `src/components/AccountModal/` | connect/disconnect, last-synced time, "Sync now"                                            |
+| `src/utils/driveSync.ts`       | the policy: dirty check, triggers, last-synced state                                        |
+| `src/components/AccountModal/` | connect/disconnect, connected account's email, last-synced time, "Sync now"                 |
 
 `syncUrl.ts` keeps its current job — the link stays as the no-account fallback.
 
@@ -205,27 +204,23 @@ Four requests, all with `Authorization: Bearer <token>`:
 
 A `401` means the token aged out: re-request it and retry once.
 
-### Making last-write-wins safe
+### The one guard that is worth keeping: the dirty check
 
-Everything above is plumbing. The one part that can destroy data is the write, and
-whole-file last-write-wins combined with a 2-minute timer is unsafe on its own.
-Picture an iPad left open and idle in another room while the laptop is in use: the
-iPad's timer fires, uploads the snapshot it has held since this morning, and the
-laptop's newer progress is gone. Nobody touched the iPad — the timer alone did it.
+Whole-file last-write-wins combined with a 2-minute timer is unsafe on its own,
+but the failure mode it actually needs guarding against is narrower than "two
+devices disagree" — it is an **idle device with nothing new to say** clobbering
+one that has been actively used. Picture an iPad left open in another room while
+the laptop is in use: its timer fires, uploads the snapshot it has held since
+this morning, and the laptop's newer progress is gone. Nobody touched the iPad —
+the timer alone did it.
 
-Two cheap guards remove nearly all of that risk, with none of the machinery that
-per-record merging would need:
+The fix costs nothing extra to build: hash the local snapshot and keep the hash
+from the last successful sync. An unchanged device then has nothing to push, so
+its timer becomes a no-op rather than a hazard.
 
-1. **Only upload when local data actually changed.** Hash the snapshot and keep
-   the hash from the last successful sync. An idle device then has nothing to
-   push, so its timer becomes a no-op rather than a hazard.
-2. **Refuse to overwrite a revision we have never seen.** Keep the `ETag` from the
-   last read and send it as `If-Match` on update. Drive rejects the write if the
-   remote has moved on since, which converts a silent clobber into a detectable
-   event: pull the remote snapshot and either take the newer one or ask.
-
-Both devices having genuinely changed since the last sync is the only case left,
-and guard 2 means it gets noticed instead of guessed.
+This does **not** cover two devices that were both genuinely edited before either
+synced — by decision, that case is simply not detected; see
+[Decisions taken](#decisions-taken).
 
 ### Trigger mechanics
 
@@ -243,9 +238,9 @@ and guard 2 means it gets noticed instead of guessed.
    with no Drive calls at all yet.
 3. **`driveStore.ts`** — push the snapshot, then read it back on a second device,
    still overwriting local storage exactly as an imported link does today.
-4. **`driveSync.ts`** — add the dirty check and the `If-Match` precondition, so an
-   idle device can no longer clobber an active one. This is the step that
-   protects data and it deserves the most test attention.
+4. **`driveSync.ts`** — add the dirty check, so an idle device's timer can no
+   longer clobber an active one. This is the step that protects data and it
+   deserves the most test attention.
 5. **Triggers and the reconnect UI** — the button, the 2-minute timer, the
    page-hide push, and the "tap to reconnect" state when a token cannot be
    obtained silently.
@@ -259,10 +254,9 @@ suits committing one at a time.
 
 The auth and Drive layers are thin wrappers over `fetch` and a Google-hosted
 script, so fake them at the boundary rather than testing them deeply. The
-decision logic in `driveSync.ts` is where real coverage belongs, because it is
-what stands between a stale device and someone's lost progress: unchanged local
-data must not push, a stale `ETag` must abort the write, and a rejected write must
-surface rather than pass silently.
+decision logic in `driveSync.ts` is where real coverage belongs: unchanged local
+data must never push, so an idle device's timer is provably a no-op rather than
+something only observed to behave by accident.
 
 End to end this still needs a real two-device check on one account, including
 progress made on both sides before either syncs.
@@ -277,21 +271,27 @@ need to be verified by hand, once, before calling this done:
 
 - [ ] The client ID authenticates from `https://idan2468.github.io/chen-study/`
       and from `npm run dev` (`http://localhost:5173`), and from nowhere else.
-- [ ] `Data Access` in the Cloud console lists `drive.appdata` under
-      **non-sensitive**, not sensitive or restricted.
+- [ ] The GitHub Pages workflow passes `VITE_GOOGLE_CLIENT_ID` at build time, and
+      the deployed bundle actually contains it — a local `npm run build` without
+      the env var set should fail loudly rather than ship a broken Connect
+      button.
+- [ ] `Data Access` in the Cloud console lists both `drive.appdata` and
+      `userinfo.email` under **non-sensitive**, not sensitive or restricted.
 - [ ] No client secret exists anywhere in the repo, the built `dist/` bundle, or
       any commit — `git log -p` on the files touched by this feature, and a
       search of the production bundle for `GOCSPX-` (the secret's standard
       prefix).
 
-### The write path cannot lose data
+### The write path behaves as designed
 
 - [ ] Editing progress on device A, syncing, then syncing an **untouched**
       device B does not revert A's write. This is the dirty-check guard,
       verified concretely rather than trusted on faith.
 - [ ] Editing on both A and B before either syncs, then syncing A followed by B,
-      surfaces the conflict rather than B silently overwriting A — this is the
-      `If-Match` precondition actually firing, not merely present in the code.
+      leaves B's snapshot as the final state in Drive, with no error and no
+      alert — confirming the accepted trade-off in
+      [Decisions taken](#decisions-taken) behaves as intended, not as an
+      unnoticed bug.
 - [ ] Killing the network mid-write leaves the previous Drive revision intact —
       a half-finished multipart upload does not corrupt the file.
 
@@ -303,8 +303,11 @@ need to be verified by hand, once, before calling this done:
 - [ ] With the Google session itself signed out, the app shows "tap to
       reconnect" — never a silent no-op and never a thrown error in the console.
 - [ ] Disconnecting revokes the token (`google.accounts.oauth2.revoke`) and the
-      app falls back cleanly to local-only, matching whatever
-      [Open questions](#open-questions) #3 ends up deciding.
+      app falls back cleanly to local-only.
+- [ ] The `AccountModal` shows the actual signed-in email, not just "connected" —
+      and updates if the user reconnects with a different Google account.
+- [ ] Dismissing the "Connect" prompt without ever authorising leaves the app
+      fully functional on `?s=` links alone, and the prompt does not resurface.
 
 ### Triggers behave as designed
 
@@ -316,13 +319,13 @@ need to be verified by hand, once, before calling this done:
 - [ ] The manual "Sync now" button reflects a real error (offline, revoked
       access, Drive quota) rather than a generic failure state.
 
-### Cross-device, cross-browser
+### Cross-device (Chrome on macOS, Windows, Android)
 
 - [ ] A full round trip on two genuinely different devices — not two tabs on
       one machine — with real added progress on each before the first sync.
-- [ ] iOS Safari specifically, since it is called out in this plan as the most
-      likely to block the silent popup re-issue; confirm the fallback UI, not
-      just that it "seems to still work".
+- [ ] Covers Chrome on macOS, Windows and Android specifically — no other
+      browser or platform is in scope, per
+      [Decisions taken](#decisions-taken).
 
 ### Fallback preserved
 
@@ -335,3 +338,27 @@ need to be verified by hand, once, before calling this done:
 - [ ] README gained the promised section; `storageKeys.ts` gained the note that
       its key names are now a wire format for the Drive file, not only for
       links.
+
+## Possible future additions
+
+Deliberately out of scope for the first version, kept here so the simplification
+is a recorded decision rather than something later mistaken for an oversight.
+
+- **Detect the two-device conflict.** Keep the `ETag` from the last read and send
+  it as `If-Match` on update. Drive then rejects a write built on a revision it
+  never saw, turning today's silent overwrite into a detectable event — surface
+  it to the user, or auto-resolve with "most recent wins" if writes carry a
+  timestamp. This is a small addition on top of the current design, not a
+  rewrite, since the dirty check already tracks the last-synced state needed to
+  know whether a conflict is even possible.
+- **Per-record merge.** Replace whole-file last-write-wins with a union merge.
+  Most of the synced state is a keyed record —
+  `english_reading_practice_progress_v3`, `flashcards_status_*`, the exercise
+  and module libraries — where union is the natural merge, needing no
+  timestamps. This is the one that removes the need for "last sync wins" or a
+  conflict alert entirely, at the cost of a real conflict rule for cases like
+  the same word being `known` on one device and `unknown` on the other.
+
+Worth revisiting if two devices end up being edited in genuine parallel often
+enough for the current trade-off to actually bite; not worth building
+speculatively before that happens.
