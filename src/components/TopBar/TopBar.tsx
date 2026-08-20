@@ -16,7 +16,8 @@ import {
   selectDyslexiaFont,
   toggleDyslexiaFont,
 } from "@/store/slices/settingsSlice"
-import { isGoogleSyncAvailable } from "@/utils/googleAuth"
+import { isGoogleSyncAvailable } from "@/utils/google/googleAuth"
+import { GoogleIcon } from "@/components/GoogleIcon/GoogleIcon"
 import { SpeechSettingsModal } from "@/components/SpeechSettingsModal/SpeechSettingsModal"
 import { SyncModal } from "@/components/SyncModal/SyncModal"
 
@@ -47,7 +48,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
 
   return (
     <Paper withBorder p="xs" radius="md" w="100%">
-      <Group justify="space-between" gap="xs" wrap="wrap">
+      <Group justify="center" gap="xs" wrap="wrap">
         <Group gap="xs" wrap="wrap">
           {withHomeLink ? (
             <Button size="xs" variant="subtle" component={Link} to="/">
@@ -95,6 +96,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
             <Button
               size="xs"
               variant="default"
+              leftSection={<GoogleIcon />}
               loading={googleConnect.connecting}
               onClick={
                 googleConnect.connectedEmail

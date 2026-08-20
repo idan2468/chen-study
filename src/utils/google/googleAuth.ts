@@ -1,31 +1,12 @@
 /**
- * Google sign-in for Drive sync, entirely in the browser.
+ * Google sign-in for Drive sync, entirely in the browser -- see
+ * docs/google-account-sync.md for the full design.
  *
- * Token acquisition itself is `@react-oauth/google`'s `useGoogleLogin` hook
- * (see `TopBar.tsx`), which wraps Google Identity Services' token client --
- * the implicit-style flow that never issues a refresh token, see
- * `docs/google-account-sync.md#why-there-is-no-refresh-token` for why that is
- * unavoidable without a backend. The access token it resolves lives in
- * memory only (via `setAccessToken` below) and is gone on reload; callers
- * are expected to trigger `login()` again (with `prompt: ""`) to renew it
- * silently.
- *
- * Two things the library doesn't cover, so they stay here: revoking the
- * token on disconnect (no wrapper for `google.accounts.oauth2.revoke`), and
- * looking up the connected email (the implicit flow only returns an access
- * token, not identity claims).
+ * The access token lives in memory only and is gone on reload; disconnect
+ * only clears it locally, without revoking Google's consent, since
+ * `useGoogleLogin`'s default `select_account` prompt already lets a user
+ * switch accounts without one.
  */
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- augmenting the global Window requires an interface for declaration merging
-  interface Window {
-    google?: {
-      accounts: {
-        oauth2: { revoke: (token: string, callback: () => void) => void }
-      }
-    }
-  }
-}
 
 const USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
@@ -45,13 +26,6 @@ let accessToken: string | null = null
 export const getAccessToken = () => accessToken
 export const setAccessToken = (token: string | null) => {
   accessToken = token
-}
-
-export const signOut = () => {
-  if (accessToken) {
-    window.google?.accounts.oauth2.revoke(accessToken, () => undefined)
-  }
-  accessToken = null
 }
 
 /** Requires the `userinfo.email` scope, requested alongside `drive.appdata`. */

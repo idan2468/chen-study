@@ -82,13 +82,21 @@ links and Drive sync can't drift apart.
 
 ### Modules to add
 
-| Path                           | Responsibility                                                                                                   |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `@react-oauth/google`          | the token client: GIS script load, `useGoogleLogin()` hook, popup/consent handling                               |
-| `src/utils/googleAuth.ts`      | what the library doesn't cover -- hold the access token in memory, `signOut()` (revoke), `fetchConnectedEmail()` |
-| `src/utils/driveStore.ts`      | `readSnapshot()` / `writeSnapshot()` against the Drive REST API                                                  |
-| `src/utils/driveSync.ts`       | the policy: dirty check, triggers, last-synced state                                                             |
-| `src/components/AccountModal/` | connect/disconnect, connected email, last-synced time, "Sync now"                                                |
+Google-specific modules live under `src/utils/google/`, not the flat
+`src/utils/`, so they don't pile up alongside unrelated helpers
+(`voices.ts`, `speech.ts`, ...). Each pairs a plain module (state/API calls,
+no React) with a hook that wires it into the UI — same split as
+`googleAuth.ts` / `useGoogleConnect.ts` already in place.
+
+| Path                             | Responsibility                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| `@react-oauth/google`            | the token client: GIS script load, `useGoogleLogin()` hook, popup/consent handling         |
+| `src/utils/google/googleAuth.ts` | what the library doesn't cover -- hold the access token in memory, `fetchConnectedEmail()` |
+| `src/hooks/useGoogleConnect.ts`  | wires `googleAuth.ts` + `useGoogleLogin()` into connect/disconnect state for the UI        |
+| `src/utils/google/driveStore.ts` | `readSnapshot()` / `writeSnapshot()` against the Drive REST API                            |
+| `src/utils/google/driveSync.ts`  | the policy: dirty check, last-synced state                                                 |
+| `src/hooks/useDriveSync.ts`      | the triggers -- 2-minute timer, page-hide, manual button -- calling into `driveSync.ts`    |
+| `src/components/AccountModal/`   | connect/disconnect, connected email, last-synced time, "Sync now"                          |
 
 `syncUrl.ts` is unchanged — the link stays as the no-account fallback.
 
@@ -167,9 +175,11 @@ verifying by hand once real Google infrastructure is involved:
 - [ ] Killing the network mid-write leaves the previous Drive revision intact.
 - [ ] Expired token re-authenticates silently while a Google session is live;
       with no session, the app shows "tap to reconnect", never a silent no-op.
-- [ ] Disconnecting revokes the token and falls back cleanly to local-only.
+- [ ] Disconnecting clears the local token (no Google-side revoke) and falls
+      back cleanly to local-only.
 - [ ] `AccountModal` shows the actual signed-in email and updates if the user
-      reconnects with a different account.
+      connects with a different account — Google's account chooser shows on
+      every connect by default, so switching needs no revoke step.
 - [ ] Dismissing "Connect" without ever authorising leaves `?s=` links fully
       functional, and the prompt doesn't resurface.
 - [ ] The 2-minute timer doesn't push while the tab is hidden (network panel,

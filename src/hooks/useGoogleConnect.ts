@@ -9,8 +9,7 @@ import {
   GOOGLE_EMAIL_SCOPE,
   GOOGLE_SCOPES,
   setAccessToken,
-  signOut,
-} from "@/utils/googleAuth"
+} from "@/utils/google/googleAuth"
 
 type ImplicitTokenResponse = Omit<
   TokenResponse,
@@ -72,7 +71,7 @@ export const useGoogleConnect = () => {
   })
 
   const disconnect = () => {
-    signOut()
+    setAccessToken(null)
     setConnectedEmail(null)
   }
 

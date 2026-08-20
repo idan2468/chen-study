@@ -20,7 +20,7 @@ import {
 } from "./i18n"
 import { makeStore } from "./store/store"
 import { colorSchemeManager, cssVariablesResolver, theme } from "./theme"
-import { GOOGLE_CLIENT_ID } from "./utils/googleAuth"
+import { GOOGLE_CLIENT_ID } from "./utils/google/googleAuth"
 import { importSyncFromUrl } from "./utils/syncUrl"
 
 /** No-op when unset, so a build without `VITE_GOOGLE_CLIENT_ID` doesn't load GIS at all. */

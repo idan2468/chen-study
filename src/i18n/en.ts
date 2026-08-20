@@ -38,7 +38,7 @@ export const en: Messages = {
     stopSpeaking: "Stop reading: {{label}}",
     deleteItem: "Delete {{name}}",
     voiceSettings: "🎙️ Voice settings",
-    connectGoogle: "🔐 Connect Google",
+    connectGoogle: "Connect Google",
     googleConnected: "{{email}} · Disconnect",
     googleConnectError: "Could not connect Google account. Try again.",
   },
