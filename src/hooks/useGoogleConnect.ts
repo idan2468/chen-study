@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { notifications } from "@mantine/notifications"
 import type { TokenResponse } from "@react-oauth/google"
 import { hasGrantedAllScopesGoogle, useGoogleLogin } from "@react-oauth/google"
 import { useTranslation } from "react-i18next"
 import {
   fetchConnectedEmail,
+  getAccessToken,
   GOOGLE_DRIVE_SCOPE,
   GOOGLE_EMAIL_SCOPE,
   GOOGLE_SCOPES,
@@ -17,14 +18,32 @@ type ImplicitTokenResponse = Omit<
 >
 
 /**
- * Proves a token can be obtained end to end; no Drive calls yet. Replaced by
- * a full `AccountModal` (disconnect, last-synced time, "Sync now") once
- * `driveStore.ts`/`driveSync.ts` exist -- see docs/google-account-sync.md.
+ * Proves a token can be obtained end to end; no Drive calls yet. Reloading
+ * restores the session from localStorage. Replaced by a full `AccountModal`
+ * (disconnect, last-synced time, "Sync now") once `driveStore.ts`/`driveSync.ts`
+ * exist -- see docs/google-account-sync.md.
  */
 export const useGoogleConnect = () => {
   const { t } = useTranslation()
-  const [connecting, setConnecting] = useState(false)
+  const [connecting, setConnecting] = useState(() => Boolean(getAccessToken()))
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      const token = getAccessToken()
+      if (!token) {
+        return
+      }
+      try {
+        setConnectedEmail(await fetchConnectedEmail(token))
+      } catch {
+        // Keep the stored token; a later boot path silently re-issues it.
+      } finally {
+        setConnecting(false)
+      }
+    }
+    void restoreSession()
+  }, [])
 
   const handleSuccess = async (tokenResponse: ImplicitTokenResponse) => {
     // Granular consent lets the user grant only some of the requested

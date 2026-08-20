@@ -93,13 +93,14 @@ test("returns null for a malformed URL", async () => {
   expect(await parseSyncUrl("not a url")).toBeNull()
 })
 
-test("collects progress from localStorage, but never the chosen voice", () => {
+test("collects progress from localStorage, but never device-local keys", () => {
   localStorage.setItem(
     StorageKeys.modulesProgress,
     JSON.stringify({ HAT: "known" }),
   )
   localStorage.setItem(StorageKeys.darkMode, "1")
   localStorage.setItem(StorageKeys.systemVoice, "Microsoft David - English")
+  localStorage.setItem(StorageKeys.googleAccessToken, "ya29.secret")
 
   expect(buildSyncPayload()).toStrictEqual({
     [StorageKeys.modulesProgress]: JSON.stringify({ HAT: "known" }),

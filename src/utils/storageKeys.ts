@@ -21,6 +21,8 @@ export const StorageKeys = {
   locale: "english_locale",
   /** `voiceURI` of the chosen system speech voice. New in the React app. */
   systemVoice: "english_system_voice",
+  /** GIS access token. Device-local — must never appear in `?s=` or Drive. */
+  googleAccessToken: "google_access_token",
 
   /** `Record<exerciseId, Exercise>` */
   exerciseLibrary: "english_exercise_library",
@@ -52,10 +54,13 @@ export const flashcardStatusKey = (exerciseId: string) =>
 
 /**
  * Persisted, but deliberately never shared: a `voiceURI` names a voice installed
- * on one machine, and on another `resolveVoice` just falls back to the best
- * local voice (see `utils/voices.ts`).
+ * on one machine, and the Google access token must not ride in `?s=` links or
+ * the Drive file.
  */
-const DEVICE_LOCAL_KEYS = new Set<string>([StorageKeys.systemVoice])
+const DEVICE_LOCAL_KEYS = new Set<string>([
+  StorageKeys.systemVoice,
+  StorageKeys.googleAccessToken,
+])
 
 /** Matches any key the sync feature should carry between devices. */
 export const isSyncableKey = (key: string) =>

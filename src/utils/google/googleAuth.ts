@@ -2,11 +2,14 @@
  * Google sign-in for Drive sync, entirely in the browser -- see
  * docs/google-account-sync.md for the full design.
  *
- * The access token lives in memory only and is gone on reload; disconnect
- * only clears it locally, without revoking Google's consent, since
+ * The access token is kept in localStorage so a reload stays connected.
+ * Disconnect only clears it locally, without revoking Google's consent, since
  * `useGoogleLogin`'s default `select_account` prompt already lets a user
  * switch accounts without one.
  */
+
+import { readString, removeKey, writeString } from "@/store/storage"
+import { StorageKeys } from "@/utils/storageKeys"
 
 const USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
@@ -21,11 +24,17 @@ export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 /** Whether Drive sync can be offered at all -- false with no client ID configured. */
 export const isGoogleSyncAvailable = () => Boolean(GOOGLE_CLIENT_ID)
 
-let accessToken: string | null = null
+export const getAccessToken = () => {
+  const stored = readString(StorageKeys.googleAccessToken, "")
+  return stored === "" ? null : stored
+}
 
-export const getAccessToken = () => accessToken
 export const setAccessToken = (token: string | null) => {
-  accessToken = token
+  if (token) {
+    writeString(StorageKeys.googleAccessToken, token)
+  } else {
+    removeKey(StorageKeys.googleAccessToken)
+  }
 }
 
 /** Requires the `userinfo.email` scope, requested alongside `drive.appdata`. */
