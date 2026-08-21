@@ -71,29 +71,38 @@ export const readSnapshot = async (
   return file ? downloadSnapshot(token, file.id) : null
 }
 
+/**
+ * Drive's multipart upload is RFC 2387 `multipart/related` -- two parts
+ * (JSON metadata, then media) joined by a boundary, closed with `--boundary--`.
+ * That's a different wire format from the browser's `FormData`, which sends
+ * `multipart/form-data` and Drive's create endpoint rejects.
+ */
+const buildMultipartRelatedBody = (payload: SyncPayload) => {
+  const boundary = crypto.randomUUID()
+  const metadata = JSON.stringify({
+    name: PROGRESS_FILE_NAME,
+    parents: ["appDataFolder"],
+  })
+
+  const body =
+    `--${boundary}\r\n` +
+    `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+    `${metadata}\r\n` +
+    `--${boundary}\r\n` +
+    `Content-Type: application/json\r\n\r\n` +
+    `${JSON.stringify(payload)}\r\n` +
+    `--${boundary}--`
+
+  return { boundary, body }
+}
+
 const createSnapshot = async (token: string, payload: SyncPayload) => {
-  const form = new FormData()
-  form.append(
-    "metadata",
-    new Blob(
-      [
-        JSON.stringify({
-          name: PROGRESS_FILE_NAME,
-          parents: ["appDataFolder"],
-        }),
-      ],
-      {
-        type: "application/json",
-      },
-    ),
-  )
-  form.append(
-    "file",
-    new Blob([JSON.stringify(payload)], { type: "application/json" }),
-  )
+  const { boundary, body } = buildMultipartRelatedBody(payload)
+
   await authorizedFetch(token, `${DRIVE_UPLOAD_URL}?uploadType=multipart`, {
     method: "POST",
-    body: form,
+    headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
+    body,
   })
 }
 

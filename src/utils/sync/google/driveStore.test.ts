@@ -103,7 +103,7 @@ describe("readSnapshot", () => {
 })
 
 describe("writeSnapshot", () => {
-  test("creates the file with a multipart upload when none exists", async () => {
+  test("creates the file with a multipart/related upload when none exists", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(filesResponse([]))
       .mockResolvedValueOnce(okResponse())
@@ -112,18 +112,28 @@ describe("writeSnapshot", () => {
 
     const [url, init] = vi.mocked(fetch).mock.calls[1] ?? []
     expect(url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
-    expect(init).toMatchObject({ method: "POST" })
-    const form = init?.body as FormData
-    const metadata: unknown = JSON.parse(
-      await (form.get("metadata") as Blob).text(),
-    )
-    expect(metadata).toStrictEqual({
+    expect(init?.method).toBe("POST")
+
+    // Drive's multipart upload is RFC 2387 `multipart/related`, not the
+    // browser's `multipart/form-data` -- see docs/google-account-sync.md.
+    const contentType = new Headers(init?.headers).get("Content-Type") ?? ""
+    expect(contentType).toMatch(/^multipart\/related; boundary=.+/)
+    const boundary = contentType.replace("multipart/related; boundary=", "")
+
+    const body = init?.body
+    expect(typeof body).toBe("string")
+    const metadataJson = JSON.stringify({
       name: "progress.json",
       parents: ["appDataFolder"],
     })
-    expect(await (form.get("file") as Blob).text()).toBe(
-      JSON.stringify(payload),
+    const payloadJson = JSON.stringify(payload)
+    expect((body as string).indexOf(metadataJson)).toBeGreaterThan(
+      (body as string).indexOf(`--${boundary}`),
     )
+    expect((body as string).indexOf(payloadJson)).toBeGreaterThan(
+      (body as string).indexOf(metadataJson),
+    )
+    expect((body as string).trimEnd().endsWith(`--${boundary}--`)).toBe(true)
   })
 
   test("overwrites the existing file with a media PATCH", async () => {
