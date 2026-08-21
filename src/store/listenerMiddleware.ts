@@ -64,9 +64,7 @@ startListening({
     const next = api.getState().settings
 
     if (previous.dyslexiaFont !== next.dyslexiaFont) {
-      // Both original pages kept their own copy of this preference.
       writeFlag(StorageKeys.dyslexiaFont, next.dyslexiaFont)
-      writeFlag(StorageKeys.dyslexiaFontModules, next.dyslexiaFont)
     }
 
     if (previous.speechRate !== next.speechRate) {

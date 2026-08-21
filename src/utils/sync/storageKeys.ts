@@ -12,8 +12,6 @@ export const StorageKeys = {
   darkMode: "dark_mode_enabled",
   /** `'1'` / `'0'`. Written by the Unseen page in the originals. */
   dyslexiaFont: "dyslexia_font_enabled",
-  /** `'1'` / `'0'`. The Modules page's separate copy of the same preference. */
-  dyslexiaFontModules: "dyslexia_font_enabled_modules",
   /** Speech rate as a decimal string. New: the originals read it live off the
    *  slider and never persisted it. `english_` prefixed so it also syncs. */
   speechRate: "english_speech_rate",

@@ -13,13 +13,13 @@ describe("hydration", () => {
   })
 
   describe("dyslexiaFont", () => {
-    test("off when neither legacy key is set", () => {
+    test("off when the key is not set", () => {
       const store = makeStore()
 
       expect(selectDyslexiaFont(store.getState())).toBe(false)
     })
 
-    test("on when only the Unseen page's key is set", () => {
+    test("on when the key is set", () => {
       localStorage.setItem(StorageKeys.dyslexiaFont, "1")
 
       const store = makeStore()
@@ -27,21 +27,12 @@ describe("hydration", () => {
       expect(selectDyslexiaFont(store.getState())).toBe(true)
     })
 
-    test("on when only the Modules page's key is set", () => {
-      localStorage.setItem(StorageKeys.dyslexiaFontModules, "1")
+    test("drops the retired Modules-page key so it stops riding along in sync links", () => {
+      localStorage.setItem("dyslexia_font_enabled_modules", "1")
 
-      const store = makeStore()
+      makeStore()
 
-      expect(selectDyslexiaFont(store.getState())).toBe(true)
-    })
-
-    test("on when both legacy keys are set", () => {
-      localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-      localStorage.setItem(StorageKeys.dyslexiaFontModules, "1")
-
-      const store = makeStore()
-
-      expect(selectDyslexiaFont(store.getState())).toBe(true)
+      expect(localStorage.getItem("dyslexia_font_enabled_modules")).toBeNull()
     })
   })
 

@@ -17,11 +17,11 @@ future change can pick which ones (if any) are worth closing.
 
 ### `settingsSlice` — fully persisted
 
-| Field            | Persisted? | Key(s)                                                                            | Flow/interaction missed if lost |
-| ---------------- | ---------- | --------------------------------------------------------------------------------- | ------------------------------- |
-| `dyslexiaFont`   | Yes        | `dyslexia_font_enabled` + `dyslexia_font_enabled_modules` (both written together) | — no gap                        |
-| `speechRate`     | Yes        | `english_speech_rate`                                                             | — no gap                        |
-| `systemVoiceUri` | Yes        | `english_system_voice`                                                            | — no gap                        |
+| Field            | Persisted? | Key(s)                  | Flow/interaction missed if lost |
+| ---------------- | ---------- | ----------------------- | ------------------------------- |
+| `dyslexiaFont`   | Yes        | `dyslexia_font_enabled` | — no gap                        |
+| `speechRate`     | Yes        | `english_speech_rate`   | — no gap                        |
+| `systemVoiceUri` | Yes        | `english_system_voice`  | — no gap                        |
 
 ### `speechSlice` — intentionally not persisted
 

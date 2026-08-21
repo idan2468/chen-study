@@ -29,25 +29,20 @@ const clampRate = (value: number) => {
   return Math.min(MAX_SPEECH_RATE, Math.max(MIN_SPEECH_RATE, value))
 }
 
-/**
- * The two original pages wrote the dyslexia preference under two different
- * keys. Either one being set counts as enabled, so the setting carries over
- * whichever page the user last used.
- */
 const loadFromStorage = (): SettingsState => {
   const storedSystemVoice = readString(StorageKeys.systemVoice, "")
 
-  // Drops leftovers from the removed neural TTS engine (see
-  // docs/remove-neural-tts.md), so they stop riding along in sync links.
-  // Inlined rather than added back to StorageKeys: the app no longer reads
-  // either key, so they do not belong in the registry of keys it uses.
+  // Drops leftovers from keys the app no longer reads, so they stop riding
+  // along in sync links. Inlined rather than added back to StorageKeys since
+  // nothing reads them anymore. `dyslexia_font_enabled_modules` was the
+  // Modules page's separate copy of this preference, pre-React-app merge; see
+  // docs/remove-neural-tts.md for the TTS engine keys.
   removeKey("english_tts_engine")
   removeKey("english_neural_voice")
+  removeKey("dyslexia_font_enabled_modules")
 
   return {
-    dyslexiaFont:
-      readFlag(StorageKeys.dyslexiaFont, false) ||
-      readFlag(StorageKeys.dyslexiaFontModules, false),
+    dyslexiaFont: readFlag(StorageKeys.dyslexiaFont, false),
     speechRate: clampRate(
       Number.parseFloat(readString(StorageKeys.speechRate, "")),
     ),
