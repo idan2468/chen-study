@@ -12,22 +12,10 @@
  * links can no longer be decoded, hence the parameter rename from `sync`: an old
  * link is now ignored outright rather than failing halfway through an import.
  */
-import { isSyncableKey } from "./storageKeys"
-import { listKeys, readString } from "@/store/storage"
-
-export type SyncPayload = Record<string, string>
+import { applySyncPayload, buildSyncPayload } from "./syncPayload"
+import type { SyncPayload } from "@/types/schemas/syncPayload"
 
 const SYNC_PARAM = "s"
-
-export const buildSyncPayload = (): SyncPayload => {
-  const payload: SyncPayload = {}
-  for (const key of listKeys()) {
-    if (isSyncableKey(key)) {
-      payload[key] = readString(key)
-    }
-  }
-  return payload
-}
 
 /** `+`, `/` and `=` all need escaping in a query string; base64url does not. */
 const toBase64Url = (bytes: Uint8Array) => {
@@ -112,20 +100,6 @@ export const parseSyncUrl = async (
 
   const encoded = url.searchParams.get(SYNC_PARAM)
   return encoded ? decodeSyncPayload(encoded) : null
-}
-
-/** Writes an imported payload straight into localStorage. Returns the count. */
-export const applySyncPayload = (payload: SyncPayload) => {
-  let applied = 0
-  for (const [key, value] of Object.entries(payload)) {
-    try {
-      window.localStorage.setItem(key, value)
-      applied += 1
-    } catch (error) {
-      console.warn(`Could not import "${key}"`, error)
-    }
-  }
-  return applied
 }
 
 /**
