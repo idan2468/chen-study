@@ -61,6 +61,7 @@ export const settingsSlice = createAppSlice({
         state.systemVoiceUri = action.payload
       },
     ),
+    reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
     selectDyslexiaFont: settings => settings.dyslexiaFont,
@@ -74,6 +75,7 @@ export const {
   setDyslexiaFont,
   setSpeechRate,
   setSystemVoiceUri,
+  reloadFromStorage,
 } = settingsSlice.actions
 
 export const { selectDyslexiaFont, selectSpeechRate, selectSystemVoiceUri } =

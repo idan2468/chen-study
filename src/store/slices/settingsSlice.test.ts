@@ -2,9 +2,11 @@ import { StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "@/store/store"
 import {
   DEFAULT_SPEECH_RATE,
+  reloadFromStorage,
   selectDyslexiaFont,
   selectSpeechRate,
   selectSystemVoiceUri,
+  setSpeechRate,
 } from "./settingsSlice"
 
 describe("hydration", () => {
@@ -82,5 +84,26 @@ describe("hydration", () => {
 
       expect(selectSystemVoiceUri(store.getState())).toBe("Google US English")
     })
+  })
+})
+
+describe("reloadFromStorage", () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  test("discards in-memory changes and re-reads whatever is in storage now, e.g. after a Drive pull", () => {
+    const store = makeStore()
+    store.dispatch(setSpeechRate(0.9))
+
+    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+    localStorage.setItem(StorageKeys.speechRate, "0.3")
+    localStorage.setItem(StorageKeys.systemVoice, "Google US English")
+    store.dispatch(reloadFromStorage())
+
+    const state = store.getState()
+    expect(selectDyslexiaFont(state)).toBe(true)
+    expect(selectSpeechRate(state)).toBe(0.3)
+    expect(selectSystemVoiceUri(state)).toBe("Google US English")
   })
 })

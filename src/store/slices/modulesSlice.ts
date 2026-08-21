@@ -218,6 +218,8 @@ export const modulesSlice = createAppSlice({
         state.filterMissed = false
       }
     }),
+
+    reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
     selectModules: state => state.modules,
@@ -241,6 +243,7 @@ export const {
   resetCurrentModuleProgress,
   addModules,
   deleteModule,
+  reloadFromStorage,
 } = modulesSlice.actions
 
 export const {

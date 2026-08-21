@@ -9,6 +9,7 @@ import {
   deleteModule,
   markCard,
   mergeModules,
+  reloadFromStorage,
   resetCurrentModuleProgress,
   selectActiveCards,
   selectCurrentModuleId,
@@ -317,6 +318,27 @@ describe("hydration", () => {
 
     expect(selectModules(state).map(m => m.id)).not.toContain(secondBuiltInId)
     expect(state.modules.deletedBuiltInIds).toStrictEqual([secondBuiltInId])
+  })
+})
+
+describe("reloadFromStorage", () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  test("discards in-memory changes and re-reads whatever is in storage now, e.g. after a Drive pull", () => {
+    const store = makeStore({ modules: baseState() })
+    store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
+
+    localStorage.setItem(
+      StorageKeys.modulesProgress,
+      JSON.stringify({ [firstCard.en]: "unknown" }),
+    )
+    store.dispatch(reloadFromStorage())
+
+    expect(selectModulesProgress(store.getState())).toStrictEqual({
+      [firstCard.en]: "unknown",
+    })
   })
 })
 

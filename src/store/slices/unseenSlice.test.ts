@@ -8,6 +8,7 @@ import {
   answerQuestion,
   deleteExercise,
   markFlashcard,
+  reloadFromStorage,
   resetFlashcardProgress,
   selectAllMarkedWords,
   selectAllProgress,
@@ -308,6 +309,34 @@ describe("hydration", () => {
         defaultExercise.exerciseId,
       )
     })
+  })
+})
+
+describe("reloadFromStorage", () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  test("discards in-memory changes and re-reads whatever is in storage now, e.g. after a Drive pull", () => {
+    const store = makeStore({ unseen: baseState() })
+    store.dispatch(markFlashcard({ word: "Delicate", isKnown: true }))
+
+    localStorage.setItem(
+      StorageKeys.exerciseLibrary,
+      JSON.stringify({ other_1: otherExercise }),
+    )
+    localStorage.setItem(StorageKeys.currentExerciseId, "other_1")
+    store.dispatch(reloadFromStorage())
+
+    const state = store.getState()
+    expect(selectCurrentExerciseId(state)).toBe("other_1")
+    // The built-in default is always re-seeded if missing from storage -- see
+    // `loadFromStorage`'s "first run" comment.
+    expect(selectLibrary(state)).toStrictEqual({
+      other_1: otherExercise,
+      [defaultExercise.exerciseId]: defaultExercise,
+    })
+    expect(selectCurrentProgress(state)).toStrictEqual({})
   })
 })
 

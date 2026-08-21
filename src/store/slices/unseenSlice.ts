@@ -190,6 +190,8 @@ export const unseenSlice = createAppSlice({
     prevFlashcard: create.reducer(state => {
       state.cardIndex = Math.max(state.cardIndex - 1, 0)
     }),
+
+    reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
     selectLibrary: state => state.library,
@@ -212,6 +214,7 @@ export const {
   setFlashcardIndex,
   nextFlashcard,
   prevFlashcard,
+  reloadFromStorage,
 } = unseenSlice.actions
 
 export const {
