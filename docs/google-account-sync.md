@@ -17,7 +17,7 @@ database — the app stays a static bundle on GitHub Pages.
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Storage location            | `drive.appdata` — hidden app-data folder, not user-editable                                                                        |
 | Merge strategy              | whole-file last-write-wins, guarded only by a dirty check (below)                                                                  |
-| Sync triggers               | manual "Sync now", a 2-minute timer, and on page hide                                                                              |
+| Sync triggers               | manual "Sync now", a 30-second timer, and on page hide                                                                             |
 | No-account usage            | fully usable without one — local-only storage plus `?s=` links; "Connect" can be dismissed for good                                |
 | Connected-account display   | show the signed-in email, via an added `userinfo.email` scope                                                                      |
 | Device preferences          | dark mode, dyslexia font and speech rate keep syncing; only `english_system_voice` stays local                                     |
@@ -86,7 +86,7 @@ pretending to have synced.
 
 ## Design sketch
 
-`buildSyncPayload()` / `applySyncPayload()` in `src/utils/syncPayload.ts` --
+`buildSyncPayload()` / `applySyncPayload()` in `src/utils/sync/syncPayload.ts` --
 split out of `syncUrl.ts` since Drive sync needs the snapshot but nothing
 URL-specific -- already produce the exact snapshot this needs; the Drive file
 is that same object, so
@@ -118,7 +118,7 @@ no React) with a hook that wires it into the UI — same split as
 | `src/hooks/useGoogleConnect.ts`  | wires `googleAuth.ts` + `useGoogleLogin()` into connect/disconnect state for the UI                |
 | `src/utils/sync/google/driveStore.ts` | `readSnapshot()` / `writeSnapshot()` against the Drive REST API                                    |
 | `src/utils/sync/google/driveSync.ts` | the policy: dirty check, last-synced state                                                         |
-| `src/hooks/useDriveSync.ts`      | the triggers -- 2-minute timer, page-hide, manual button -- calling into `driveSync.ts`            |
+| `src/hooks/useDriveSync.ts`      | the triggers -- 30-second timer, page-hide, manual button -- calling into `driveSync.ts`           |
 | `src/components/AccountModal/`   | connect/disconnect, connected email, last-synced time, "Sync now"                                  |
 
 `syncUrl.ts` itself is unchanged beyond that split — the link stays as the
@@ -138,21 +138,29 @@ the token and retry once.
 
 ### The dirty check
 
-Whole-file LWW plus a 2-minute timer is unsafe on its own: an idle device
-(e.g. an iPad left open elsewhere) would otherwise re-upload its stale
-snapshot and clobber a device that's actively being used. Fix: hash the local
-snapshot and compare to the hash from the last successful sync — unchanged
-means the timer is a no-op. This does not cover two devices genuinely edited
-before either synced; that's an accepted trade-off (see
-[Decisions taken](#decisions-taken)).
+Whole-file LWW plus a timer is unsafe on its own: an idle device (e.g. an
+iPad left open elsewhere) would otherwise re-upload its stale snapshot and
+clobber a device that's actively being used. Fix: hash the local snapshot and
+compare to the hash from the last successful sync — unchanged means the timer
+is a no-op. This is also what makes a 30-second interval cheap: an idle
+device never actually calls Drive, it only re-hashes localStorage. This does
+not cover two devices genuinely edited before either synced; that's an
+accepted trade-off (see [Decisions taken](#decisions-taken)).
 
 ### Trigger mechanics
 
 | Trigger          | Mechanism                     | Caveat                                                                                                |
 | ---------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
 | "Sync now"       | button                        | always available; the only path guaranteed to carry a user gesture                                    |
-| Every 2 minutes  | `setInterval`                 | after ~1 h the silent token re-issue can be popup-blocked — must degrade to "tap to reconnect"        |
+| Every 30 seconds | `setInterval`                 | after ~1 h the silent token re-issue can be popup-blocked — must degrade to "tap to reconnect"        |
 | Leaving the page | `visibilitychange` → `hidden` | not `beforeunload`; `fetch(…, { keepalive: true })` survives unload and can still set `Authorization` |
+
+All three triggers only push (`writeSnapshot()`); a pull only ever happens at
+Connect and at boot. So the timer can't make another device see changes any
+sooner -- that's already handled immediately by page-hide/manual sync on the
+writing device. Its only job is bounding how much progress a crash or killed
+tab could lose on a long-lived, never-hidden tab, which is why 30 seconds is
+already generous rather than tight -- no need to go lower.
 
 ## Rollout
 
@@ -224,7 +232,7 @@ verifying by hand once real Google infrastructure is involved:
       every connect by default, so switching needs no revoke step.
 - [ ] Dismissing "Connect" without ever authorising leaves `?s=` links fully
       functional, and the prompt doesn't resurface.
-- [ ] The 2-minute timer doesn't push while the tab is hidden (network panel,
+- [ ] The 30-second timer doesn't push while the tab is hidden (network panel,
       not assumption); closing the tab still lands the last change in Drive.
 - [ ] A mid-session token expiry degrades to "tap to reconnect", never a
       silent no-op.
