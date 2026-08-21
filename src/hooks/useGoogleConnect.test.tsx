@@ -1,7 +1,7 @@
 import { screen, waitFor } from "@testing-library/react"
 import { useGoogleLogin } from "@react-oauth/google"
 import { renderWithProviders } from "@test/render"
-import { getAccessToken, setAccessToken } from "@/utils/google/googleAuth"
+import { getAccessToken, setAccessToken } from "@/utils/sync/google/googleAuth"
 import { useGoogleConnect } from "./useGoogleConnect"
 
 vi.mock("@react-oauth/google", () => ({
@@ -11,6 +11,10 @@ vi.mock("@react-oauth/google", () => ({
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status })
+
+/** `init.headers` is a `Headers` instance -- `toEqual` can't diff those, so pull the value out instead. */
+const authorizationHeader = (init: RequestInit | undefined) =>
+  new Headers(init?.headers).get("Authorization")
 
 const Host = () => {
   const { connecting, connectedEmail, disconnect } = useGoogleConnect()
@@ -48,10 +52,9 @@ test("restores the connected email from a stored token", async () => {
     expect(screen.getByText("chen@example.com")).toBeInTheDocument()
   })
   expect(screen.getByText("idle")).toBeInTheDocument()
-  expect(fetch).toHaveBeenCalledExactlyOnceWith(
-    "https://www.googleapis.com/oauth2/v3/userinfo",
-    { headers: { Authorization: "Bearer ya29.token" } },
-  )
+  const [url, init] = vi.mocked(fetch).mock.calls[0] ?? []
+  expect(url).toBe("https://www.googleapis.com/oauth2/v3/userinfo")
+  expect(authorizationHeader(init)).toBe("Bearer ya29.token")
 })
 
 test("a failed userinfo restore leaves the token and stays signed out", async () => {

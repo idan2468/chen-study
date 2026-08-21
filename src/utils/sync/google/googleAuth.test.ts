@@ -1,12 +1,17 @@
-import { StorageKeys } from "@/utils/storageKeys"
+import { StorageKeys } from "@/utils/sync/storageKeys"
 import {
   fetchConnectedEmail,
   getAccessToken,
+  GoogleAuthError,
   setAccessToken,
 } from "./googleAuth"
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status })
+
+/** `init.headers` is a `Headers` instance -- `toEqual` can't diff those, so pull the value out instead. */
+const authorizationHeader = (init: RequestInit | undefined) =>
+  new Headers(init?.headers).get("Authorization")
 
 beforeEach(() => {
   localStorage.clear()
@@ -44,17 +49,24 @@ test("fetchConnectedEmail returns the email from userinfo", async () => {
   await expect(fetchConnectedEmail("ya29.token")).resolves.toBe(
     "chen@example.com",
   )
-  expect(fetch).toHaveBeenCalledExactlyOnceWith(
-    "https://www.googleapis.com/oauth2/v3/userinfo",
-    { headers: { Authorization: "Bearer ya29.token" } },
+  const [url, init] = vi.mocked(fetch).mock.calls[0] ?? []
+  expect(url).toBe("https://www.googleapis.com/oauth2/v3/userinfo")
+  expect(authorizationHeader(init)).toBe("Bearer ya29.token")
+})
+
+test("fetchConnectedEmail throws GoogleAuthError on a 401", async () => {
+  vi.mocked(fetch).mockResolvedValue(jsonResponse({}, 401))
+
+  await expect(fetchConnectedEmail("ya29.expired")).rejects.toBeInstanceOf(
+    GoogleAuthError,
   )
 })
 
-test("fetchConnectedEmail throws when userinfo is not ok", async () => {
-  vi.mocked(fetch).mockResolvedValue(jsonResponse({}, 401))
+test("fetchConnectedEmail throws on other failures", async () => {
+  vi.mocked(fetch).mockResolvedValue(jsonResponse({}, 500))
 
-  await expect(fetchConnectedEmail("ya29.expired")).rejects.toThrow(
-    "userinfo request failed: 401",
+  await expect(fetchConnectedEmail("ya29.token")).rejects.toThrow(
+    "Google API request failed: 500",
   )
 })
 

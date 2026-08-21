@@ -9,7 +9,7 @@
  */
 
 import { readString, removeKey, writeString } from "@/store/storage"
-import { StorageKeys } from "@/utils/storageKeys"
+import { StorageKeys } from "@/utils/sync/storageKeys"
 
 const USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
@@ -23,6 +23,35 @@ export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
 /** Whether Drive sync can be offered at all -- false with no client ID configured. */
 export const isGoogleSyncAvailable = () => Boolean(GOOGLE_CLIENT_ID)
+
+/**
+ * Thrown for a 401 specifically, so callers (userinfo, Drive) can tell "token
+ * needs a silent re-issue" apart from a real failure (offline, quota, 5xx)
+ * worth surfacing.
+ */
+export class GoogleAuthError extends Error {
+  constructor() {
+    super("Google request failed: token expired or revoked")
+  }
+}
+
+/** Attaches the bearer token to any Google API call; shared by `fetchConnectedEmail` and `driveStore.ts`. */
+export const authorizedFetch = async (
+  token: string,
+  url: string,
+  init: RequestInit = {},
+): Promise<Response> => {
+  const headers = new Headers(init.headers)
+  headers.set("Authorization", `Bearer ${token}`)
+  const response = await fetch(url, { ...init, headers })
+  if (response.status === 401) {
+    throw new GoogleAuthError()
+  }
+  if (!response.ok) {
+    throw new Error(`Google API request failed: ${String(response.status)}`)
+  }
+  return response
+}
 
 export const getAccessToken = () => {
   const stored = readString(StorageKeys.googleAccessToken, "")
@@ -39,12 +68,7 @@ export const setAccessToken = (token: string | null) => {
 
 /** Requires the `userinfo.email` scope, requested alongside `drive.appdata`. */
 export const fetchConnectedEmail = async (token: string): Promise<string> => {
-  const response = await fetch(USERINFO_URL, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  if (!response.ok) {
-    throw new Error(`userinfo request failed: ${String(response.status)}`)
-  }
+  const response = await authorizedFetch(token, USERINFO_URL)
   const data: unknown = await response.json()
   const email =
     typeof data === "object" && data !== null && "email" in data
