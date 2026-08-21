@@ -1,4 +1,3 @@
-import { useCallback } from "react"
 import { useMantineColorScheme } from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import { useAppDispatch } from "@/store/hooks"
@@ -21,7 +20,7 @@ export const useRehydrateFromStorage = () => {
   const { i18n } = useTranslation()
   const { setColorScheme } = useMantineColorScheme()
 
-  return useCallback(() => {
+  return () => {
     dispatch(reloadSettings())
     dispatch(reloadUnseen())
     dispatch(reloadModules())
@@ -31,5 +30,5 @@ export const useRehydrateFromStorage = () => {
     void i18n.changeLanguage(locale)
 
     setColorScheme(colorSchemeManager().get("dark"))
-  }, [dispatch, i18n, setColorScheme])
+  }
 }
