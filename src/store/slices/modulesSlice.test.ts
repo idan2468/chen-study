@@ -24,12 +24,12 @@ import {
 
 const customModule: PracticeModule = {
   id: "custom_1",
-  tabName: "שלי",
-  title: "מודול שלי",
+  tabName: "Mine",
+  title: "My module",
   rule: "",
   cards: [
-    { en: "ZAP", he: "זַפ", meaning: "זפ" },
-    { en: "QUIZ", he: "קְוִיז", meaning: "מבחן" },
+    { en: "ZAP", he: "zap", meaning: "zap" },
+    { en: "QUIZ", he: "quiz", meaning: "test" },
   ],
 }
 
@@ -41,10 +41,10 @@ const customModule: PracticeModule = {
  */
 const otherCustomModule: PracticeModule = {
   id: "custom_2",
-  tabName: "שלי 2",
-  title: "מודול שלי 2",
+  tabName: "Mine 2",
+  title: "My module 2",
   rule: "",
-  cards: [{ en: "QUIZ", he: "קְוִיז", meaning: "מבחן" }],
+  cards: [{ en: "QUIZ", he: "quiz", meaning: "test" }],
 }
 
 const firstBuiltInId = at(builtInModuleIds, 0)
@@ -82,10 +82,10 @@ describe("mergeModules", () => {
   })
 
   test("a stored copy of a built-in wins, so user edits survive", () => {
-    const edited = { ...at(defaultModules, 0), tabName: "ערכתי" }
+    const edited = { ...at(defaultModules, 0), tabName: "Edited" }
     const merged = mergeModules([edited], [])
 
-    expect(at(merged, 0).tabName).toBe("ערכתי")
+    expect(at(merged, 0).tabName).toBe("Edited")
   })
 
   test("honours deleted built-ins instead of re-seeding them", () => {

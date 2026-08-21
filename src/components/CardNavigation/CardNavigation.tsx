@@ -16,8 +16,8 @@ export type CardNavigationProps = {
  * `Unseen New.html` and `.nav-controls` in `Modules Practice.html`).
  *
  * The arrows are not mirrored for RTL: the originals labelled these
- * "← הקודם" / "הבא →", so left is always previous. `useFlashcardKeys` binds the
- * keyboard shortcuts to match.
+ * "← Previous" / "Next →" (in Hebrew), so left is always previous.
+ * `useFlashcardKeys` binds the keyboard shortcuts to match.
  */
 export const CardNavigation = ({
   index,

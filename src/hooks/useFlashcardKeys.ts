@@ -16,7 +16,8 @@ export type FlashcardKeyHandlers = {
  * `keydown` listener at all.
  *
  * Note the arrow keys are deliberately *not* mirrored for RTL: the original
- * labelled its buttons "← הקודם" / "הבא →", i.e. left is previous.
+ * labelled its buttons "← Previous" / "Next →" (in Hebrew), i.e. left is
+ * previous.
  *
  * Mantine's `useHotkeys` ignores events originating in `INPUT`, `TEXTAREA` and
  * `SELECT` by default, so typing JSON into the loader never triggers these.

@@ -5,10 +5,10 @@ const NOW = 1_700_000_000_000
 
 const valid = {
   id: "m1",
-  tabName: "טאב",
-  title: "כותרת",
-  rule: "<b>כלל</b>",
-  cards: [{ en: "HAT", he: "הַט", meaning: "כובע" }],
+  tabName: "Tab",
+  title: "Title",
+  rule: "<b>Rule</b>",
+  cards: [{ en: "HAT", he: "hat", meaning: "hat" }],
 }
 
 const parse = (value: unknown) => parseModulesJson(JSON.stringify(value), NOW)
@@ -32,7 +32,7 @@ test("generates ids from the timestamp and position when absent", () => {
 test("falls back to the title for a missing tab name", () => {
   const { modules } = expectOk(parse(omitKey(valid, "tabName")))
 
-  expect(at(modules, 0).tabName).toBe("כותרת")
+  expect(at(modules, 0).tabName).toBe("Title")
 })
 
 test("falls back to the id when neither tab name nor title is given", () => {
@@ -78,7 +78,7 @@ describe("rejections", () => {
   test("a card with no English word", () => {
     // The error points at the offending card, as the original's message did.
     expect(
-      expectFailure(parse({ ...valid, cards: [{ he: "הַט" }] })).error,
+      expectFailure(parse({ ...valid, cards: [{ he: "hat" }] })).error,
     ).toStrictEqual({
       code: "moduleMissingCardWord",
       position: 1,

@@ -24,12 +24,12 @@ import {
 } from "./unseenSlice"
 
 const otherExercise: Exercise = {
-  title: "אחר",
-  subtitle: "תרגיל שני",
+  title: "Other",
+  subtitle: "Second exercise",
   exerciseId: "other_1",
   paragraphs: ["A cat sat."],
   questions: [],
-  flashcards: [{ en: "Cat", he: "חתול", trans: "קֶט" }],
+  flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
 }
 
 const baseState = (overrides: Partial<UnseenState> = {}): UnseenState => ({
