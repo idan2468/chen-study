@@ -1,6 +1,6 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
-import { readFlag, readString, removeKey } from "@/store/storage"
+import { readFlag, readString } from "@/store/storage"
 import { StorageKeys } from "@/utils/sync/storageKeys"
 
 /**
@@ -31,15 +31,6 @@ const clampRate = (value: number) => {
 
 const loadFromStorage = (): SettingsState => {
   const storedSystemVoice = readString(StorageKeys.systemVoice, "")
-
-  // Drops leftovers from keys the app no longer reads, so they stop riding
-  // along in sync links. Inlined rather than added back to StorageKeys since
-  // nothing reads them anymore. `dyslexia_font_enabled_modules` was the
-  // Modules page's separate copy of this preference, pre-React-app merge; see
-  // docs/remove-neural-tts.md for the TTS engine keys.
-  removeKey("english_tts_engine")
-  removeKey("english_neural_voice")
-  removeKey("dyslexia_font_enabled_modules")
 
   return {
     dyslexiaFont: readFlag(StorageKeys.dyslexiaFont, false),
