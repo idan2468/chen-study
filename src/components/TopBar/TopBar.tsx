@@ -16,7 +16,7 @@ import {
   selectDyslexiaFont,
   toggleDyslexiaFont,
 } from "@/store/slices/settingsSlice"
-import { isGoogleSyncAvailable } from "@/utils/google/googleAuth"
+import { isGoogleSyncAvailable } from "@/utils/sync/google/googleAuth"
 import { GoogleIcon } from "@/components/GoogleIcon/GoogleIcon"
 import { SpeechSettingsModal } from "@/components/SpeechSettingsModal/SpeechSettingsModal"
 import { SyncModal } from "@/components/SyncModal/SyncModal"

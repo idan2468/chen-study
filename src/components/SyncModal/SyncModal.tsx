@@ -9,7 +9,7 @@ import {
 } from "@mantine/core"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { buildSyncUrl } from "@/utils/syncUrl"
+import { buildSyncUrl } from "@/utils/sync/syncUrl"
 
 export type SyncModalProps = {
   opened: boolean

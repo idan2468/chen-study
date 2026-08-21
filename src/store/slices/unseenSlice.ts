@@ -3,7 +3,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { deleteEntry } from "@/store/records"
 import { readJson, readString } from "@/store/storage"
-import { flashcardStatusKey, StorageKeys } from "@/utils/storageKeys"
+import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { defaultExercise } from "@/data/defaultExercise"
 import type {
   AnswerRecord,

@@ -1,7 +1,7 @@
 import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
 import { at } from "@test/helpers"
 import type { PracticeModule } from "@/types/module"
-import { StorageKeys } from "@/utils/storageKeys"
+import { StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "@/store/store"
 import type { ModulesState } from "./modulesSlice"
 import {

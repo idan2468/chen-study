@@ -1,7 +1,7 @@
 import { defaultExercise } from "@/data/defaultExercise"
 import { defaultModules } from "@/data/defaultModules"
 import { at } from "@test/helpers"
-import { flashcardStatusKey, StorageKeys } from "@/utils/storageKeys"
+import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "./store"
 import { markCard, nextCard, selectModule } from "./slices/modulesSlice"
 import {

@@ -20,7 +20,7 @@ import {
   setSpeechRate,
   setSystemVoiceUri,
 } from "@/store/slices/settingsSlice"
-import { voicesForLanguage } from "@/utils/voices"
+import { voicesForLanguage } from "@/utils/speech/voices"
 
 export type SpeechSettingsModalProps = {
   opened: boolean

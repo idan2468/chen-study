@@ -1,6 +1,6 @@
 import { defaultExercise } from "@/data/defaultExercise"
 import type { Exercise } from "@/types/exercise"
-import { StorageKeys } from "@/utils/storageKeys"
+import { StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "@/store/store"
 import type { UnseenState } from "./unseenSlice"
 import {

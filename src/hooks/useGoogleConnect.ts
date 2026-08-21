@@ -10,7 +10,7 @@ import {
   GOOGLE_EMAIL_SCOPE,
   GOOGLE_SCOPES,
   setAccessToken,
-} from "@/utils/google/googleAuth"
+} from "@/utils/sync/google/googleAuth"
 
 type ImplicitTokenResponse = Omit<
   TokenResponse,

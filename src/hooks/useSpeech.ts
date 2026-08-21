@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { SpeechItem } from "@/utils/speech"
-import { cancelSpeech, isSpeechSupported, speakQueue } from "@/utils/speech"
-import { loadVoices, resolveVoice } from "@/utils/voices"
+import type { SpeechItem } from "@/utils/speech/speech"
+import { cancelSpeech, isSpeechSupported, speakQueue } from "@/utils/speech/speech"
+import { loadVoices, resolveVoice } from "@/utils/speech/voices"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   selectSpeechRate,
