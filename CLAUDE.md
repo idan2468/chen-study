@@ -18,3 +18,13 @@ Apply this before creating any new component, icon, or piece of UI markup in thi
 3. For things Mantine doesn't ship as a component (e.g. brand icons/logos), check Mantine's own published recipes at [ui.mantine.dev](https://ui.mantine.dev) before reaching for a separate npm package or hand-rolling one from scratch.
 4. Only add a new dependency or write something fully from scratch once 1–3 are confirmed to not cover it, and the need is generic enough to justify it.
 
+# File tree organization rule
+
+Apply this whenever adding a new file to a shared directory (e.g. `src/utils/`, `src/components/`, `src/hooks/`):
+
+1. Before adding the file, look at what already sits in that directory. If the new file plus 2+ existing ones share a clear domain (e.g. all speech-related, all sync-related) that isn't yet reflected in the folder structure, propose grouping them into a subfolder instead of leaving everything flat.
+2. Group by domain/responsibility, not by file type — prefer `speech/`, `sync/` over `types/`, `helpers/`, `constants/`, so a feature's files sit together.
+3. Only propose a reorg when a real pattern with multiple files emerges. Don't create a subfolder speculatively for one file, "in case" related files show up later.
+4. This is a suggestion only. Describe the proposed tree and stop — do not run any move, rename, or import update until the user explicitly approves it in that same turn. Adding the file you were already asked to add is not itself approval to also reorganize.
+5. Once approved, use `git mv` to preserve history and update every import path across the codebase in the same change.
+
