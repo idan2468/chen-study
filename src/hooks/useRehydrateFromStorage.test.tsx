@@ -1,7 +1,12 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { Provider } from "react-redux"
-import { MantineProvider, useMantineColorScheme } from "@mantine/core"
+import {
+  DirectionProvider,
+  MantineProvider,
+  useDirection,
+  useMantineColorScheme,
+} from "@mantine/core"
 import { useAppSelector } from "@/store/hooks"
 import { makeStore } from "@/store/store"
 import { selectDyslexiaFont } from "@/store/slices/settingsSlice"
@@ -28,6 +33,7 @@ const Host = () => {
   const currentExerciseId = useAppSelector(selectCurrentExerciseId)
   const currentModuleId = useAppSelector(selectCurrentModuleId)
   const { colorScheme } = useMantineColorScheme()
+  const { dir } = useDirection()
 
   return (
     <div>
@@ -35,6 +41,7 @@ const Host = () => {
       <span>{currentExerciseId}</span>
       <span>{currentModuleId}</span>
       <span>{colorScheme}</span>
+      <span>{dir}</span>
       <button type="button" onClick={rehydrate}>
         Rehydrate
       </button>
@@ -45,13 +52,15 @@ const Host = () => {
 const renderHost = () => {
   render(
     <Provider store={makeStore()}>
-      <MantineProvider
-        theme={theme}
-        colorSchemeManager={colorSchemeManager()}
-        defaultColorScheme="dark"
-      >
-        <Host />
-      </MantineProvider>
+      <DirectionProvider initialDirection="ltr" detectDirection={false}>
+        <MantineProvider
+          theme={theme}
+          colorSchemeManager={colorSchemeManager()}
+          defaultColorScheme="dark"
+        >
+          <Host />
+        </MantineProvider>
+      </DirectionProvider>
     </Provider>,
   )
 }
@@ -67,6 +76,7 @@ test("re-reads settings, unseen, modules, locale and colour scheme from storage,
   const secondBuiltInId = builtInModuleIds[1] ?? ""
   expect(screen.getByText("dyslexia-off")).toBeInTheDocument()
   expect(screen.getByText("dark")).toBeInTheDocument()
+  expect(screen.getByText("ltr")).toBeInTheDocument()
   expect(screen.queryByText(secondBuiltInId)).not.toBeInTheDocument()
   expect(screen.queryByText("other_1")).not.toBeInTheDocument()
 
@@ -87,4 +97,7 @@ test("re-reads settings, unseen, modules, locale and colour scheme from storage,
   expect(screen.getByText("other_1")).toBeInTheDocument()
   expect(screen.getByText(secondBuiltInId)).toBeInTheDocument()
   expect(document.documentElement.lang).toBe("he")
+  // `detectDirection={false}` above rules out Mantine's own dir-attribute
+  // MutationObserver -- this only passes if the hook calls setDirection().
+  expect(screen.getByText("rtl")).toBeInTheDocument()
 })

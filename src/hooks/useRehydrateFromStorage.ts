@@ -1,11 +1,11 @@
-import { useMantineColorScheme } from "@mantine/core"
+import { useDirection, useMantineColorScheme } from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import { useAppDispatch } from "@/store/hooks"
 import { reloadFromStorage as reloadModules } from "@/store/slices/modulesSlice"
 import { reloadFromStorage as reloadSettings } from "@/store/slices/settingsSlice"
 import { reloadFromStorage as reloadUnseen } from "@/store/slices/unseenSlice"
 import { colorSchemeManager } from "@/theme"
-import { applyDocumentLocale, readStoredLocale } from "@/i18n"
+import { applyDocumentLocale, directionFor, readStoredLocale } from "@/i18n"
 
 /**
  * Resets the running app from whatever is now in localStorage -- store,
@@ -18,16 +18,22 @@ import { applyDocumentLocale, readStoredLocale } from "@/i18n"
 export const useRehydrateFromStorage = () => {
   const dispatch = useAppDispatch()
   const { i18n } = useTranslation()
+  const { setDirection } = useDirection()
   const { setColorScheme } = useMantineColorScheme()
+
+  const reloadLocale = () => {
+    const locale = readStoredLocale()
+    applyDocumentLocale(locale)
+    void i18n.changeLanguage(locale)
+    setDirection(directionFor(locale))
+  }
 
   return () => {
     dispatch(reloadSettings())
     dispatch(reloadUnseen())
     dispatch(reloadModules())
 
-    const locale = readStoredLocale()
-    applyDocumentLocale(locale)
-    void i18n.changeLanguage(locale)
+    reloadLocale()
 
     setColorScheme(colorSchemeManager().get("dark"))
   }
