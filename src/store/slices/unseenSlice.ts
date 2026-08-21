@@ -52,7 +52,7 @@ const readAllFlashcardProgress = (
   return progress
 }
 
-const readInitialState = (): UnseenState => {
+const loadFromStorage = (): UnseenState => {
   const library = readJson<Record<string, Exercise>>(
     StorageKeys.exerciseLibrary,
     {},
@@ -89,7 +89,7 @@ export const unseenSlice = createAppSlice({
   name: "unseen",
   // Lazy initializer, so localStorage is read at store-creation time -- after
   // any `?sync=` payload has been imported. See `src/main.tsx`.
-  initialState: readInitialState,
+  initialState: loadFromStorage,
   reducers: create => ({
     switchExercise: create.reducer((state, action: PayloadAction<string>) => {
       if (!(action.payload in state.library)) {

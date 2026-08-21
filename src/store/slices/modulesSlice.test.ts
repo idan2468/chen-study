@@ -281,6 +281,43 @@ describe("hydration", () => {
     expect(current).toBeDefined()
     expect(selectModuleCardIndex(state)).toBe((current?.cards.length ?? 1) - 1)
   })
+
+  test("reopens with stored modules merged in alongside the built-ins", () => {
+    localStorage.setItem(StorageKeys.allModules, JSON.stringify([customModule]))
+
+    const store = makeStore()
+
+    expect(selectModules(store.getState()).map(m => m.id)).toStrictEqual([
+      ...builtInModuleIds,
+      "custom_1",
+    ])
+  })
+
+  test("reopens with the stored progress", () => {
+    localStorage.setItem(
+      StorageKeys.modulesProgress,
+      JSON.stringify({ [firstCard.en]: "known" }),
+    )
+
+    const store = makeStore()
+
+    expect(selectModulesProgress(store.getState())).toStrictEqual({
+      [firstCard.en]: "known",
+    })
+  })
+
+  test("reopens without a deleted built-in, and does not re-seed it", () => {
+    localStorage.setItem(
+      StorageKeys.deletedBuiltInModules,
+      JSON.stringify([secondBuiltInId]),
+    )
+
+    const store = makeStore()
+    const state = store.getState()
+
+    expect(selectModules(state).map(m => m.id)).not.toContain(secondBuiltInId)
+    expect(state.modules.deletedBuiltInIds).toStrictEqual([secondBuiltInId])
+  })
 })
 
 describe("deleteModule", () => {

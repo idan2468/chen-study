@@ -34,7 +34,7 @@ const clampRate = (value: number) => {
  * keys. Either one being set counts as enabled, so the setting carries over
  * whichever page the user last used.
  */
-const readInitialState = (): SettingsState => {
+const loadFromStorage = (): SettingsState => {
   const storedSystemVoice = readString(StorageKeys.systemVoice, "")
 
   // Drops leftovers from the removed neural TTS engine (see
@@ -59,7 +59,7 @@ export const settingsSlice = createAppSlice({
   name: "settings",
   // Lazy initializer: localStorage is read when the store is created, not when
   // this module is imported, so `importSyncFromUrl()` can run first.
-  initialState: readInitialState,
+  initialState: loadFromStorage,
   reducers: create => ({
     toggleDyslexiaFont: create.reducer(state => {
       state.dyslexiaFont = !state.dyslexiaFont
