@@ -25,7 +25,7 @@ database — the app stays a static bundle on GitHub Pages.
 | Browser/platform support    | Chrome only, on macOS, Windows and Android                                                                                         |
 | Two-device conflicts        | not detected — whichever syncs second silently wins; see [Possible future additions](#possible-future-additions)                   |
 | First connect               | if Drive already has `progress.json`, pull it (same overwrite as a `?s=` import); if not, push local                               |
-| Step-3 trigger              | Connect itself runs that first pull-or-push — no extra Sync button until [Rollout](#rollout) step 5                                |
+| Step-3 trigger              | Connect itself runs that first pull-or-push — no extra Sync button until [Rollout](#rollout) step 6                                |
 | Unreadable Drive file       | treat as missing — push local over it                                                                                              |
 | Duplicate `progress.json`   | the one with the newest `modifiedTime` is the snapshot; extras are left alone                                                      |
 | After a pull                | re-read localStorage into the running app (store, locale, colour scheme) — no page reload                                          |
@@ -178,20 +178,27 @@ already generous rather than tight -- no need to go lower.
 
 ## Rollout
 
-Steps 2–5 are each independently shippable, suited to committing one at a
+Steps 2–6 are each independently shippable, suited to committing one at a
 time.
 
 - [x] 1. **Google Cloud setup** — no code; see [above](#setting-it-up-by-hand).
       Project created, client ID is in `.env.local`.
 - [x] 2. **`googleAuth.ts` + Connect button** — prove a token can be obtained,
       no Drive calls yet. Connect/disconnect works end to end.
-- [ ] 3. **`driveStore.ts`** — on Connect, pull if Drive has `progress.json`
-      (overwrite local as a `?s=` import does), else push local. **Next up.**
-- [ ] 4. **`driveSync.ts`** — add the dirty check. Deserves the most test
+- [x] 3. **`driveStore.ts`** — on Connect, pull if Drive has `progress.json`
+      (overwrite local as a `?s=` import does), else push local.
+- [ ] 4. **Boot-time restore** — the same pull-or-push through
+      `useGoogleConnect`'s existing restore effect, with a silent GIS
+      re-issue on a 401, skipped entirely if a `?s=` link already imported
+      this load. Also add the full-page loading spinner while this runs, so
+      a returning connected user doesn't see local state flash then get
+      swapped by the pull (gated on a saved token existing at all -- a
+      first-time visitor never sees it). **Next up.**
+- [ ] 5. **`driveSync.ts`** — add the dirty check. Deserves the most test
       attention.
-- [ ] 5. **Triggers and reconnect UI** — button, timer, page-hide push, "tap
+- [ ] 6. **Triggers and reconnect UI** — button, timer, page-hide push, "tap
       to reconnect" state.
-- [ ] 6. **Docs** — README section, note in `storageKeys.ts` that its keys are
+- [ ] 7. **Docs** — README section, note in `storageKeys.ts` that its keys are
       now a wire format for the Drive file too.
 
 ## Testing
