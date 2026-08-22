@@ -3,6 +3,8 @@ import { notifications } from "@mantine/notifications"
 import type { TokenResponse } from "@react-oauth/google"
 import { hasGrantedAllScopesGoogle, useGoogleLogin } from "@react-oauth/google"
 import { useTranslation } from "react-i18next"
+import { useRehydrateFromStorage } from "@/hooks/useRehydrateFromStorage"
+import { buildSyncPayload, applySyncPayload } from "@/utils/sync/syncPayload"
 import {
   fetchConnectedEmail,
   getAccessToken,
@@ -11,6 +13,7 @@ import {
   GOOGLE_SCOPES,
   setAccessToken,
 } from "@/utils/sync/google/googleAuth"
+import { readSnapshot, writeSnapshot } from "@/utils/sync/google/driveStore"
 
 type ImplicitTokenResponse = Omit<
   TokenResponse,
@@ -18,13 +21,16 @@ type ImplicitTokenResponse = Omit<
 >
 
 /**
- * Proves a token can be obtained end to end; no Drive calls yet. Reloading
- * restores the session from localStorage. Replaced by a full `AccountModal`
- * (disconnect, last-synced time, "Sync now") once `driveStore.ts`/`driveSync.ts`
- * exist -- see docs/google-account-sync.md.
+ * Connecting pulls the Drive snapshot if one exists, applying it and
+ * rehydrating the running app, or pushes the local snapshot if Drive has
+ * none yet -- a first-sync-only pull-or-push, with no dirty check (that
+ * policy lives in the still-to-come `driveSync.ts`). Reloading restores the
+ * session from localStorage; boot-time sync is wired in a later commit. See
+ * docs/google-account-sync.md.
  */
 export const useGoogleConnect = () => {
   const { t } = useTranslation()
+  const rehydrate = useRehydrateFromStorage()
   const [connecting, setConnecting] = useState(() => Boolean(getAccessToken()))
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null)
 
@@ -44,6 +50,16 @@ export const useGoogleConnect = () => {
     }
     void restoreSession()
   }, [])
+
+  const syncNow = async (token: string) => {
+    const payload = await readSnapshot(token)
+    if (payload) {
+      applySyncPayload(payload)
+      rehydrate()
+    } else {
+      await writeSnapshot(token, buildSyncPayload())
+    }
+  }
 
   const handleSuccess = async (tokenResponse: ImplicitTokenResponse) => {
     // Granular consent lets the user grant only some of the requested
@@ -66,6 +82,7 @@ export const useGoogleConnect = () => {
     setConnecting(true)
     try {
       setConnectedEmail(await fetchConnectedEmail(tokenResponse.access_token))
+      await syncNow(tokenResponse.access_token)
     } catch {
       notifications.show({
         color: "red",

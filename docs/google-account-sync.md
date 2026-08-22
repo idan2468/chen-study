@@ -30,7 +30,7 @@ database — the app stays a static bundle on GitHub Pages.
 | Duplicate `progress.json`   | the one with the newest `modifiedTime` is the snapshot; extras are left alone                                                      |
 | After a pull                | re-read localStorage into the running app (store, locale, colour scheme) — no page reload                                          |
 | Access token                | `localStorage` — survives tab close and a second tab; Disconnect clears it. Key is device-local (never in `?s=` / Drive snapshots) |
-| Boot with a saved token     | same pull-or-push as Connect, _before_ the store is created — Drive lands like a `?s=` import                                      |
+| Boot with a saved token     | same pull-or-push as Connect, but _after_ mount, reusing `useGoogleConnect`'s existing restore effect — silent re-issue needs `@react-oauth/google`'s React context, so it can't run before `createRoot().render()` |
 | `?s=` link plus saved token | share link wins this load — import it and skip the Drive pull; the next sync pushes that snapshot up                               |
 | Expired token at boot       | silent GIS re-issue (`prompt: ''`); stay connected if a Google session is live, otherwise clear the token and show **Connect**     |
 
@@ -79,10 +79,11 @@ server can read that response, which is the backend this plan avoids.
 
 Instead: an access token lasting ~1 hour, persisted in `localStorage` and
 silently renewed via `requestAccessToken({ prompt: '' })` while the browser
-holds a live Google session — including at boot, before the store is created.
-If that fails (session gone, popup blocked), boot clears the token and shows
-**Connect**; a mid-session timer failure shows "tap to reconnect" rather than
-pretending to have synced.
+holds a live Google session — including at boot, once the app has mounted
+(the same `useGoogleConnect` effect Connect uses, since silent re-issue needs
+`@react-oauth/google`'s React context). If that fails (session gone, popup
+blocked), boot clears the token and shows **Connect**; a mid-session timer
+failure shows "tap to reconnect" rather than pretending to have synced.
 
 ## Design sketch
 
@@ -93,14 +94,16 @@ is that same object, so
 links and Drive sync can't drift apart. Connect is the first I/O: locate
 `progress.json` (newest `modifiedTime` if several exist), pull-and-apply if
 the body is a valid snapshot, otherwise push local over it (see
-[Decisions taken](#decisions-taken)). The same pull-or-push runs at boot when
-`localStorage` already has a token, _before_ `makeStore()` — so that path
-doesn't need an in-place reset. A 401 (or known-expired token) first tries a
-silent GIS re-issue from `googleAuth.ts` directly: the React hook is not
-mounted yet. If re-issue fails, clear the token and skip Drive. A `?s=`
-import on that same load wins: skip the Drive pull and let the next sync
-push the imported snapshot. A Connect click (store already mounted) still
-resets in-memory state from the new localStorage, with no navigation.
+[Decisions taken](#decisions-taken)). A pull applies the snapshot to
+localStorage, then calls `useRehydrateFromStorage()` to reset the running
+store, i18n locale and colour scheme in place — no navigation, no reload.
+The same pull-or-push also runs at boot when `localStorage` already has a
+token, via `useGoogleConnect`'s existing restore effect -- after mount, not
+before `makeStore()`, since a silent GIS re-issue needs
+`@react-oauth/google`'s React context. A 401 there first tries that silent
+re-issue; if it fails, clear the token and fall back to **Connect** rather
+than retrying Drive with a dead token. A `?s=` import on that same load wins:
+skip the Drive pull and let the next sync push the imported snapshot.
 
 ### Modules to add
 
@@ -127,7 +130,18 @@ no-account fallback.
 ### Drive REST calls
 
 All requests carry `Authorization: Bearer <token>`; a `401` means re-request
-the token and retry once.
+the token and retry once. Not yet implemented anywhere -- lands with the
+boot-restore commit, since that's the realistic case (a token saved a while
+ago that's since expired). Connect itself doesn't get this treatment: its
+token was just minted by the GIS popup, so an immediate 401 there points to
+something other than plain expiry, and today just surfaces the generic
+connect-error toast (see `useGoogleConnect.test.tsx`).
+
+A **general retry/backoff for transient failures** (network blips, a 500,
+timeout) is a separate, not-yet-scoped concern -- there's currently none at
+all; a failed sync just shows the error toast and the user retries manually.
+Revisit scope (which module owns it, backoff strategy, max attempts) when it
+comes up.
 
 | Purpose  | Request                                                                                          |
 | -------- | ------------------------------------------------------------------------------------------------ |
