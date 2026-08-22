@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { notifications } from "@mantine/notifications"
 import type { TokenResponse } from "@react-oauth/google"
 import { hasGrantedAllScopesGoogle, useGoogleLogin } from "@react-oauth/google"
 import { useTranslation } from "react-i18next"
+import { useLatest } from "@/hooks/useLatest"
 import { useRehydrateFromStorage } from "@/hooks/useRehydrateFromStorage"
 import { buildSyncPayload, applySyncPayload } from "@/utils/sync/syncPayload"
 import {
   fetchConnectedEmail,
   getAccessToken,
+  GoogleAuthError,
   GOOGLE_DRIVE_SCOPE,
   GOOGLE_EMAIL_SCOPE,
   GOOGLE_SCOPES,
@@ -21,35 +23,22 @@ type ImplicitTokenResponse = Omit<
 >
 
 /**
- * Connecting pulls the Drive snapshot if one exists, applying it and
- * rehydrating the running app, or pushes the local snapshot if Drive has
- * none yet -- a first-sync-only pull-or-push, with no dirty check (that
- * policy lives in the still-to-come `driveSync.ts`). Reloading restores the
- * session from localStorage; boot-time sync is wired in a later commit. See
+ * Connecting (by click, or silently at boot with a saved token) pulls the
+ * Drive snapshot if one exists and rehydrates the running app, or pushes the
+ * local snapshot if Drive has none yet. A 401 at boot triggers one silent
+ * GIS re-issue before falling back to signed-out. See
  * docs/google-account-sync.md.
+ *
+ * @param skipBootSync - True once a `?s=` link has already imported this
+ * load, so boot skips the Drive pull and leaves the next sync to push it.
  */
-export const useGoogleConnect = () => {
+export const useGoogleConnect = (skipBootSync: boolean) => {
   const { t } = useTranslation()
   const rehydrate = useRehydrateFromStorage()
   const [connecting, setConnecting] = useState(() => Boolean(getAccessToken()))
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null)
-
-  useEffect(() => {
-    const restoreSession = async () => {
-      const token = getAccessToken()
-      if (!token) {
-        return
-      }
-      try {
-        setConnectedEmail(await fetchConnectedEmail(token))
-      } catch {
-        // Keep the stored token; a later boot path silently re-issues it.
-      } finally {
-        setConnecting(false)
-      }
-    }
-    void restoreSession()
-  }, [])
+  /** Distinguishes a boot-triggered silent re-issue from an interactive Connect click in the shared `onSuccess`/`onError` below. */
+  const bootReissueRef = useRef(false)
 
   const syncNow = async (token: string) => {
     const payload = await readSnapshot(token)
@@ -61,7 +50,10 @@ export const useGoogleConnect = () => {
     }
   }
 
-  const handleSuccess = async (tokenResponse: ImplicitTokenResponse) => {
+  const handleSuccess = async (
+    tokenResponse: ImplicitTokenResponse,
+    { skipSync = false } = {},
+  ) => {
     // Granular consent lets the user grant only some of the requested
     // scopes; without this check a partial grant would look "connected"
     // while Drive sync silently has no permission to write.
@@ -82,7 +74,9 @@ export const useGoogleConnect = () => {
     setConnecting(true)
     try {
       setConnectedEmail(await fetchConnectedEmail(tokenResponse.access_token))
-      await syncNow(tokenResponse.access_token)
+      if (!skipSync) {
+        await syncNow(tokenResponse.access_token)
+      }
     } catch {
       notifications.show({
         color: "red",
@@ -96,15 +90,55 @@ export const useGoogleConnect = () => {
   const login = useGoogleLogin({
     scope: GOOGLE_SCOPES,
     onSuccess: tokenResponse => {
-      void handleSuccess(tokenResponse)
+      const wasBootReissue = bootReissueRef.current
+      bootReissueRef.current = false
+      void handleSuccess(tokenResponse, {
+        skipSync: wasBootReissue && skipBootSync,
+      })
     },
     onError: () => {
+      // A silent re-issue quietly falls back to signed-out rather than nagging with a toast for something the user didn't trigger.
+      if (bootReissueRef.current) {
+        bootReissueRef.current = false
+        setAccessToken(null)
+        setConnecting(false)
+        return
+      }
       notifications.show({
         color: "red",
         message: t("common.googleConnectError"),
       })
     },
   })
+
+  const latest = useLatest({ login, syncNow })
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      const token = getAccessToken()
+      if (!token) {
+        return
+      }
+      try {
+        setConnectedEmail(await fetchConnectedEmail(token))
+        if (!skipBootSync) {
+          await latest.current.syncNow(token)
+        }
+      } catch (error) {
+        if (error instanceof GoogleAuthError) {
+          bootReissueRef.current = true
+          latest.current.login({ prompt: "" })
+          return
+        }
+      } finally {
+        // A re-issue in flight settles `connecting` itself, via its own onSuccess/onError.
+        if (!bootReissueRef.current) {
+          setConnecting(false)
+        }
+      }
+    }
+    void restoreSession()
+  }, [skipBootSync, latest])
 
   const disconnect = () => {
     setAccessToken(null)

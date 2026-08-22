@@ -12,13 +12,16 @@ import { getAccessToken, setAccessToken } from "@/utils/sync/google/googleAuth"
 import { StorageKeys } from "@/utils/sync/storageKeys"
 import { useGoogleConnect } from "./useGoogleConnect"
 
-/** Captured by the `useGoogleLogin` mock below, so tests can fire `onSuccess` directly. */
+/** Captured by the `useGoogleLogin` mock below, so tests can fire `onSuccess`/`onError` directly. */
 let latestLoginOptions: UseGoogleLoginOptionsImplicitFlow | undefined
+/** The mocked `login` callable itself, so tests can assert a silent re-issue was attempted. */
+let latestLoginFn: ReturnType<typeof vi.fn> | undefined
 
 vi.mock("@react-oauth/google", () => ({
   useGoogleLogin: vi.fn((options: UseGoogleLoginOptionsImplicitFlow) => {
     latestLoginOptions = options
-    return vi.fn()
+    latestLoginFn = vi.fn()
+    return latestLoginFn
   }),
   hasGrantedAllScopesGoogle: vi.fn(() => true),
 }))
@@ -42,8 +45,14 @@ const triggerLoginSuccess = (accessToken: string) => {
   } as TokenResponse)
 }
 
-const Host = () => {
-  const { connecting, connectedEmail, disconnect } = useGoogleConnect()
+/** Simulates GIS failing to issue a token, e.g. a silent re-issue with no live session. */
+const triggerLoginError = () => {
+  latestLoginOptions?.onError?.({})
+}
+
+const Host = ({ skipBootSync = false }: { skipBootSync?: boolean }) => {
+  const { connecting, connectedEmail, disconnect } =
+    useGoogleConnect(skipBootSync)
   const dyslexiaFont = useAppSelector(selectDyslexiaFont)
   return (
     <div>
@@ -86,17 +95,79 @@ test("restores the connected email from a stored token", async () => {
   expect(authorizationHeader(init)).toBe("Bearer ya29.token")
 })
 
-test("a failed userinfo restore leaves the token and stays signed out", async () => {
+test("a 401 at boot triggers a silent re-issue that succeeds with a fresh token", async () => {
   setAccessToken("ya29.expired")
-  vi.mocked(fetch).mockResolvedValue(jsonResponse({}, 401))
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(jsonResponse({}, 401)) // boot's own fetchConnectedEmail
+    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" })) // after the re-issue
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(new Response(null, { status: 200 }))
 
   renderWithProviders(<Host />)
+
+  await waitFor(() => {
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "" })
+  })
+  triggerLoginSuccess("ya29.refreshed")
+
+  await waitFor(() => {
+    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
+  })
+  expect(screen.getByText("idle")).toBeInTheDocument()
+  expect(getAccessToken()).toBe("ya29.refreshed")
+})
+
+test("a 401 at boot falls back to signed-out when the silent re-issue fails", async () => {
+  setAccessToken("ya29.expired")
+  vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({}, 401))
+
+  renderWithProviders(<Host />)
+
+  await waitFor(() => {
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "" })
+  })
+  triggerLoginError()
 
   await waitFor(() => {
     expect(screen.getByText("idle")).toBeInTheDocument()
   })
   expect(screen.getByText("signed-out")).toBeInTheDocument()
-  expect(getAccessToken()).toBe("ya29.expired")
+  expect(getAccessToken()).toBeNull()
+})
+
+test("a re-issue succeeding at boot still skips the Drive pull when a sync link just won", async () => {
+  setAccessToken("ya29.expired")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(jsonResponse({}, 401))
+    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
+
+  renderWithProviders(<Host skipBootSync />)
+
+  await waitFor(() => {
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "" })
+  })
+  triggerLoginSuccess("ya29.refreshed")
+
+  await waitFor(() => {
+    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
+  })
+  // Only the two userinfo calls above -- no Drive calls at all.
+  expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2)
+})
+
+test("a valid token at boot skips the Drive pull when a sync link just won", async () => {
+  setAccessToken("ya29.token")
+  vi.mocked(fetch).mockResolvedValueOnce(
+    jsonResponse({ email: "chen@example.com" }),
+  )
+
+  renderWithProviders(<Host skipBootSync />)
+
+  await waitFor(() => {
+    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
+  })
+  expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1)
 })
 
 test("disconnect clears the stored token", async () => {

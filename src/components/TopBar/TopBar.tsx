@@ -42,7 +42,9 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
   const { locale, toggleLocale } = useLocale()
   const [syncOpened, syncHandlers] = useDisclosure(false)
   const [speechOpened, speechHandlers] = useDisclosure(false)
-  const googleConnect = useGoogleConnect()
+  // TODO: thread the real `?s=`-import flag through once useGoogleConnect is
+  // lifted to App and shared via context.
+  const googleConnect = useGoogleConnect(false)
 
   const isDark = colorScheme === "dark"
 
