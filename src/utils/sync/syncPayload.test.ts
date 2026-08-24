@@ -13,6 +13,7 @@ test("collects progress from localStorage, but never device-local keys", () => {
   localStorage.setItem(StorageKeys.darkMode, "1")
   localStorage.setItem(StorageKeys.systemVoice, "Microsoft David - English")
   localStorage.setItem(StorageKeys.googleAccessToken, "ya29.secret")
+  localStorage.setItem(StorageKeys.googleLastSyncedHash, "abc123")
 
   expect(buildSyncPayload()).toStrictEqual({
     [StorageKeys.modulesProgress]: JSON.stringify({ HAT: "known" }),

@@ -7,7 +7,7 @@
  * single well-known filename is enough; no folder bookkeeping is needed.
  */
 import { z } from "zod"
-import { authorizedFetch } from "./googleAuth"
+import { authorizedFetch, getAccessToken } from "./googleAuth"
 import {
   type SyncPayload,
   syncPayloadSchema,
@@ -63,10 +63,18 @@ const downloadSnapshot = async (
   }
 }
 
+/** Both public functions below run only once `useGoogleConnect.ts` has already set a token. */
+const requireAccessToken = () => {
+  const token = getAccessToken()
+  if (!token) {
+    throw new Error("No Google access token")
+  }
+  return token
+}
+
 /** `null` covers both "no file yet" and "file exists but is unreadable". */
-export const readSnapshot = async (
-  token: string,
-): Promise<SyncPayload | null> => {
+export const readSnapshot = async (): Promise<SyncPayload | null> => {
+  const token = requireAccessToken()
   const file = await locateProgressFile(token)
   return file ? downloadSnapshot(token, file.id) : null
 }
@@ -123,7 +131,8 @@ const updateSnapshot = async (
 }
 
 /** Overwrites whichever file `progress.json` currently resolves to, or creates it. */
-export const writeSnapshot = async (token: string, payload: SyncPayload) => {
+export const writeSnapshot = async (payload: SyncPayload) => {
+  const token = requireAccessToken()
   const file = await locateProgressFile(token)
   if (file) {
     await updateSnapshot(token, file.id, payload)

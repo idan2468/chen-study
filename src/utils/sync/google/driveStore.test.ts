@@ -1,5 +1,6 @@
 import { GoogleAuthError } from "./googleAuth"
 import type { SyncPayload } from "@/types/schemas/syncPayload"
+import { StorageKeys } from "@/utils/sync/storageKeys"
 import { readSnapshot, writeSnapshot } from "./driveStore"
 
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
@@ -29,6 +30,7 @@ const authorizationHeader = (init: RequestInit | undefined) =>
 const payload: SyncPayload = { english_marked_words: "{}" }
 
 beforeEach(() => {
+  localStorage.setItem(StorageKeys.googleAccessToken, "ya29.token")
   vi.stubGlobal("fetch", vi.fn())
 })
 
@@ -40,7 +42,7 @@ describe("readSnapshot", () => {
   test("returns null when Drive has no progress.json", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(filesResponse([]))
 
-    await expect(readSnapshot("ya29.token")).resolves.toBeNull()
+    await expect(readSnapshot()).resolves.toBeNull()
     const [url, init] = vi.mocked(fetch).mock.calls[0] ?? []
     expect(url).toBe(locateUrl())
     expect(authorizationHeader(init)).toBe("Bearer ya29.token")
@@ -56,7 +58,7 @@ describe("readSnapshot", () => {
       )
       .mockResolvedValueOnce(textResponse(JSON.stringify(payload)))
 
-    await expect(readSnapshot("ya29.token")).resolves.toStrictEqual(payload)
+    await expect(readSnapshot()).resolves.toStrictEqual(payload)
     const [url] = vi.mocked(fetch).mock.calls[1] ?? []
     expect(url).toBe(`${DRIVE_FILES_URL}/newer?alt=media`)
   })
@@ -70,7 +72,7 @@ describe("readSnapshot", () => {
       )
       .mockResolvedValueOnce(textResponse("not json"))
 
-    await expect(readSnapshot("ya29.token")).resolves.toBeNull()
+    await expect(readSnapshot()).resolves.toBeNull()
   })
 
   test("returns null for valid JSON that is not a string-to-string map", async () => {
@@ -82,23 +84,28 @@ describe("readSnapshot", () => {
       )
       .mockResolvedValueOnce(textResponse(JSON.stringify({ count: 1 })))
 
-    await expect(readSnapshot("ya29.token")).resolves.toBeNull()
+    await expect(readSnapshot()).resolves.toBeNull()
   })
 
   test("throws GoogleAuthError on a 401", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 401 }))
 
-    await expect(readSnapshot("ya29.expired")).rejects.toBeInstanceOf(
-      GoogleAuthError,
-    )
+    await expect(readSnapshot()).rejects.toBeInstanceOf(GoogleAuthError)
   })
 
   test("throws a plain error on other failures", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 500 }))
 
-    await expect(readSnapshot("ya29.token")).rejects.toThrow(
+    await expect(readSnapshot()).rejects.toThrow(
       "Google API request failed: 500",
     )
+  })
+
+  test("throws a plain error instead of calling fetch when there is no access token", async () => {
+    localStorage.removeItem(StorageKeys.googleAccessToken)
+
+    await expect(readSnapshot()).rejects.toThrow("No Google access token")
+    expect(fetch).not.toHaveBeenCalled()
   })
 })
 
@@ -108,7 +115,7 @@ describe("writeSnapshot", () => {
       .mockResolvedValueOnce(filesResponse([]))
       .mockResolvedValueOnce(okResponse())
 
-    await writeSnapshot("ya29.token", payload)
+    await writeSnapshot(payload)
 
     const [url, init] = vi.mocked(fetch).mock.calls[1] ?? []
     expect(url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
@@ -145,7 +152,7 @@ describe("writeSnapshot", () => {
       )
       .mockResolvedValueOnce(okResponse())
 
-    await writeSnapshot("ya29.token", payload)
+    await writeSnapshot(payload)
 
     const [url, init] = vi.mocked(fetch).mock.calls[1] ?? []
     expect(url).toBe(`${DRIVE_UPLOAD_URL}/abc?uploadType=media`)
@@ -153,5 +160,14 @@ describe("writeSnapshot", () => {
       method: "PATCH",
       body: JSON.stringify(payload),
     })
+  })
+
+  test("throws a plain error instead of calling fetch when there is no access token", async () => {
+    localStorage.removeItem(StorageKeys.googleAccessToken)
+
+    await expect(writeSnapshot(payload)).rejects.toThrow(
+      "No Google access token",
+    )
+    expect(fetch).not.toHaveBeenCalled()
   })
 })

@@ -21,6 +21,9 @@ export const StorageKeys = {
   systemVoice: "english_system_voice",
   /** GIS access token. Device-local — must never appear in `?s=` or Drive. */
   googleAccessToken: "google_access_token",
+  /** Hash of the payload as of the last successful Drive sync (push or pulled
+   *  apply). Device-local; drives the dirty check in `driveSync.ts`. */
+  googleLastSyncedHash: "google_last_synced_hash",
 
   /** `Record<exerciseId, Exercise>` */
   exerciseLibrary: "english_exercise_library",
@@ -58,6 +61,7 @@ export const flashcardStatusKey = (exerciseId: string) =>
 const DEVICE_LOCAL_KEYS = new Set<string>([
   StorageKeys.systemVoice,
   StorageKeys.googleAccessToken,
+  StorageKeys.googleLastSyncedHash,
 ])
 
 /** Matches any key the sync feature should carry between devices. */

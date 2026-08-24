@@ -5,7 +5,7 @@ import { hasGrantedAllScopesGoogle, useGoogleLogin } from "@react-oauth/google"
 import { useTranslation } from "react-i18next"
 import { useLatest } from "@/hooks/useLatest"
 import { useRehydrateFromStorage } from "@/hooks/useRehydrateFromStorage"
-import { buildSyncPayload, applySyncPayload } from "@/utils/sync/syncPayload"
+import { applySyncPayload } from "@/utils/sync/syncPayload"
 import {
   fetchConnectedEmail,
   getAccessToken,
@@ -15,7 +15,8 @@ import {
   GOOGLE_SCOPES,
   setAccessToken,
 } from "@/utils/sync/google/googleAuth"
-import { readSnapshot, writeSnapshot } from "@/utils/sync/google/driveStore"
+import { readSnapshot } from "@/utils/sync/google/driveStore"
+import { recordSynced, syncIfDirty } from "@/utils/sync/google/driveSync"
 
 type ImplicitTokenResponse = Omit<
   TokenResponse,
@@ -49,13 +50,14 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     setRestoring(false)
   }
 
-  const syncNow = async (token: string) => {
-    const payload = await readSnapshot(token)
+  const syncNow = async () => {
+    const payload = await readSnapshot()
     if (payload) {
       applySyncPayload(payload)
       rehydrate()
+      recordSynced(payload)
     } else {
-      await writeSnapshot(token, buildSyncPayload())
+      await syncIfDirty()
     }
   }
 
@@ -84,7 +86,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     try {
       setConnectedEmail(await fetchConnectedEmail(tokenResponse.access_token))
       if (!skipSync) {
-        await syncNow(tokenResponse.access_token)
+        await syncNow()
       }
     } catch {
       notifications.show({
@@ -131,7 +133,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
       try {
         setConnectedEmail(await fetchConnectedEmail(token))
         if (!skipBootSync) {
-          await latest.current.syncNow(token)
+          await latest.current.syncNow()
         }
       } catch (error) {
         if (error instanceof GoogleAuthError) {
