@@ -19,6 +19,7 @@ export const useDriveSync = (
 ) => {
   const { t } = useTranslation()
   const [needsReconnect, setNeedsReconnect] = useState(false)
+  const [syncing, setSyncing] = useState(false)
 
   const attemptSync = async ({
     keepalive,
@@ -29,9 +30,16 @@ export const useDriveSync = (
     silent: boolean
     hasRetried?: boolean
   }) => {
+    setSyncing(true)
     try {
       await syncIfDirty(keepalive)
       setNeedsReconnect(false)
+      if (!silent) {
+        notifications.show({
+          color: "green",
+          message: t("common.googleSyncSuccess"),
+        })
+      }
     } catch (error) {
       if (!(error instanceof GoogleAuthError)) {
         if (!silent) {
@@ -56,6 +64,8 @@ export const useDriveSync = (
           setNeedsReconnect(true)
         }
       })
+    } finally {
+      setSyncing(false)
     }
   }
 
@@ -99,5 +109,5 @@ export const useDriveSync = (
     void attemptSync({ keepalive: false, silent: false })
   }
 
-  return { needsReconnect, syncNow }
+  return { needsReconnect, syncing, syncNow }
 }

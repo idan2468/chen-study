@@ -17,10 +17,14 @@ const reissueForSync = vi.fn((onSettled: (success: boolean) => void) => {
 })
 
 const Host = ({ connected }: { connected: boolean }) => {
-  const { needsReconnect, syncNow } = useDriveSync(connected, reissueForSync)
+  const { needsReconnect, syncing, syncNow } = useDriveSync(
+    connected,
+    reissueForSync,
+  )
   return (
     <div>
       <span>{needsReconnect ? "needs-reconnect" : "ok"}</span>
+      <span>{syncing ? "syncing" : "idle"}</span>
       <button type="button" onClick={syncNow}>
         Sync now
       </button>
@@ -265,5 +269,60 @@ test("a non-auth error during the background timer stays silent", async () => {
 
   expect(
     screen.queryByText(i18next.t("common.googleSyncError")),
+  ).not.toBeInTheDocument()
+})
+
+test("syncing is true while a sync is in flight, and false once it settles", async () => {
+  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+  let resolveLocate: (response: Response) => void = () => undefined
+  vi.mocked(fetch)
+    .mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveLocate = resolve
+      }),
+    )
+    .mockResolvedValueOnce(okResponse())
+
+  renderWithProviders(<Host connected />)
+  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+  await waitFor(() => {
+    expect(screen.getByText("syncing")).toBeInTheDocument()
+  })
+
+  resolveLocate(filesResponse([]))
+
+  await waitFor(() => {
+    expect(screen.getByText("idle")).toBeInTheDocument()
+  })
+})
+
+test("shows a success toast once a manual sync completes", async () => {
+  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
+
+  renderWithProviders(<Host connected />)
+  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+
+  await waitFor(() => {
+    expect(
+      screen.getByText(i18next.t("common.googleSyncSuccess")),
+    ).toBeInTheDocument()
+  })
+})
+
+test("the background timer's successful push stays silent, without a success toast", async () => {
+  vi.useFakeTimers()
+  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
+
+  renderWithProviders(<Host connected />)
+  await vi.advanceTimersByTimeAsync(30_000)
+
+  expect(
+    screen.queryByText(i18next.t("common.googleSyncSuccess")),
   ).not.toBeInTheDocument()
 })
