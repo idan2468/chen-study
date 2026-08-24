@@ -28,13 +28,16 @@ const driveFilesResponseSchema = z.object({
  * The newest `modifiedTime` wins if a failed create ever left duplicates
  * behind; the older copies are left alone (see docs/google-account-sync.md).
  */
-const locateProgressFile = async (token: string): Promise<DriveFile | null> => {
+const locateProgressFile = async (
+  token: string,
+  keepalive = false,
+): Promise<DriveFile | null> => {
   const url = new URL(DRIVE_FILES_URL)
   url.searchParams.set("spaces", "appDataFolder")
   url.searchParams.set("q", `name='${PROGRESS_FILE_NAME}'`)
   url.searchParams.set("fields", "files(id,modifiedTime)")
 
-  const response = await authorizedFetch(token, url.toString())
+  const response = await authorizedFetch(token, url.toString(), { keepalive })
   const parsed = driveFilesResponseSchema.safeParse(await response.json())
   const files = parsed.success ? parsed.data.files : []
 
@@ -104,13 +107,18 @@ const buildMultipartRelatedBody = (payload: SyncPayload) => {
   return { boundary, body }
 }
 
-const createSnapshot = async (token: string, payload: SyncPayload) => {
+const createSnapshot = async (
+  token: string,
+  payload: SyncPayload,
+  keepalive = false,
+) => {
   const { boundary, body } = buildMultipartRelatedBody(payload)
 
   await authorizedFetch(token, `${DRIVE_UPLOAD_URL}?uploadType=multipart`, {
     method: "POST",
     headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
     body,
+    keepalive,
   })
 }
 
@@ -118,6 +126,7 @@ const updateSnapshot = async (
   token: string,
   fileId: string,
   payload: SyncPayload,
+  keepalive = false,
 ) => {
   await authorizedFetch(
     token,
@@ -126,17 +135,25 @@ const updateSnapshot = async (
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      keepalive,
     },
   )
 }
 
-/** Overwrites whichever file `progress.json` currently resolves to, or creates it. */
-export const writeSnapshot = async (payload: SyncPayload) => {
+/**
+ * Overwrites whichever file `progress.json` currently resolves to, or
+ * creates it. `keepalive` is set for the page-hide push, so it survives the
+ * tab closing -- see "Trigger mechanics" in docs/google-account-sync.md.
+ */
+export const writeSnapshot = async (
+  payload: SyncPayload,
+  keepalive = false,
+) => {
   const token = requireAccessToken()
-  const file = await locateProgressFile(token)
+  const file = await locateProgressFile(token, keepalive)
   if (file) {
-    await updateSnapshot(token, file.id, payload)
+    await updateSnapshot(token, file.id, payload, keepalive)
   } else {
-    await createSnapshot(token, payload)
+    await createSnapshot(token, payload, keepalive)
   }
 }

@@ -170,4 +170,30 @@ describe("writeSnapshot", () => {
     )
     expect(fetch).not.toHaveBeenCalled()
   })
+
+  test("threads keepalive through to both the locate and write requests when requested", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(filesResponse([]))
+      .mockResolvedValueOnce(okResponse())
+
+    await writeSnapshot(payload, true)
+
+    const [, locateInit] = vi.mocked(fetch).mock.calls[0] ?? []
+    const [, writeInit] = vi.mocked(fetch).mock.calls[1] ?? []
+    expect(locateInit?.keepalive).toBe(true)
+    expect(writeInit?.keepalive).toBe(true)
+  })
+
+  test("defaults keepalive to false when not requested", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(filesResponse([]))
+      .mockResolvedValueOnce(okResponse())
+
+    await writeSnapshot(payload)
+
+    const [, locateInit] = vi.mocked(fetch).mock.calls[0] ?? []
+    const [, writeInit] = vi.mocked(fetch).mock.calls[1] ?? []
+    expect(locateInit?.keepalive).toBeFalsy()
+    expect(writeInit?.keepalive).toBeFalsy()
+  })
 })

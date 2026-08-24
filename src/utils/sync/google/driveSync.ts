@@ -26,14 +26,16 @@ export const recordSynced = (payload: SyncPayload) => {
 /**
  * Pushes the local snapshot to Drive only if it differs from the last
  * successful sync. A failed push does not record the new hash, so the next
- * call retries instead of silently giving up.
+ * call retries instead of silently giving up. `keepalive` is set for the
+ * page-hide trigger only -- see "Trigger mechanics" in
+ * docs/google-account-sync.md.
  */
-export const syncIfDirty = async () => {
+export const syncIfDirty = async (keepalive = false) => {
   const payload = buildSyncPayload()
   const hash = hashPayload(payload)
   if (hash === readString(StorageKeys.googleLastSyncedHash)) {
     return
   }
-  await writeSnapshot(payload)
+  await writeSnapshot(payload, keepalive)
   recordSynced(payload)
 }

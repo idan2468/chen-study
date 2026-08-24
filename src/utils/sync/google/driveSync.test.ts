@@ -77,6 +77,18 @@ describe("syncIfDirty", () => {
     await expect(syncIfDirty()).rejects.toBeInstanceOf(GoogleAuthError)
     expect(localStorage.getItem(StorageKeys.googleLastSyncedHash)).toBeNull()
   })
+
+  test("passes keepalive through to the write request when requested", async () => {
+    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(filesResponse([]))
+      .mockResolvedValueOnce(okResponse())
+
+    await syncIfDirty(true)
+
+    const [, writeInit] = vi.mocked(fetch).mock.calls[1] ?? []
+    expect(writeInit?.keepalive).toBe(true)
+  })
 })
 
 describe("recordSynced", () => {
