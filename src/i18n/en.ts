@@ -21,7 +21,7 @@ export const en: Messages = {
     dyslexiaFontTooltip: "Dyslexia-friendly font",
     dayMode: "☀️ Light mode",
     nightMode: "🌙 Dark mode",
-    syncDevices: "🔗 Sync devices",
+    syncDevices: "🔗 Sync via link",
     switchToEnglish: "English",
     switchToHebrew: "עברית",
     languageTooltip: "Change interface language",

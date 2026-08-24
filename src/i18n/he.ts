@@ -15,7 +15,7 @@ export const he = {
     dyslexiaFontTooltip: "גופן מותאם לדיסלקציה",
     dayMode: "☀️ מצב יום",
     nightMode: "🌙 מצב לילה",
-    syncDevices: "🔗 סנכרון מכשירים",
+    syncDevices: "🔗 סנכרון בעזרת קישור",
     switchToEnglish: "English",
     switchToHebrew: "עברית",
     languageTooltip: "החלפת שפת הממשק",
