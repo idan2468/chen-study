@@ -13,26 +13,26 @@ database — the app stays a static bundle on GitHub Pages.
 
 ## Decisions taken
 
-| Decision                    | Choice                                                                                                                             |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Storage location            | `drive.appdata` — hidden app-data folder, not user-editable                                                                        |
-| Merge strategy              | whole-file last-write-wins, guarded only by a dirty check (below)                                                                  |
-| Sync triggers               | manual "Sync now", a 30-second timer, and on page hide                                                                             |
-| No-account usage            | fully usable without one — local-only storage plus `?s=` links; "Connect" can be dismissed for good                                |
-| Connected-account display   | show the signed-in email, via an added `userinfo.email` scope                                                                      |
-| Device preferences          | dark mode, dyslexia font and speech rate keep syncing; only `english_system_voice` stays local                                     |
-| Client ID storage           | `VITE_GOOGLE_CLIENT_ID` env var, injected at build time by the GitHub Pages workflow                                               |
-| Browser/platform support    | Chrome only, on macOS, Windows and Android                                                                                         |
-| Two-device conflicts        | not detected — whichever syncs second silently wins; see [Possible future additions](#possible-future-additions)                   |
-| First connect               | if Drive already has `progress.json`, pull it (same overwrite as a `?s=` import); if not, push local                               |
-| Step-3 trigger              | Connect itself runs that first pull-or-push — no extra Sync button until [Rollout](#rollout) step 6                                |
-| Unreadable Drive file       | treat as missing — push local over it                                                                                              |
-| Duplicate `progress.json`   | the one with the newest `modifiedTime` is the snapshot; extras are left alone                                                      |
-| After a pull                | re-read localStorage into the running app (store, locale, colour scheme) — no page reload                                          |
-| Access token                | `localStorage` — survives tab close and a second tab; Disconnect clears it. Key is device-local (never in `?s=` / Drive snapshots) |
+| Decision                    | Choice                                                                                                                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Storage location            | `drive.appdata` — hidden app-data folder, not user-editable                                                                                                                                                         |
+| Merge strategy              | whole-file last-write-wins, guarded only by a dirty check (below)                                                                                                                                                   |
+| Sync triggers               | manual "Sync now", a 30-second timer, and on page hide                                                                                                                                                              |
+| No-account usage            | fully usable without one — local-only storage plus `?s=` links; "Connect" can be dismissed for good                                                                                                                 |
+| Connected-account display   | show the signed-in email, via an added `userinfo.email` scope                                                                                                                                                       |
+| Device preferences          | dark mode, dyslexia font and speech rate keep syncing; only `english_system_voice` stays local                                                                                                                      |
+| Client ID storage           | `VITE_GOOGLE_CLIENT_ID` env var, injected at build time by the GitHub Pages workflow                                                                                                                                |
+| Browser/platform support    | Chrome only, on macOS, Windows and Android                                                                                                                                                                          |
+| Two-device conflicts        | not detected — whichever syncs second silently wins; see [Possible future additions](#possible-future-additions)                                                                                                    |
+| First connect               | if Drive already has `progress.json`, pull it (same overwrite as a `?s=` import); if not, push local                                                                                                                |
+| Step-3 trigger              | Connect itself runs that first pull-or-push — no extra Sync button until [Rollout](#rollout) step 6                                                                                                                 |
+| Unreadable Drive file       | treat as missing — push local over it                                                                                                                                                                               |
+| Duplicate `progress.json`   | the one with the newest `modifiedTime` is the snapshot; extras are left alone                                                                                                                                       |
+| After a pull                | re-read localStorage into the running app (store, locale, colour scheme) — no page reload                                                                                                                           |
+| Access token                | `localStorage` — survives tab close and a second tab; Disconnect clears it. Key is device-local (never in `?s=` / Drive snapshots)                                                                                  |
 | Boot with a saved token     | same pull-or-push as Connect, but _after_ mount, reusing `useGoogleConnect`'s existing restore effect — silent re-issue needs `@react-oauth/google`'s React context, so it can't run before `createRoot().render()` |
-| `?s=` link plus saved token | share link wins this load — import it and skip the Drive pull; the next sync pushes that snapshot up                               |
-| Expired token at boot       | silent GIS re-issue (`prompt: ''`); stay connected if a Google session is live, otherwise clear the token and show **Connect**     |
+| `?s=` link plus saved token | share link wins this load — import it and skip the Drive pull; the next sync pushes that snapshot up                                                                                                                |
+| Expired token at boot       | silent GIS re-issue (`prompt: ''`); stay connected if a Google session is live, otherwise clear the token and show **Connect**                                                                                      |
 
 ## Why a Google Cloud project is still needed
 
@@ -114,16 +114,16 @@ unrelated helpers like `speech/`. Each pairs a plain module (state/API calls,
 no React) with a hook that wires it into the UI — same split as
 `googleAuth.ts` / `useGoogleConnect.ts` already in place.
 
-| Path                             | Responsibility                                                                                     |
-| -------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `@react-oauth/google`            | the token client: GIS script load, `useGoogleLogin()` hook, popup/consent handling                 |
-| `src/utils/sync/google/googleAuth.ts` | what the library doesn't cover -- hold the access token in `localStorage`, `fetchConnectedEmail()` |
-| `src/hooks/useGoogleConnect.ts`  | wires `googleAuth.ts` + `useGoogleLogin()` into connect/disconnect state for the UI                |
-| `src/hooks/GoogleConnectContext.tsx` | owns the single `useGoogleConnect` instance app-wide, shared with `TopBar`; renders the boot-restore spinner |
-| `src/utils/sync/google/driveStore.ts` | `readSnapshot()` / `writeSnapshot()` against the Drive REST API                                    |
-| `src/utils/sync/google/driveSync.ts` | the policy: dirty check, last-synced state                                                         |
-| `src/hooks/useDriveSync.ts`      | the triggers -- 30-second timer, page-hide, manual button -- calling into `driveSync.ts`           |
-| `src/components/AccountModal/`   | connect/disconnect, connected email, last-synced time, "Sync now"                                  |
+| Path                                  | Responsibility                                                                                               |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `@react-oauth/google`                 | the token client: GIS script load, `useGoogleLogin()` hook, popup/consent handling                           |
+| `src/utils/sync/google/googleAuth.ts` | what the library doesn't cover -- hold the access token in `localStorage`, `fetchConnectedEmail()`           |
+| `src/hooks/useGoogleConnect.ts`       | wires `googleAuth.ts` + `useGoogleLogin()` into connect/disconnect state for the UI                          |
+| `src/hooks/GoogleConnectContext.tsx`  | owns the single `useGoogleConnect` instance app-wide, shared with `TopBar`; renders the boot-restore spinner |
+| `src/utils/sync/google/driveStore.ts` | `readSnapshot()` / `writeSnapshot()` against the Drive REST API                                              |
+| `src/utils/sync/google/driveSync.ts`  | the policy: dirty check, last-synced state                                                                   |
+| `src/hooks/useDriveSync.ts`           | the triggers -- 30-second timer, page-hide, manual button -- calling into `driveSync.ts`                     |
+| `src/components/AccountModal/`        | connect/disconnect, connected email, last-synced time, "Sync now"                                            |
 
 `syncUrl.ts` itself is unchanged beyond that split — the link stays as the
 no-account fallback.
@@ -202,9 +202,11 @@ time.
       leave the stored hash untouched on a failed push so the next attempt
       retries. Wired into `useGoogleConnect.ts`'s pull-or-push so the
       baseline is already correct by the time step 6's timer exists.
-- [ ] 6. **Triggers and reconnect UI** — button, timer, page-hide push, "tap
-      to reconnect" state. **Next up.**
-- [ ] 7. **Docs** — README section, note in `storageKeys.ts` that its keys are
+- [x] 6. **Triggers and reconnect UI** — `useDriveSync.ts`'s 30-second timer,
+      page-hide push (`keepalive`), and manual "Sync now"; a silent GIS
+      re-issue retried once on a mid-session 401, falling back to a red
+      "tap to reconnect" icon next to the `TopBar` Google button.
+- [x] 7. **Docs** — README section, note in `storageKeys.ts` that its keys are
       now a wire format for the Drive file too.
 
 ## Testing

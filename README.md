@@ -8,9 +8,10 @@ RTL/English learning tools —
 - **Modules (phonics flashcards)** — tabbed practice sets by phonics module, with
   known/unknown progress tracking and keyboard shortcuts.
 
-Both pages support sync links between devices, a dyslexia-friendly font toggle,
-light/dark mode, and an English/Hebrew UI language toggle (the learning content
-itself stays Hebrew — only the chrome translates).
+Both pages support sync links between devices, an optional Google Drive sync
+for automatic cross-device backup, a dyslexia-friendly font toggle, light/dark
+mode, and an English/Hebrew UI language toggle (the learning content itself
+stays Hebrew — only the chrome translates).
 
 This app started as three standalone static HTML files (still kept in `old/` for
 reference) and was converted to React + Redux Toolkit + Mantine + CSS Modules. See
@@ -78,6 +79,18 @@ Run the suite:
 npm run test
 ```
 
+## Google Drive sync
+
+An optional, opt-in alternative to copy-pasting `?s=` links between devices.
+Connecting a Google account stores the same syncable `localStorage` keys as a
+`?s=` link (see `storageKeys.ts`) in a single `progress.json` file in the
+app's hidden Drive `appDataFolder` — never a user-visible file, and no backend
+or database of our own. A 30-second timer, a push on tab-hide, and a manual
+"Sync now" button keep it up to date, with a dirty check so an unchanged
+snapshot never re-uploads. See `docs/google-account-sync.md` for the full
+design (token handling, conflict resolution, and the Google Cloud setup
+required to enable it).
+
 ## Deployment
 
 Deployed to GitHub Pages via `.github/workflows/deploy.yml` on every push to
@@ -93,3 +106,4 @@ sub-path, `vite.config.ts` sets `base: "/chen-study/"`, and the app uses
 - `docs/kokoro-tts.md` / `docs/remove-neural-tts.md` — the neural TTS experiment
   and why it was removed (the app now speaks only through
   `window.speechSynthesis`, with a voice-ranking layer on top)
+- `docs/google-account-sync.md` — the Google Drive sync design and rollout plan
