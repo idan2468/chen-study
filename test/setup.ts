@@ -1,9 +1,18 @@
 import "@testing-library/jest-dom/vitest"
+import { notifications } from "@mantine/notifications"
 import { initI18n } from "@/i18n"
 
 // The app defaults to Hebrew, but tests run in English so assertions and
 // fixtures in test files stay readable without mixing scripts.
 initI18n("en")
+
+// Mantine's notification queue is a module-level store outside the React
+// tree, so unmounting a test's <Notifications /> never clears it -- a toast
+// left showing (e.g. no autoClose wait) would otherwise leak into the next
+// test's queries.
+afterEach(() => {
+  notifications.clean()
+})
 
 // jsdom does not implement matchMedia; Mantine's colour-scheme hooks need it.
 Object.defineProperty(window, "matchMedia", {
