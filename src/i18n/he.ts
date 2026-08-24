@@ -32,13 +32,15 @@ export const he = {
     stopSpeaking: "עצירת ההקראה: {{label}}",
     deleteItem: "מחיקת {{name}}",
     voiceSettings: "🎙️ הגדרות קול",
+    settingsMenu: "⚙️ הגדרות",
     connectGoogle: "חיבור לחשבון Google",
     googleConnected: "{{email}} · התנתקות",
     googleConnectError: "החיבור לחשבון Google נכשל. נסו שוב.",
     restoringSync: "משחזר את ההתקדמות המסונכרנת...",
     googleSyncError: "הסנכרון עם Google Drive נכשל.",
-    syncNowTooltip: "סנכרון עכשיו",
-    reconnectTooltip: "הקישו להתחברות מחדש",
+    googleSyncSuccess: "הסנכרון עם Google Drive הושלם",
+    syncNowLabel: "סנכרון עכשיו",
+    reconnectLabel: "הקישו להתחברות מחדש",
   },
 
   hub: {

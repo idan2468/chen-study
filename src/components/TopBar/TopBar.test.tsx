@@ -11,13 +11,17 @@ import { TopBar } from "./TopBar"
 
 /** Captured by the `useGoogleLogin` mock below, so tests can fire `onSuccess`/`onError` directly. */
 let latestLoginOptions: UseGoogleLoginOptionsImplicitFlow | undefined
-/** The mocked `login` callable itself, so tests can assert which kind of login was requested. */
-let latestLoginFn: ReturnType<typeof vi.fn> | undefined
+/**
+ * The mocked `login` callable, kept as one stable spy across re-renders (like
+ * the real hook's memoized callback) -- a fresh mock per render would drift
+ * out of sync with whichever render's closure a background sync retry
+ * actually calls.
+ */
+const latestLoginFn = vi.fn()
 
 vi.mock("@react-oauth/google", () => ({
   useGoogleLogin: vi.fn((options: UseGoogleLoginOptionsImplicitFlow) => {
     latestLoginOptions = options
-    latestLoginFn = vi.fn()
     return latestLoginFn
   }),
   hasGrantedAllScopesGoogle: vi.fn(() => true),
@@ -48,6 +52,7 @@ const renderTopBar = () =>
 beforeEach(() => {
   localStorage.clear()
   latestLoginOptions = undefined
+  latestLoginFn.mockClear()
   vi.stubGlobal("fetch", vi.fn())
 })
 
@@ -102,7 +107,7 @@ test("hides the Sync now button while signed out", () => {
   renderTopBar()
 
   expect(
-    screen.queryByRole("button", { name: i18next.t("common.syncNowTooltip") }),
+    screen.queryByRole("button", { name: i18next.t("common.syncNowLabel") }),
   ).not.toBeInTheDocument()
 })
 
@@ -118,7 +123,7 @@ test("shows a Sync now button once connected, which pushes the local snapshot on
 
   const { user } = renderTopBar()
   const syncButton = await screen.findByRole("button", {
-    name: i18next.t("common.syncNowTooltip"),
+    name: i18next.t("common.syncNowLabel"),
   })
   expect(fetch).toHaveBeenCalledTimes(4)
 
@@ -136,6 +141,67 @@ test("shows a Sync now button once connected, which pushes the local snapshot on
   expect(init?.body as string).toContain(
     JSON.stringify({ [StorageKeys.speechRate]: "1.5" }),
   )
+})
+
+test("marks the Sync now button aria-busy (spinning icon) while a sync is in flight", async () => {
+  setAccessToken("ya29.token")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
+
+  const { user } = renderTopBar()
+  const syncButton = await screen.findByRole("button", {
+    name: i18next.t("common.syncNowLabel"),
+  })
+
+  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+  let resolveLocate: (response: Response) => void = () => undefined
+  vi.mocked(fetch)
+    .mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveLocate = resolve
+      }),
+    )
+    .mockResolvedValueOnce(okResponse())
+  await user.click(syncButton)
+
+  await waitFor(() => {
+    expect(syncButton).toHaveAttribute("aria-busy", "true")
+  })
+
+  resolveLocate(filesResponse([]))
+
+  await waitFor(() => {
+    expect(syncButton).not.toHaveAttribute("aria-busy", "true")
+  })
+})
+
+test("shows a success toast once the Sync now button completes a sync", async () => {
+  setAccessToken("ya29.token")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
+
+  const { user } = renderTopBar()
+  const syncButton = await screen.findByRole("button", {
+    name: i18next.t("common.syncNowLabel"),
+  })
+
+  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
+  await user.click(syncButton)
+
+  await waitFor(() => {
+    expect(
+      screen.getByText(i18next.t("common.googleSyncSuccess")),
+    ).toBeInTheDocument()
+  })
 })
 
 test("switches to tap-to-reconnect after a failed silent reissue, and tapping it starts an interactive reconnect", async () => {
@@ -173,7 +239,7 @@ test("switches to tap-to-reconnect after a failed silent reissue, and tapping it
   })
 
   const reconnectButton = screen.getByRole("button", {
-    name: i18next.t("common.reconnectTooltip"),
+    name: i18next.t("common.reconnectLabel"),
   })
   fireEvent.click(reconnectButton)
 

@@ -6,7 +6,10 @@ import { useDriveSync } from "@/hooks/useDriveSync"
 import { useGoogleConnect } from "@/hooks/useGoogleConnect"
 
 type GoogleConnectValue = ReturnType<typeof useGoogleConnect> &
-  Pick<ReturnType<typeof useDriveSync>, "needsReconnect" | "syncNow">
+  Pick<
+    ReturnType<typeof useDriveSync>,
+    "needsReconnect" | "syncing" | "syncNow"
+  >
 
 const GoogleConnectContext = createContext<GoogleConnectValue | null>(null)
 
@@ -29,7 +32,7 @@ export const GoogleConnectProvider = ({
 }: GoogleConnectProviderProps) => {
   const { t } = useTranslation()
   const googleConnect = useGoogleConnect(skipBootSync)
-  const { needsReconnect, syncNow } = useDriveSync(
+  const { needsReconnect, syncing, syncNow } = useDriveSync(
     Boolean(googleConnect.connectedEmail),
     googleConnect.reissueForSync,
   )
@@ -43,7 +46,9 @@ export const GoogleConnectProvider = ({
   }
 
   return (
-    <GoogleConnectContext value={{ ...googleConnect, needsReconnect, syncNow }}>
+    <GoogleConnectContext
+      value={{ ...googleConnect, needsReconnect, syncing, syncNow }}
+    >
       {children}
     </GoogleConnectContext>
   )

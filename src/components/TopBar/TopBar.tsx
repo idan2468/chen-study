@@ -1,6 +1,5 @@
 import type { ReactNode } from "react"
 import {
-  ActionIcon,
   Button,
   Group,
   Paper,
@@ -8,6 +7,7 @@ import {
   useMantineColorScheme,
 } from "@mantine/core"
 import { useDisclosure } from "@mantine/hooks"
+import { IconRefresh } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { useGoogleConnectContext } from "@/hooks/GoogleConnectContext"
@@ -21,6 +21,7 @@ import { isGoogleSyncAvailable } from "@/utils/sync/google/googleAuth"
 import { GoogleIcon } from "@/components/GoogleIcon/GoogleIcon"
 import { SpeechSettingsModal } from "@/components/SpeechSettingsModal/SpeechSettingsModal"
 import { SyncModal } from "@/components/SyncModal/SyncModal"
+import classes from "./TopBar.module.css"
 
 export type TopBarProps = {
   /** Page-specific controls, e.g. the Unseen page's exercise picker. */
@@ -114,31 +115,26 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
           ) : null}
 
           {isGoogleSyncAvailable() && googleConnect.connectedEmail ? (
-            <Tooltip
-              label={t(
+            <Button
+              size="xs"
+              variant="default"
+              className={classes.syncButton}
+              color={googleConnect.needsReconnect ? "red" : undefined}
+              leftSection={<IconRefresh size={14} />}
+              disabled={!googleConnect.needsReconnect && googleConnect.syncing}
+              aria-busy={!googleConnect.needsReconnect && googleConnect.syncing}
+              onClick={
                 googleConnect.needsReconnect
-                  ? "common.reconnectTooltip"
-                  : "common.syncNowTooltip",
-              )}
+                  ? googleConnect.connect
+                  : googleConnect.syncNow
+              }
             >
-              <ActionIcon
-                size="lg"
-                variant="default"
-                color={googleConnect.needsReconnect ? "red" : undefined}
-                aria-label={t(
-                  googleConnect.needsReconnect
-                    ? "common.reconnectTooltip"
-                    : "common.syncNowTooltip",
-                )}
-                onClick={
-                  googleConnect.needsReconnect
-                    ? googleConnect.connect
-                    : googleConnect.syncNow
-                }
-              >
-                🔄
-              </ActionIcon>
-            </Tooltip>
+              {t(
+                googleConnect.needsReconnect
+                  ? "common.reconnectLabel"
+                  : "common.syncNowLabel",
+              )}
+            </Button>
           ) : null}
         </Group>
 

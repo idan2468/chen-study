@@ -24,11 +24,13 @@ const okResponse = () => new Response(null, { status: 200 })
 const DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
 
 const Consumer = () => {
-  const { connectedEmail, needsReconnect, syncNow } = useGoogleConnectContext()
+  const { connectedEmail, needsReconnect, syncing, syncNow } =
+    useGoogleConnectContext()
   return (
     <div>
       <span>{connectedEmail ?? "signed-out"}</span>
       <span>{needsReconnect ? "needs-reconnect" : "ok"}</span>
+      <span>{syncing ? "syncing" : "idle"}</span>
       <button type="button" onClick={syncNow}>
         Sync now
       </button>
@@ -134,4 +136,44 @@ test("exposes syncNow, wired to useDriveSync and gated on being connected", asyn
   expect(init?.body as string).toContain(
     JSON.stringify({ [StorageKeys.dyslexiaFont]: "1" }),
   )
+})
+
+test("exposes syncing, wired to useDriveSync", async () => {
+  setAccessToken("ya29.token")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
+
+  const { user } = renderWithProviders(
+    <GoogleConnectProvider skipBootSync={false}>
+      <Consumer />
+    </GoogleConnectProvider>,
+  )
+  await waitFor(() => {
+    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
+  })
+  expect(screen.getByText("idle")).toBeInTheDocument()
+
+  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+  let resolveLocate: (response: Response) => void = () => undefined
+  vi.mocked(fetch)
+    .mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveLocate = resolve
+      }),
+    )
+    .mockResolvedValueOnce(okResponse())
+  await user.click(screen.getByRole("button", { name: "Sync now" }))
+
+  await waitFor(() => {
+    expect(screen.getByText("syncing")).toBeInTheDocument()
+  })
+
+  resolveLocate(filesResponse([]))
+
+  await waitFor(() => {
+    expect(screen.getByText("idle")).toBeInTheDocument()
+  })
 })

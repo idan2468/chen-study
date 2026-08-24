@@ -38,13 +38,15 @@ export const en: Messages = {
     stopSpeaking: "Stop reading: {{label}}",
     deleteItem: "Delete {{name}}",
     voiceSettings: "🎙️ Voice settings",
+    settingsMenu: "⚙️ Settings",
     connectGoogle: "Connect Google",
     googleConnected: "{{email}} · Disconnect",
     googleConnectError: "Could not connect Google account. Try again.",
     restoringSync: "Restoring your synced progress...",
     googleSyncError: "Could not sync your progress to Google Drive.",
-    syncNowTooltip: "Sync now",
-    reconnectTooltip: "Tap to reconnect",
+    googleSyncSuccess: "Synced with Google Drive",
+    syncNowLabel: "Sync now",
+    reconnectLabel: "Tap to reconnect",
   },
 
   hub: {
