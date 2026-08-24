@@ -119,6 +119,7 @@ no React) with a hook that wires it into the UI — same split as
 | `@react-oauth/google`            | the token client: GIS script load, `useGoogleLogin()` hook, popup/consent handling                 |
 | `src/utils/sync/google/googleAuth.ts` | what the library doesn't cover -- hold the access token in `localStorage`, `fetchConnectedEmail()` |
 | `src/hooks/useGoogleConnect.ts`  | wires `googleAuth.ts` + `useGoogleLogin()` into connect/disconnect state for the UI                |
+| `src/hooks/GoogleConnectContext.tsx` | owns the single `useGoogleConnect` instance app-wide, shared with `TopBar`; renders the boot-restore spinner |
 | `src/utils/sync/google/driveStore.ts` | `readSnapshot()` / `writeSnapshot()` against the Drive REST API                                    |
 | `src/utils/sync/google/driveSync.ts` | the policy: dirty check, last-synced state                                                         |
 | `src/hooks/useDriveSync.ts`      | the triggers -- 30-second timer, page-hide, manual button -- calling into `driveSync.ts`           |
@@ -129,12 +130,12 @@ no-account fallback.
 
 ### Drive REST calls
 
-All requests carry `Authorization: Bearer <token>`; a `401` means re-request
-the token and retry once. Not yet implemented anywhere -- lands with the
-boot-restore commit, since that's the realistic case (a token saved a while
-ago that's since expired). Connect itself doesn't get this treatment: its
-token was just minted by the GIS popup, so an immediate 401 there points to
-something other than plain expiry, and today just surfaces the generic
+All requests carry `Authorization: Bearer <token>`. At boot, a `401`
+(`GoogleAuthError`) triggers one silent GIS re-issue (`prompt: ''`) before
+falling back to signed-out -- that's the realistic case, a token saved a
+while ago that's since expired. Connect itself doesn't get this treatment:
+its token was just minted by the GIS popup, so an immediate 401 there points
+to something other than plain expiry, and today just surfaces the generic
 connect-error toast (see `useGoogleConnect.test.tsx`).
 
 A **general retry/backoff for transient failures** (network blips, a 500,
@@ -187,15 +188,16 @@ time.
       no Drive calls yet. Connect/disconnect works end to end.
 - [x] 3. **`driveStore.ts`** — on Connect, pull if Drive has `progress.json`
       (overwrite local as a `?s=` import does), else push local.
-- [ ] 4. **Boot-time restore** — the same pull-or-push through
+- [x] 4. **Boot-time restore** — the same pull-or-push through
       `useGoogleConnect`'s existing restore effect, with a silent GIS
       re-issue on a 401, skipped entirely if a `?s=` link already imported
-      this load. Also add the full-page loading spinner while this runs, so
-      a returning connected user doesn't see local state flash then get
-      swapped by the pull (gated on a saved token existing at all -- a
-      first-time visitor never sees it). **Next up.**
+      this load. `GoogleConnectProvider` owns the single hook instance for
+      the whole app (shared with `TopBar` via context) and renders a
+      full-page spinner in its place until that boot restore settles, gated
+      on a saved token existing at all -- a first-time visitor never sees
+      it.
 - [ ] 5. **`driveSync.ts`** — add the dirty check. Deserves the most test
-      attention.
+      attention. **Next up.**
 - [ ] 6. **Triggers and reconnect UI** — button, timer, page-hide push, "tap
       to reconnect" state.
 - [ ] 7. **Docs** — README section, note in `storageKeys.ts` that its keys are
