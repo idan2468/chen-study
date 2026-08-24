@@ -61,6 +61,59 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+test("hides the rare-use settings behind a Settings menu, shown only once opened", async () => {
+  renderTopBar()
+
+  expect(
+    screen.queryByRole("menuitem", {
+      name: i18next.t("common.voiceSettings"),
+    }),
+  ).not.toBeInTheDocument()
+
+  fireEvent.click(
+    screen.getByRole("button", { name: i18next.t("common.settingsMenu") }),
+  )
+
+  expect(
+    await screen.findByRole("menuitem", {
+      name: i18next.t("common.voiceSettings"),
+    }),
+  ).toBeInTheDocument()
+})
+
+test("toggles day/night mode from the Settings menu, without closing it", async () => {
+  renderTopBar()
+
+  fireEvent.click(
+    screen.getByRole("button", { name: i18next.t("common.settingsMenu") }),
+  )
+  const dayModeItem = await screen.findByRole("menuitem", {
+    name: i18next.t("common.dayMode"),
+  })
+  fireEvent.click(dayModeItem)
+
+  expect(
+    await screen.findByRole("menuitem", {
+      name: i18next.t("common.nightMode"),
+    }),
+  ).toBeInTheDocument()
+})
+
+test("opens the voice settings modal from the Settings menu", async () => {
+  renderTopBar()
+
+  fireEvent.click(
+    screen.getByRole("button", { name: i18next.t("common.settingsMenu") }),
+  )
+  fireEvent.click(
+    await screen.findByRole("menuitem", {
+      name: i18next.t("common.voiceSettings"),
+    }),
+  )
+
+  expect(await screen.findByRole("dialog")).toBeInTheDocument()
+})
+
 test("shows a Connect button when signed out, which triggers GIS login on click", async () => {
   const { user } = renderTopBar()
 

@@ -10,12 +10,12 @@
  */
 export const he = {
   common: {
-    home: "🏠 דף הבית",
-    dyslexiaFont: "🔠 גופן נגיש",
+    home: "דף הבית",
+    dyslexiaFont: "גופן נגיש",
     dyslexiaFontTooltip: "גופן מותאם לדיסלקציה",
-    dayMode: "☀️ מצב יום",
-    nightMode: "🌙 מצב לילה",
-    syncDevices: "🔗 סנכרון בעזרת קישור",
+    dayMode: "מצב יום",
+    nightMode: "מצב לילה",
+    syncDevices: "סנכרון בעזרת קישור",
     switchToEnglish: "English",
     switchToHebrew: "עברית",
     languageTooltip: "החלפת שפת הממשק",
@@ -31,8 +31,8 @@ export const he = {
     speakWord: "הקראת המילה {{word}}",
     stopSpeaking: "עצירת ההקראה: {{label}}",
     deleteItem: "מחיקת {{name}}",
-    voiceSettings: "🎙️ הגדרות קול",
-    settingsMenu: "⚙️ הגדרות",
+    voiceSettings: "הגדרות קול",
+    settingsMenu: "הגדרות",
     connectGoogle: "חיבור לחשבון Google",
     googleConnected: "{{email}} · התנתקות",
     googleConnectError: "החיבור לחשבון Google נכשל. נסו שוב.",

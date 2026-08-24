@@ -16,12 +16,12 @@ type Messages = {
 
 export const en: Messages = {
   common: {
-    home: "🏠 Home",
-    dyslexiaFont: "🔠 Readable font",
+    home: "Home",
+    dyslexiaFont: "Readable font",
     dyslexiaFontTooltip: "Dyslexia-friendly font",
-    dayMode: "☀️ Light mode",
-    nightMode: "🌙 Dark mode",
-    syncDevices: "🔗 Sync via link",
+    dayMode: "Light mode",
+    nightMode: "Dark mode",
+    syncDevices: "Sync via link",
     switchToEnglish: "English",
     switchToHebrew: "עברית",
     languageTooltip: "Change interface language",
@@ -37,8 +37,8 @@ export const en: Messages = {
     speakWord: "Read the word {{word}} aloud",
     stopSpeaking: "Stop reading: {{label}}",
     deleteItem: "Delete {{name}}",
-    voiceSettings: "🎙️ Voice settings",
-    settingsMenu: "⚙️ Settings",
+    voiceSettings: "Voice settings",
+    settingsMenu: "Settings",
     connectGoogle: "Connect Google",
     googleConnected: "{{email}} · Disconnect",
     googleConnectError: "Could not connect Google account. Try again.",

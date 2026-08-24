@@ -2,12 +2,23 @@ import type { ReactNode } from "react"
 import {
   Button,
   Group,
+  Menu,
   Paper,
   Tooltip,
   useMantineColorScheme,
 } from "@mantine/core"
 import { useDisclosure } from "@mantine/hooks"
-import { IconRefresh } from "@tabler/icons-react"
+import {
+  IconHome,
+  IconLanguage,
+  IconLink,
+  IconMicrophone,
+  IconMoon,
+  IconRefresh,
+  IconSettings,
+  IconSun,
+  IconTextSize,
+} from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { useGoogleConnectContext } from "@/hooks/GoogleConnectContext"
@@ -53,46 +64,78 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
       <Group justify="center" gap="xs" wrap="wrap">
         <Group gap="xs" wrap="wrap">
           {withHomeLink ? (
-            <Button size="xs" variant="subtle" component={Link} to="/">
+            <Button
+              size="xs"
+              variant="subtle"
+              component={Link}
+              to="/"
+              leftSection={<IconHome size={14} />}
+            >
               {t("common.home")}
             </Button>
           ) : null}
+
+          <Menu shadow="md" width={220} closeOnItemClick={false}>
+            <Menu.Target>
+              <Button
+                size="xs"
+                variant="default"
+                leftSection={<IconSettings size={14} />}
+              >
+                {t("common.settingsMenu")}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                aria-pressed={isDark}
+                leftSection={
+                  isDark ? <IconSun size={14} /> : <IconMoon size={14} />
+                }
+                onClick={toggleColorScheme}
+              >
+                {isDark ? t("common.dayMode") : t("common.nightMode")}
+              </Menu.Item>
+
+              <Tooltip label={t("common.languageTooltip")}>
+                <Menu.Item
+                  leftSection={<IconLanguage size={14} />}
+                  onClick={toggleLocale}
+                >
+                  {locale === "he"
+                    ? t("common.switchToEnglish")
+                    : t("common.switchToHebrew")}
+                </Menu.Item>
+              </Tooltip>
+
+              <Menu.Item
+                closeMenuOnClick
+                leftSection={<IconMicrophone size={14} />}
+                onClick={speechHandlers.open}
+              >
+                {t("common.voiceSettings")}
+              </Menu.Item>
+
+              <Menu.Item
+                closeMenuOnClick
+                leftSection={<IconLink size={14} />}
+                onClick={syncHandlers.open}
+              >
+                {t("common.syncDevices")}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
 
           <Tooltip label={t("common.dyslexiaFontTooltip")}>
             <Button
               size="xs"
               variant={dyslexiaFont ? "filled" : "default"}
               aria-pressed={dyslexiaFont}
+              leftSection={<IconTextSize size={14} />}
               onClick={() => dispatch(toggleDyslexiaFont())}
             >
               {t("common.dyslexiaFont")}
             </Button>
           </Tooltip>
-
-          <Button
-            size="xs"
-            variant="default"
-            aria-pressed={isDark}
-            onClick={toggleColorScheme}
-          >
-            {isDark ? t("common.dayMode") : t("common.nightMode")}
-          </Button>
-
-          <Tooltip label={t("common.languageTooltip")}>
-            <Button size="xs" variant="default" onClick={toggleLocale}>
-              {locale === "he"
-                ? t("common.switchToEnglish")
-                : t("common.switchToHebrew")}
-            </Button>
-          </Tooltip>
-
-          <Button size="xs" variant="default" onClick={speechHandlers.open}>
-            {t("common.voiceSettings")}
-          </Button>
-
-          <Button size="xs" variant="default" onClick={syncHandlers.open}>
-            {t("common.syncDevices")}
-          </Button>
 
           {isGoogleSyncAvailable() ? (
             <Button
