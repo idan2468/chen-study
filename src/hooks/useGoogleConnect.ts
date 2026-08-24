@@ -23,6 +23,10 @@ type ImplicitTokenResponse = Omit<
   "error" | "error_description" | "error_uri"
 >
 
+type PendingLogin =
+  | { kind: "bootReissue" }
+  | { kind: "syncReissue"; onSettled: (success: boolean) => void }
+
 /**
  * Connecting (by click, or silently at boot with a saved token) pulls the
  * Drive snapshot if one exists and rehydrates the running app, or pushes the
@@ -42,8 +46,8 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
   const [restoring, setRestoring] = useState(
     () => Boolean(getAccessToken()) && !skipBootSync,
   )
-  /** Distinguishes a boot-triggered silent re-issue from an interactive Connect click in the shared `onSuccess`/`onError` below. */
-  const bootReissueRef = useRef(false)
+  /** `login()` has three callers sharing one `onSuccess`/`onError` pair below; this records which one is awaiting a result so the shared callback can dispatch to it. */
+  const pendingLoginRef = useRef<PendingLogin | null>(null)
 
   const settle = () => {
     setConnecting(false)
@@ -61,9 +65,10 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     }
   }
 
-  const handleSuccess = async (
+  /** Shared consent/token-storage/email-fetch/sync steps behind both the interactive Connect and boot-reissue scenarios below -- they differ only in `skipSync`. */
+  const connectWithToken = async (
     tokenResponse: ImplicitTokenResponse,
-    { skipSync = false } = {},
+    skipSync: boolean,
   ) => {
     // Granular consent lets the user grant only some of the requested
     // scopes; without this check a partial grant would look "connected"
@@ -98,29 +103,66 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     }
   }
 
-  const login = useGoogleLogin({
-    scope: GOOGLE_SCOPES,
-    onSuccess: tokenResponse => {
-      const wasBootReissue = bootReissueRef.current
-      bootReissueRef.current = false
-      void handleSuccess(tokenResponse, {
-        skipSync: wasBootReissue && skipBootSync,
-      })
-    },
-    onError: () => {
-      // A silent re-issue quietly falls back to signed-out rather than nagging with a toast for something the user didn't trigger.
-      if (bootReissueRef.current) {
-        bootReissueRef.current = false
-        setAccessToken(null)
-        settle()
-        return
-      }
+  const handleConnectResult = (tokenResponse: ImplicitTokenResponse | null) => {
+    if (tokenResponse) {
+      void connectWithToken(tokenResponse, false)
+    } else {
       notifications.show({
         color: "red",
         message: t("common.googleConnectError"),
       })
+    }
+  }
+
+  const handleBootReissueResult = (
+    tokenResponse: ImplicitTokenResponse | null,
+  ) => {
+    if (tokenResponse) {
+      void connectWithToken(tokenResponse, skipBootSync)
+    } else {
+      // Quietly falls back to signed-out rather than nagging with a toast for something the user didn't trigger.
+      setAccessToken(null)
+      settle()
+    }
+  }
+
+  const handleSyncReissueResult = (
+    tokenResponse: ImplicitTokenResponse | null,
+    onSettled: (success: boolean) => void,
+  ) => {
+    if (tokenResponse) {
+      setAccessToken(tokenResponse.access_token)
+    }
+    onSettled(Boolean(tokenResponse))
+  }
+
+  const handleLoginResult = (tokenResponse: ImplicitTokenResponse | null) => {
+    const pending = pendingLoginRef.current
+    pendingLoginRef.current = null
+    if (pending?.kind === "syncReissue") {
+      handleSyncReissueResult(tokenResponse, pending.onSettled)
+    } else if (pending?.kind === "bootReissue") {
+      handleBootReissueResult(tokenResponse)
+    } else {
+      handleConnectResult(tokenResponse)
+    }
+  }
+
+  const login = useGoogleLogin({
+    scope: GOOGLE_SCOPES,
+    onSuccess: tokenResponse => {
+      handleLoginResult(tokenResponse)
+    },
+    onError: () => {
+      handleLoginResult(null)
     },
   })
+
+  /** A silent GIS re-issue for `useDriveSync.ts`'s mid-session 401s -- only refreshes the token, never pulls, since only Connect and boot may (see docs/google-account-sync.md). */
+  const reissueForSync = (onSettled: (success: boolean) => void) => {
+    pendingLoginRef.current = { kind: "syncReissue", onSettled }
+    login({ prompt: "none" })
+  }
 
   const latest = useLatest({ login, syncNow, settle })
 
@@ -137,13 +179,13 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
         }
       } catch (error) {
         if (error instanceof GoogleAuthError) {
-          bootReissueRef.current = true
-          latest.current.login({ prompt: "" })
+          pendingLoginRef.current = { kind: "bootReissue" }
+          latest.current.login({ prompt: "none" })
           return
         }
       } finally {
         // A re-issue in flight settles this itself, via its own onSuccess/onError.
-        if (!bootReissueRef.current) {
+        if (!pendingLoginRef.current) {
           latest.current.settle()
         }
       }
@@ -160,5 +202,12 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     login()
   }
 
-  return { connecting, connectedEmail, restoring, connect, disconnect }
+  return {
+    connecting,
+    connectedEmail,
+    restoring,
+    connect,
+    disconnect,
+    reissueForSync,
+  }
 }

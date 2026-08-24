@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { screen, waitFor } from "@testing-library/react"
 import { useGoogleLogin } from "@react-oauth/google"
 import type {
@@ -51,16 +52,28 @@ const triggerLoginError = () => {
 }
 
 const Host = ({ skipBootSync = false }: { skipBootSync?: boolean }) => {
-  const { connecting, connectedEmail, disconnect } =
+  const { connecting, connectedEmail, disconnect, reissueForSync } =
     useGoogleConnect(skipBootSync)
   const dyslexiaFont = useAppSelector(selectDyslexiaFont)
+  const [reissueResult, setReissueResult] = useState("untried")
   return (
     <div>
       <span>{connecting ? "connecting" : "idle"}</span>
       <span>{connectedEmail ?? "signed-out"}</span>
       <span>{dyslexiaFont ? "dyslexia-on" : "dyslexia-off"}</span>
+      <span>{reissueResult}</span>
       <button type="button" onClick={disconnect}>
         Disconnect
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          reissueForSync(success => {
+            setReissueResult(success ? "reissue-ok" : "reissue-failed")
+          })
+        }}
+      >
+        Reissue
       </button>
     </div>
   )
@@ -107,7 +120,7 @@ test("a 401 at boot triggers a silent re-issue that succeeds with a fresh token"
   renderWithProviders(<Host />)
 
   await waitFor(() => {
-    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "" })
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
   })
   triggerLoginSuccess("ya29.refreshed")
 
@@ -125,7 +138,7 @@ test("a 401 at boot falls back to signed-out when the silent re-issue fails", as
   renderWithProviders(<Host />)
 
   await waitFor(() => {
-    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "" })
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
   })
   triggerLoginError()
 
@@ -145,7 +158,7 @@ test("a re-issue succeeding at boot still skips the Drive pull when a sync link 
   renderWithProviders(<Host skipBootSync />)
 
   await waitFor(() => {
-    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "" })
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
   })
   triggerLoginSuccess("ya29.refreshed")
 
@@ -286,4 +299,42 @@ test("an unparsable Drive snapshot is treated as none, so connecting pushes loca
     method: "PATCH",
     body: JSON.stringify({ [StorageKeys.dyslexiaFont]: "1" }),
   })
+})
+
+test("reissueForSync refreshes the token and reports success, without fetching email or syncing", async () => {
+  const { user } = renderWithProviders(<Host />)
+
+  await user.click(screen.getByRole("button", { name: "Reissue" }))
+  await waitFor(() => {
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
+  })
+  triggerLoginSuccess("ya29.refreshed")
+
+  await waitFor(() => {
+    expect(screen.getByText("reissue-ok")).toBeInTheDocument()
+  })
+  expect(getAccessToken()).toBe("ya29.refreshed")
+  expect(fetch).not.toHaveBeenCalled()
+})
+
+test("reissueForSync reports failure without clearing an existing token", async () => {
+  setAccessToken("ya29.token")
+  vi.mocked(fetch).mockResolvedValueOnce(
+    jsonResponse({ email: "chen@example.com" }),
+  )
+  const { user } = renderWithProviders(<Host />)
+  await waitFor(() => {
+    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
+  })
+
+  await user.click(screen.getByRole("button", { name: "Reissue" }))
+  await waitFor(() => {
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
+  })
+  triggerLoginError()
+
+  await waitFor(() => {
+    expect(screen.getByText("reissue-failed")).toBeInTheDocument()
+  })
+  expect(getAccessToken()).toBe("ya29.token")
 })
