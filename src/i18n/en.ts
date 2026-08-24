@@ -43,6 +43,8 @@ export const en: Messages = {
     googleConnectError: "Could not connect Google account. Try again.",
     restoringSync: "Restoring your synced progress...",
     googleSyncError: "Could not sync your progress to Google Drive.",
+    syncNowTooltip: "Sync now",
+    reconnectTooltip: "Tap to reconnect",
   },
 
   hub: {

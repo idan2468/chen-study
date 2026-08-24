@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import {
+  ActionIcon,
   Button,
   Group,
   Paper,
@@ -110,6 +111,34 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
                   })
                 : t("common.connectGoogle")}
             </Button>
+          ) : null}
+
+          {isGoogleSyncAvailable() && googleConnect.connectedEmail ? (
+            <Tooltip
+              label={t(
+                googleConnect.needsReconnect
+                  ? "common.reconnectTooltip"
+                  : "common.syncNowTooltip",
+              )}
+            >
+              <ActionIcon
+                size="lg"
+                variant="default"
+                color={googleConnect.needsReconnect ? "red" : undefined}
+                aria-label={t(
+                  googleConnect.needsReconnect
+                    ? "common.reconnectTooltip"
+                    : "common.syncNowTooltip",
+                )}
+                onClick={
+                  googleConnect.needsReconnect
+                    ? googleConnect.connect
+                    : googleConnect.syncNow
+                }
+              >
+                🔄
+              </ActionIcon>
+            </Tooltip>
           ) : null}
         </Group>
 

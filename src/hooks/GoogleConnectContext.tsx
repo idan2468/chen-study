@@ -2,9 +2,11 @@ import type { ReactNode } from "react"
 import { createContext, use } from "react"
 import { Center, Loader } from "@mantine/core"
 import { useTranslation } from "react-i18next"
+import { useDriveSync } from "@/hooks/useDriveSync"
 import { useGoogleConnect } from "@/hooks/useGoogleConnect"
 
-type GoogleConnectValue = ReturnType<typeof useGoogleConnect>
+type GoogleConnectValue = ReturnType<typeof useGoogleConnect> &
+  Pick<ReturnType<typeof useDriveSync>, "needsReconnect" | "syncNow">
 
 const GoogleConnectContext = createContext<GoogleConnectValue | null>(null)
 
@@ -26,9 +28,13 @@ export const GoogleConnectProvider = ({
   children,
 }: GoogleConnectProviderProps) => {
   const { t } = useTranslation()
-  const value = useGoogleConnect(skipBootSync)
+  const googleConnect = useGoogleConnect(skipBootSync)
+  const { needsReconnect, syncNow } = useDriveSync(
+    Boolean(googleConnect.connectedEmail),
+    googleConnect.reissueForSync,
+  )
 
-  if (value.restoring) {
+  if (googleConnect.restoring) {
     return (
       <Center h="100vh">
         <Loader aria-label={t("common.restoringSync")} />
@@ -36,7 +42,11 @@ export const GoogleConnectProvider = ({
     )
   }
 
-  return <GoogleConnectContext value={value}>{children}</GoogleConnectContext>
+  return (
+    <GoogleConnectContext value={{ ...googleConnect, needsReconnect, syncNow }}>
+      {children}
+    </GoogleConnectContext>
+  )
 }
 
 export const useGoogleConnectContext = () => {
