@@ -196,10 +196,14 @@ time.
       full-page spinner in its place until that boot restore settles, gated
       on a saved token existing at all -- a first-time visitor never sees
       it.
-- [ ] 5. **`driveSync.ts`** — add the dirty check. Deserves the most test
-      attention. **Next up.**
+- [x] 5. **`driveSync.ts`** — the dirty check: hash the current payload
+      (`object-hash`, sorted keys) against the last-synced hash in
+      `localStorage`, skip the Drive call entirely when they match, and
+      leave the stored hash untouched on a failed push so the next attempt
+      retries. Wired into `useGoogleConnect.ts`'s pull-or-push so the
+      baseline is already correct by the time step 6's timer exists.
 - [ ] 6. **Triggers and reconnect UI** — button, timer, page-hide push, "tap
-      to reconnect" state.
+      to reconnect" state. **Next up.**
 - [ ] 7. **Docs** — README section, note in `storageKeys.ts` that its keys are
       now a wire format for the Drive file too.
 
