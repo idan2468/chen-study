@@ -14,6 +14,18 @@ afterEach(() => {
   notifications.clean()
 })
 
+// jsdom has no ResizeObserver; Mantine's ScrollArea (used inside Modal, Select,
+// Menu, etc.) needs it just to mount.
+class ResizeObserverStub {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+}
+Object.defineProperty(window, "ResizeObserver", {
+  writable: true,
+  value: ResizeObserverStub,
+})
+
 // jsdom does not implement matchMedia; Mantine's colour-scheme hooks need it.
 Object.defineProperty(window, "matchMedia", {
   writable: true,
