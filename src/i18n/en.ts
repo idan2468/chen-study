@@ -41,6 +41,7 @@ export const en: Messages = {
     connectGoogle: "Connect Google",
     googleConnected: "{{email}} · Disconnect",
     googleConnectError: "Could not connect Google account. Try again.",
+    restoringSync: "Restoring your synced progress...",
   },
 
   hub: {

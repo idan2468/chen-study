@@ -37,8 +37,17 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
   const rehydrate = useRehydrateFromStorage()
   const [connecting, setConnecting] = useState(() => Boolean(getAccessToken()))
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null)
+  /** True only until the boot flow (including any re-issue) first settles; never set true again after that. */
+  const [restoring, setRestoring] = useState(
+    () => Boolean(getAccessToken()) && !skipBootSync,
+  )
   /** Distinguishes a boot-triggered silent re-issue from an interactive Connect click in the shared `onSuccess`/`onError` below. */
   const bootReissueRef = useRef(false)
+
+  const settle = () => {
+    setConnecting(false)
+    setRestoring(false)
+  }
 
   const syncNow = async (token: string) => {
     const payload = await readSnapshot(token)
@@ -83,7 +92,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
         message: t("common.googleConnectError"),
       })
     } finally {
-      setConnecting(false)
+      settle()
     }
   }
 
@@ -101,7 +110,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
       if (bootReissueRef.current) {
         bootReissueRef.current = false
         setAccessToken(null)
-        setConnecting(false)
+        settle()
         return
       }
       notifications.show({
@@ -111,7 +120,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     },
   })
 
-  const latest = useLatest({ login, syncNow })
+  const latest = useLatest({ login, syncNow, settle })
 
   useEffect(() => {
     const restoreSession = async () => {
@@ -131,9 +140,9 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
           return
         }
       } finally {
-        // A re-issue in flight settles `connecting` itself, via its own onSuccess/onError.
+        // A re-issue in flight settles this itself, via its own onSuccess/onError.
         if (!bootReissueRef.current) {
-          setConnecting(false)
+          latest.current.settle()
         }
       }
     }
@@ -149,5 +158,5 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     login()
   }
 
-  return { connecting, connectedEmail, connect, disconnect }
+  return { connecting, connectedEmail, restoring, connect, disconnect }
 }

@@ -35,6 +35,7 @@ export const he = {
     connectGoogle: "חיבור לחשבון Google",
     googleConnected: "{{email}} · התנתקות",
     googleConnectError: "החיבור לחשבון Google נכשל. נסו שוב.",
+    restoringSync: "משחזר את ההתקדמות המסונכרנת...",
   },
 
   hub: {

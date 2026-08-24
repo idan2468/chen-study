@@ -9,7 +9,7 @@ import {
 import { useDisclosure } from "@mantine/hooks"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
-import { useGoogleConnect } from "@/hooks/useGoogleConnect"
+import { useGoogleConnectContext } from "@/hooks/GoogleConnectContext"
 import { useLocale } from "@/i18n/useLocale"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
@@ -42,9 +42,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
   const { locale, toggleLocale } = useLocale()
   const [syncOpened, syncHandlers] = useDisclosure(false)
   const [speechOpened, speechHandlers] = useDisclosure(false)
-  // TODO: thread the real `?s=`-import flag through once useGoogleConnect is
-  // lifted to App and shared via context.
-  const googleConnect = useGoogleConnect(false)
+  const googleConnect = useGoogleConnectContext()
 
   const isDark = colorScheme === "dark"
 

@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { Route, Routes, useLocation } from "react-router-dom"
 import { notifications } from "@mantine/notifications"
 import { useTranslation } from "react-i18next"
+import { GoogleConnectProvider } from "./hooks/GoogleConnectContext"
 import { useAppDispatch, useAppSelector } from "./store/hooks"
 import { selectDyslexiaFont } from "./store/slices/settingsSlice"
 import { speechStopped } from "./store/slices/speechSlice"
@@ -69,12 +70,14 @@ export const App = ({ importedKeyCount }: AppProps) => {
   useSyncImportNotice(importedKeyCount)
 
   return (
-    <Routes>
-      <Route path="/" element={<HubPage />} />
-      <Route path="/unseen" element={<UnseenPage />} />
-      <Route path="/modules" element={<ModulesPage />} />
-      {/* Anything unrecognised falls back to the hub. */}
-      <Route path="*" element={<HubPage />} />
-    </Routes>
+    <GoogleConnectProvider skipBootSync={importedKeyCount !== null}>
+      <Routes>
+        <Route path="/" element={<HubPage />} />
+        <Route path="/unseen" element={<UnseenPage />} />
+        <Route path="/modules" element={<ModulesPage />} />
+        {/* Anything unrecognised falls back to the hub. */}
+        <Route path="*" element={<HubPage />} />
+      </Routes>
+    </GoogleConnectProvider>
   )
 }
