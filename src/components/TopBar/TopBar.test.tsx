@@ -49,6 +49,25 @@ const renderTopBar = () =>
     </GoogleConnectProvider>,
   )
 
+/** Below this, the bar collapses Home + hamburger-drawer instead of a full row. */
+const MOBILE_QUERY = "(max-width: 36em)"
+
+const mockMobileViewport = () => {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => ({
+      matches: query === MOBILE_QUERY,
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    })),
+  )
+}
+
 beforeEach(() => {
   localStorage.clear()
   latestLoginOptions = undefined
@@ -297,4 +316,89 @@ test("switches to tap-to-reconnect after a failed silent reissue, and tapping it
   fireEvent.click(reconnectButton)
 
   expect(latestLoginFn).toHaveBeenLastCalledWith()
+})
+
+test("on mobile, collapses to Home + a hamburger button that opens a drawer with full-text rows", async () => {
+  mockMobileViewport()
+  renderTopBar()
+
+  expect(
+    screen.getByRole("link", { name: i18next.t("common.home") }),
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByRole("menuitem", { name: i18next.t("common.dayMode") }),
+  ).not.toBeInTheDocument()
+
+  fireEvent.click(
+    screen.getByRole("button", { name: i18next.t("common.settingsMenu") }),
+  )
+
+  expect(
+    await screen.findByRole("button", { name: i18next.t("common.dayMode") }),
+  ).toBeInTheDocument()
+  expect(
+    screen.getByRole("button", { name: i18next.t("common.connectGoogle") }),
+  ).toBeInTheDocument()
+})
+
+test("on mobile, toggling a setting in the drawer keeps it open", async () => {
+  mockMobileViewport()
+  renderTopBar()
+
+  fireEvent.click(
+    screen.getByRole("button", { name: i18next.t("common.settingsMenu") }),
+  )
+  const dayModeButton = await screen.findByRole("button", {
+    name: i18next.t("common.dayMode"),
+  })
+  fireEvent.click(dayModeButton)
+
+  expect(
+    await screen.findByRole("button", { name: i18next.t("common.nightMode") }),
+  ).toBeInTheDocument()
+})
+
+test("on mobile, opening the voice settings modal from the drawer closes the drawer", async () => {
+  mockMobileViewport()
+  renderTopBar()
+
+  fireEvent.click(
+    screen.getByRole("button", { name: i18next.t("common.settingsMenu") }),
+  )
+  fireEvent.click(
+    await screen.findByRole("button", {
+      name: i18next.t("common.voiceSettings"),
+    }),
+  )
+
+  expect(await screen.findByRole("dialog")).toBeInTheDocument()
+  expect(
+    screen.queryByRole("button", { name: i18next.t("common.voiceSettings") }),
+  ).not.toBeInTheDocument()
+})
+
+test("on mobile, connects Google and pushes a snapshot from the drawer", async () => {
+  mockMobileViewport()
+  setAccessToken("ya29.token")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
+
+  renderTopBar()
+  await waitFor(() => {
+    expect(fetch).toHaveBeenCalledTimes(4)
+  })
+
+  fireEvent.click(
+    screen.getByRole("button", { name: i18next.t("common.settingsMenu") }),
+  )
+  const googleButton = await screen.findByRole("button", {
+    name: i18next.t("common.googleConnected", { email: "chen@example.com" }),
+  })
+  expect(googleButton).toBeInTheDocument()
+  expect(
+    screen.getByRole("button", { name: i18next.t("common.syncNowLabel") }),
+  ).toBeInTheDocument()
 })
