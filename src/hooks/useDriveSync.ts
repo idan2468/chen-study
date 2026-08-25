@@ -54,9 +54,7 @@ export const useDriveSync = (
         setNeedsReconnect(true)
         return
       }
-      // A silent re-issue only refreshes the token -- retrying once here
-      // picks the push back up without the timer having to wait a full
-      // interval for it.
+      // Retry once so the push doesn't wait a full interval for the token refresh.
       reissueForSync(success => {
         if (success) {
           void attemptSync({ keepalive, silent, hasRetried: true })

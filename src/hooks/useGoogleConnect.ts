@@ -70,9 +70,8 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     tokenResponse: ImplicitTokenResponse,
     skipSync: boolean,
   ) => {
-    // Granular consent lets the user grant only some of the requested
-    // scopes; without this check a partial grant would look "connected"
-    // while Drive sync silently has no permission to write.
+    // Granular consent lets the user grant only some scopes; without this
+    // check a partial grant would look "connected" but can't write to Drive.
     if (
       !hasGrantedAllScopesGoogle(
         tokenResponse,
@@ -120,10 +119,9 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     if (tokenResponse) {
       void connectWithToken(tokenResponse, skipBootSync)
     } else {
-      // Quietly falls back to signed-out rather than nagging with a toast for something the user didn't trigger.
-      // connectedEmail may already be set if the email fetch succeeded before
-      // a later Drive call 401'd -- clear it too, or the UI would still look
-      // connected with no token to back it.
+      // Quietly falls back to signed-out, no toast for something the user
+      // didn't trigger. Also clears connectedEmail in case the email fetch
+      // had already succeeded before the Drive call 401'd.
       setAccessToken(null)
       setConnectedEmail(null)
       settle()
@@ -160,10 +158,8 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     onError: () => {
       handleLoginResult(null)
     },
-    // GIS's token client always opens a popup, even for a silent `prompt:
-    // "none"` re-issue -- a popup/ad blocker can block it outright, which
-    // fires neither onSuccess nor onError and would hang forever without
-    // this (e.g. the boot restore spinner stuck until the blocker is off).
+    // GIS's popup can get blocked outright, firing neither onSuccess nor
+    // onError -- without this, that hangs forever instead of failing.
     onNonOAuthError: () => {
       handleLoginResult(null)
     },
