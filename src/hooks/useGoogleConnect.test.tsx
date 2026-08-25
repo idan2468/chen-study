@@ -15,13 +15,18 @@ import { useGoogleConnect } from "./useGoogleConnect"
 
 /** Captured by the `useGoogleLogin` mock below, so tests can fire `onSuccess`/`onError` directly. */
 let latestLoginOptions: UseGoogleLoginOptionsImplicitFlow | undefined
-/** The mocked `login` callable itself, so tests can assert a silent re-issue was attempted. */
-let latestLoginFn: ReturnType<typeof vi.fn> | undefined
+/**
+ * The mocked `login` callable, kept as one stable spy across re-renders (like
+ * the real hook's memoized callback) -- a fresh mock per render would drift
+ * out of sync with whichever render's closure a background retry actually
+ * calls, e.g. once a boot restore's own `setConnectedEmail` triggers a
+ * re-render before its Drive call rejects.
+ */
+const latestLoginFn = vi.fn()
 
 vi.mock("@react-oauth/google", () => ({
   useGoogleLogin: vi.fn((options: UseGoogleLoginOptionsImplicitFlow) => {
     latestLoginOptions = options
-    latestLoginFn = vi.fn()
     return latestLoginFn
   }),
   hasGrantedAllScopesGoogle: vi.fn(() => true),
@@ -87,6 +92,7 @@ const Host = ({ skipBootSync = false }: { skipBootSync?: boolean }) => {
 beforeEach(() => {
   localStorage.clear()
   vi.mocked(useGoogleLogin).mockClear()
+  latestLoginFn.mockClear()
   latestLoginOptions = undefined
   vi.stubGlobal("fetch", vi.fn())
 })
@@ -150,6 +156,31 @@ test("a 401 at boot falls back to signed-out when the silent re-issue fails", as
   await waitFor(() => {
     expect(screen.getByText("idle")).toBeInTheDocument()
   })
+  expect(screen.getByText("signed-out")).toBeInTheDocument()
+  expect(getAccessToken()).toBeNull()
+})
+
+test("a 401 from the Drive pull (after the email fetch already succeeded) also falls back to signed-out when the re-issue fails", async () => {
+  setAccessToken("ya29.expired")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" })) // boot's email fetch succeeds
+    .mockResolvedValueOnce(jsonResponse({}, 401)) // then the Drive pull itself 401s
+
+  renderWithProviders(<Host />)
+
+  await waitFor(() => {
+    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
+  })
+  await waitFor(() => {
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
+  })
+  triggerLoginError()
+
+  await waitFor(() => {
+    expect(screen.getByText("idle")).toBeInTheDocument()
+  })
+  // The already-fetched email must not linger once the token is gone --
+  // otherwise the UI looks connected while every subsequent Drive call fails.
   expect(screen.getByText("signed-out")).toBeInTheDocument()
   expect(getAccessToken()).toBeNull()
 })

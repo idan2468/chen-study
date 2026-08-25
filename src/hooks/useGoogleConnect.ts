@@ -121,7 +121,11 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
       void connectWithToken(tokenResponse, skipBootSync)
     } else {
       // Quietly falls back to signed-out rather than nagging with a toast for something the user didn't trigger.
+      // connectedEmail may already be set if the email fetch succeeded before
+      // a later Drive call 401'd -- clear it too, or the UI would still look
+      // connected with no token to back it.
       setAccessToken(null)
+      setConnectedEmail(null)
       settle()
     }
   }
