@@ -69,7 +69,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               variant="subtle"
               component={Link}
               to="/"
-              leftSection={<IconHome size={14} />}
+              leftSection={<IconHome size={18} />}
             >
               {t("common.home")}
             </Button>
@@ -80,7 +80,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               <Button
                 size="xs"
                 variant="default"
-                leftSection={<IconSettings size={14} />}
+                leftSection={<IconSettings size={18} />}
               >
                 {t("common.settingsMenu")}
               </Button>
@@ -89,7 +89,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               <Menu.Item
                 aria-pressed={isDark}
                 leftSection={
-                  isDark ? <IconSun size={14} /> : <IconMoon size={14} />
+                  isDark ? <IconSun size={18} /> : <IconMoon size={18} />
                 }
                 onClick={toggleColorScheme}
               >
@@ -98,7 +98,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
 
               <Tooltip label={t("common.languageTooltip")}>
                 <Menu.Item
-                  leftSection={<IconLanguage size={14} />}
+                  leftSection={<IconLanguage size={18} />}
                   onClick={toggleLocale}
                 >
                   {locale === "he"
@@ -109,7 +109,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
 
               <Menu.Item
                 closeMenuOnClick
-                leftSection={<IconMicrophone size={14} />}
+                leftSection={<IconMicrophone size={18} />}
                 onClick={speechHandlers.open}
               >
                 {t("common.voiceSettings")}
@@ -117,7 +117,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
 
               <Menu.Item
                 closeMenuOnClick
-                leftSection={<IconLink size={14} />}
+                leftSection={<IconLink size={18} />}
                 onClick={syncHandlers.open}
               >
                 {t("common.syncDevices")}
@@ -130,7 +130,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               size="xs"
               variant={dyslexiaFont ? "filled" : "default"}
               aria-pressed={dyslexiaFont}
-              leftSection={<IconTextSize size={14} />}
+              leftSection={<IconTextSize size={18} />}
               onClick={() => dispatch(toggleDyslexiaFont())}
             >
               {t("common.dyslexiaFont")}
@@ -141,7 +141,9 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
             <Button
               size="xs"
               variant="default"
-              leftSection={<GoogleIcon />}
+              leftSection={
+                <GoogleIcon style={{ width: "1.125rem", height: "1.125rem" }} />
+              }
               loading={googleConnect.connecting}
               onClick={
                 googleConnect.connectedEmail
@@ -163,7 +165,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               variant="default"
               className={classes.syncButton}
               color={googleConnect.needsReconnect ? "red" : undefined}
-              leftSection={<IconRefresh size={14} />}
+              leftSection={<IconRefresh size={18} />}
               disabled={!googleConnect.needsReconnect && googleConnect.syncing}
               aria-busy={!googleConnect.needsReconnect && googleConnect.syncing}
               onClick={
