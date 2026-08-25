@@ -7,8 +7,9 @@ import {
   Tooltip,
   useMantineColorScheme,
 } from "@mantine/core"
-import { useDisclosure } from "@mantine/hooks"
+import { useDisclosure, useMediaQuery } from "@mantine/hooks"
 import {
+  IconCheck,
   IconHome,
   IconLanguage,
   IconLink,
@@ -58,6 +59,9 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
   const [syncOpened, syncHandlers] = useDisclosure(false)
   const [speechOpened, speechHandlers] = useDisclosure(false)
   const googleConnect = useGoogleConnectContext()
+  // Below this width the row can't fit every button with a label, so each
+  // one drops to icon-only (aria-label still carries the accessible name).
+  const isMobile = useMediaQuery("(max-width: 36em)")
 
   const isDark = colorScheme === "dark"
 
@@ -71,9 +75,10 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               variant="subtle"
               component={Link}
               to={APP_ROUTES.home}
-              leftSection={<IconHome size={ICON_SIZE} />}
+              leftSection={isMobile ? undefined : <IconHome size={ICON_SIZE} />}
+              aria-label={t("common.home")}
             >
-              {t("common.home")}
+              {isMobile ? <IconHome size={ICON_SIZE} /> : t("common.home")}
             </Button>
           ) : null}
 
@@ -82,12 +87,34 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               <Button
                 size="xs"
                 variant="default"
-                leftSection={<IconSettings size={ICON_SIZE} />}
+                leftSection={
+                  isMobile ? undefined : <IconSettings size={ICON_SIZE} />
+                }
+                aria-label={t("common.settingsMenu")}
               >
-                {t("common.settingsMenu")}
+                {isMobile ? (
+                  <IconSettings size={ICON_SIZE} />
+                ) : (
+                  t("common.settingsMenu")
+                )}
               </Button>
             </Menu.Target>
             <Menu.Dropdown>
+              <Tooltip label={t("common.dyslexiaFontTooltip")}>
+                <Menu.Item
+                  role="menuitemcheckbox"
+                  aria-checked={dyslexiaFont}
+                  color={dyslexiaFont ? "brand" : undefined}
+                  leftSection={<IconTextSize size={ICON_SIZE} />}
+                  rightSection={
+                    dyslexiaFont ? <IconCheck size={ICON_SIZE} /> : undefined
+                  }
+                  onClick={() => dispatch(toggleDyslexiaFont())}
+                >
+                  {t("common.dyslexiaFont")}
+                </Menu.Item>
+              </Tooltip>
+
               <Menu.Item
                 aria-pressed={isDark}
                 leftSection={
@@ -131,37 +158,38 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
             </Menu.Dropdown>
           </Menu>
 
-          <Tooltip label={t("common.dyslexiaFontTooltip")}>
-            <Button
-              size="xs"
-              variant={dyslexiaFont ? "filled" : "default"}
-              aria-pressed={dyslexiaFont}
-              leftSection={<IconTextSize size={ICON_SIZE} />}
-              onClick={() => dispatch(toggleDyslexiaFont())}
-            >
-              {t("common.dyslexiaFont")}
-            </Button>
-          </Tooltip>
-
           {isGoogleSyncAvailable() ? (
             <Button
               size="xs"
               variant="default"
               leftSection={
-                <GoogleIcon style={{ width: ICON_SIZE, height: ICON_SIZE }} />
+                isMobile ? undefined : (
+                  <GoogleIcon style={{ width: ICON_SIZE, height: ICON_SIZE }} />
+                )
               }
               loading={googleConnect.connecting}
+              aria-label={
+                googleConnect.connectedEmail
+                  ? t("common.googleConnected", {
+                      email: googleConnect.connectedEmail,
+                    })
+                  : t("common.connectGoogle")
+              }
               onClick={
                 googleConnect.connectedEmail
                   ? googleConnect.disconnect
                   : googleConnect.connect
               }
             >
-              {googleConnect.connectedEmail
-                ? t("common.googleConnected", {
-                    email: googleConnect.connectedEmail,
-                  })
-                : t("common.connectGoogle")}
+              {isMobile ? (
+                <GoogleIcon style={{ width: ICON_SIZE, height: ICON_SIZE }} />
+              ) : googleConnect.connectedEmail ? (
+                t("common.googleConnected", {
+                  email: googleConnect.connectedEmail,
+                })
+              ) : (
+                t("common.connectGoogle")
+              )}
             </Button>
           ) : null}
 
@@ -171,19 +199,30 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               variant="default"
               className={classes.syncButton}
               color={googleConnect.needsReconnect ? "red" : undefined}
-              leftSection={<IconRefresh size={ICON_SIZE} />}
+              leftSection={
+                isMobile ? undefined : <IconRefresh size={ICON_SIZE} />
+              }
               disabled={!googleConnect.needsReconnect && googleConnect.syncing}
               aria-busy={!googleConnect.needsReconnect && googleConnect.syncing}
+              aria-label={t(
+                googleConnect.needsReconnect
+                  ? "common.reconnectLabel"
+                  : "common.syncNowLabel",
+              )}
               onClick={
                 googleConnect.needsReconnect
                   ? googleConnect.connect
                   : googleConnect.syncNow
               }
             >
-              {t(
-                googleConnect.needsReconnect
-                  ? "common.reconnectLabel"
-                  : "common.syncNowLabel",
+              {isMobile ? (
+                <IconRefresh size={ICON_SIZE} />
+              ) : (
+                t(
+                  googleConnect.needsReconnect
+                    ? "common.reconnectLabel"
+                    : "common.syncNowLabel",
+                )
               )}
             </Button>
           ) : null}
