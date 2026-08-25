@@ -36,7 +36,6 @@ export const ReadingTab = () => {
             }))}
             label={t("unseen.playAllLabel")}
             size="lg"
-            variant="filled"
           />
           <Text fw={600}>{t("unseen.playAll")}</Text>
         </Group>

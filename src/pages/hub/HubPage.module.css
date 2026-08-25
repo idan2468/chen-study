@@ -22,8 +22,7 @@
 }
 
 .icon {
-  font-size: 40px;
-  line-height: 1;
+  color: var(--mantine-color-brand-filled);
 }
 
 .description {

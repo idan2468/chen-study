@@ -36,8 +36,8 @@ describe("ModuleFlashcard", () => {
   })
 
   test.each([
-    [true, "✔ Got it"],
-    [false, "✖ Needs practice"],
+    [true, "Got it"],
+    [false, "Needs practice"],
   ])("clicking %s calls onMark with %s", async (expected, label) => {
     const onMark = vi.fn()
     const { user } = renderWithProviders(
@@ -75,12 +75,12 @@ describe("ModuleFlashcard", () => {
         />,
       )
 
-      expect(screen.getByRole("button", { name: "✔ Got it" })).toHaveAttribute(
+      expect(screen.getByRole("button", { name: "Got it" })).toHaveAttribute(
         "data-variant",
         knownVariant,
       )
       expect(
-        screen.getByRole("button", { name: "✖ Needs practice" }),
+        screen.getByRole("button", { name: "Needs practice" }),
       ).toHaveAttribute("data-variant", unknownVariant)
     },
   )

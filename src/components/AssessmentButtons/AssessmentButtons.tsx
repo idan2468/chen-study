@@ -1,4 +1,6 @@
 import { Button, Group } from "@mantine/core"
+import { IconCheck, IconX } from "@tabler/icons-react"
+import { ICON_SIZE } from "@/constants/icons"
 
 export type AssessmentButtonsProps = {
   /** `undefined` means not yet assessed. */
@@ -27,6 +29,7 @@ export const AssessmentButtons = ({
     <Button
       color="success"
       variant={isKnown === true ? "filled" : "light"}
+      leftSection={<IconCheck size={ICON_SIZE} />}
       onClick={() => {
         onMark(true)
       }}
@@ -36,6 +39,7 @@ export const AssessmentButtons = ({
     <Button
       color="danger"
       variant={isKnown === false ? "filled" : "light"}
+      leftSection={<IconX size={ICON_SIZE} />}
       onClick={() => {
         onMark(false)
       }}

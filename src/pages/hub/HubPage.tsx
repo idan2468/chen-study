@@ -1,4 +1,5 @@
 import { Card, Container, SimpleGrid, Stack, Text, Title } from "@mantine/core"
+import { IconBook2, IconCards } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { TopBar } from "@/components/TopBar/TopBar"
@@ -9,14 +10,14 @@ import classes from "./HubPage.module.css"
 const links = [
   {
     to: APP_ROUTES.unseen,
-    icon: "📖",
+    Icon: IconBook2,
     titleKey: "hub.unseenTitle",
     descriptionKey: "hub.unseenDescription",
     ctaKey: "hub.unseenCta",
   },
   {
     to: APP_ROUTES.modules,
-    icon: "🩵",
+    Icon: IconCards,
     titleKey: "hub.modulesTitle",
     descriptionKey: "hub.modulesDescription",
     ctaKey: "hub.modulesCta",
@@ -53,7 +54,7 @@ export const HubPage = () => {
               className={classes.card}
             >
               <Stack gap="sm" h="100%">
-                <Text className={classes.icon}>{link.icon}</Text>
+                <link.Icon className={classes.icon} size={40} />
                 <Title order={3}>{t(link.titleKey)}</Title>
                 <Text c="dimmed" size="sm" className={classes.description}>
                   {t(link.descriptionKey)}

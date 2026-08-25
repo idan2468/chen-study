@@ -10,7 +10,13 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core"
-import { IconTrash } from "@tabler/icons-react"
+import {
+  IconBook2,
+  IconBooks,
+  IconCards,
+  IconSettings,
+  IconTrash,
+} from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { ICON_SIZE } from "@/constants/icons"
 import { importErrorMessage } from "@/i18n/importErrorMessage"
@@ -112,7 +118,7 @@ export const UnseenPage = () => {
             allowDeselect={false}
             w={460}
             size="md"
-            leftSection="📚"
+            leftSection={<IconBooks size={ICON_SIZE} />}
             aria-label={t("unseen.selectExercise")}
           />
           <Tooltip label={t("unseen.deleteExercise")}>
@@ -142,12 +148,25 @@ export const UnseenPage = () => {
           keepMounted={false}
         >
           <Tabs.List grow>
-            <Tabs.Tab value="reading">{t("unseen.tabReading")}</Tabs.Tab>
-            <Tabs.Tab value="flashcards">
+            <Tabs.Tab
+              value="reading"
+              leftSection={<IconBook2 size={ICON_SIZE} />}
+            >
+              {t("unseen.tabReading")}
+            </Tabs.Tab>
+            <Tabs.Tab
+              value="flashcards"
+              leftSection={<IconCards size={ICON_SIZE} />}
+            >
               {t("unseen.tabFlashcards")}
               {stats.total > 0 ? ` (${String(stats.total)})` : ""}
             </Tabs.Tab>
-            <Tabs.Tab value="json">{t("unseen.tabJson")}</Tabs.Tab>
+            <Tabs.Tab
+              value="json"
+              leftSection={<IconSettings size={ICON_SIZE} />}
+            >
+              {t("unseen.tabJson")}
+            </Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="reading" pt="md">

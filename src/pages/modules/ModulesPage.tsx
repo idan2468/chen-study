@@ -8,7 +8,9 @@ import {
   Text,
   Title,
 } from "@mantine/core"
+import { IconArrowLeft, IconRepeat, IconSettings } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
+import { ICON_SIZE } from "@/constants/icons"
 import { importErrorMessage } from "@/i18n/importErrorMessage"
 import { confirmDanger, notifyCannotDelete } from "@/utils/confirmModal"
 import type { JsonParseResult } from "@/components/JsonLoader/JsonLoader"
@@ -130,6 +132,7 @@ export const ModulesPage = () => {
             <Button
               size="xs"
               variant="default"
+              leftSection={<IconArrowLeft size={ICON_SIZE} />}
               onClick={() => dispatch(toggleMissedReview())}
             >
               {t("modules.backToModules")}
@@ -158,7 +161,11 @@ export const ModulesPage = () => {
             </Stack>
 
             {missedWords.length > 0 ? (
-              <Button size="xs" onClick={() => dispatch(toggleMissedReview())}>
+              <Button
+                size="xs"
+                leftSection={<IconRepeat size={ICON_SIZE} />}
+                onClick={() => dispatch(toggleMissedReview())}
+              >
                 {t("modules.missedReviewButton", {
                   count: missedWords.length,
                 })}
@@ -242,6 +249,7 @@ export const ModulesPage = () => {
                     <Button
                       size="xs"
                       variant="light"
+                      leftSection={<IconRepeat size={ICON_SIZE} />}
                       onClick={() => dispatch(toggleMissedReview())}
                     >
                       {t("modules.missedReviewButton", {
@@ -276,7 +284,7 @@ export const ModulesPage = () => {
 
         <Accordion variant="contained" w="100%">
           <Accordion.Item value="json">
-            <Accordion.Control>
+            <Accordion.Control icon={<IconSettings size={ICON_SIZE} />}>
               {t("modules.jsonSectionTitle")}
             </Accordion.Control>
             <Accordion.Panel>
