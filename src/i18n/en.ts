@@ -135,6 +135,8 @@ export const en: Messages = {
     playAllLabel: "Read the whole passage aloud",
     readingHint:
       "💡 Click a word to hear it • Double-click to highlight it • Emphasised words also appear in the vocabulary cards",
+    usageHint:
+      "New here? Start with the Vocabulary cards to learn the key words, then move on to Reading & questions.",
     paragraphPlay: "Read from paragraph {{number}} onwards",
     speakQuestion: "Read the question and answers aloud",
     speakOption: "Read option {{number}} aloud",

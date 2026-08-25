@@ -10,7 +10,9 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core"
+import { IconTrash } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
+import { ICON_SIZE } from "@/constants/icons"
 import { importErrorMessage } from "@/i18n/importErrorMessage"
 import { confirmDanger, notifyCannotDelete } from "@/utils/confirmModal"
 import type { JsonParseResult } from "@/components/JsonLoader/JsonLoader"
@@ -86,32 +88,7 @@ export const UnseenPage = () => {
   return (
     <Container size="lg" py="xl">
       <Stack gap="lg">
-        <TopBar>
-          <Select
-            data={options}
-            value={currentId}
-            onChange={value => {
-              if (value !== null) {
-                dispatch(switchExercise(value))
-              }
-            }}
-            allowDeselect={false}
-            w={300}
-            size="xs"
-            leftSection="📚"
-            aria-label={t("unseen.selectExercise")}
-          />
-          <Tooltip label={t("unseen.deleteExercise")}>
-            <ActionIcon
-              variant="default"
-              size="lg"
-              onClick={handleDelete}
-              aria-label={t("unseen.deleteExercise")}
-            >
-              🗑️
-            </ActionIcon>
-          </Tooltip>
-        </TopBar>
+        <TopBar />
 
         <Stack gap={4} ta="center">
           {/* Exercise title and subtitle are author-supplied content. */}
@@ -122,6 +99,37 @@ export const UnseenPage = () => {
             {exercise?.subtitle}
           </Text>
         </Stack>
+
+        <Group justify="center" gap="xs">
+          <Select
+            data={options}
+            value={currentId}
+            onChange={value => {
+              if (value !== null) {
+                dispatch(switchExercise(value))
+              }
+            }}
+            allowDeselect={false}
+            w={460}
+            size="md"
+            leftSection="📚"
+            aria-label={t("unseen.selectExercise")}
+          />
+          <Tooltip label={t("unseen.deleteExercise")}>
+            <ActionIcon
+              variant="default"
+              size="xl"
+              onClick={handleDelete}
+              aria-label={t("unseen.deleteExercise")}
+            >
+              <IconTrash size={ICON_SIZE} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+
+        <Text size="sm" c="dimmed" ta="center">
+          {t("unseen.usageHint")}
+        </Text>
 
         <Tabs
           value={tab}
