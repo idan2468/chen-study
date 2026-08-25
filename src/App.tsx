@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { Route, Routes, useLocation } from "react-router-dom"
 import { notifications } from "@mantine/notifications"
 import { useTranslation } from "react-i18next"
+import { APP_ROUTES } from "./constants/routes"
 import { GoogleConnectProvider } from "./hooks/GoogleConnectContext"
 import { useAppDispatch, useAppSelector } from "./store/hooks"
 import { selectDyslexiaFont } from "./store/slices/settingsSlice"
@@ -72,9 +73,9 @@ export const App = ({ importedKeyCount }: AppProps) => {
   return (
     <GoogleConnectProvider skipBootSync={importedKeyCount !== null}>
       <Routes>
-        <Route path="/" element={<HubPage />} />
-        <Route path="/unseen" element={<UnseenPage />} />
-        <Route path="/modules" element={<ModulesPage />} />
+        <Route path={APP_ROUTES.home} element={<HubPage />} />
+        <Route path={APP_ROUTES.unseen} element={<UnseenPage />} />
+        <Route path={APP_ROUTES.modules} element={<ModulesPage />} />
         {/* Anything unrecognised falls back to the hub. */}
         <Route path="*" element={<HubPage />} />
       </Routes>

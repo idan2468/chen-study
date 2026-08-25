@@ -6,13 +6,11 @@ import { CardNavigation } from "@/components/CardNavigation/CardNavigation"
 import { CardWord } from "@/components/CardWord/CardWord"
 import { FlipCard } from "@/components/FlipCard/FlipCard"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
+import { FLASHCARD_AUTO_ADVANCE_MS } from "@/constants/flashcards"
 import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
 import { useSpeech } from "@/hooks/useSpeech"
 import type { CardStatus, ModuleCard } from "@/types/module"
 import classes from "./ModuleFlashcard.module.css"
-
-/** The original auto-advanced 250ms after marking a card. */
-const AUTO_ADVANCE_MS = 250
 
 export type ModuleFlashcardProps = {
   card: ModuleCard
@@ -61,7 +59,7 @@ export const ModuleFlashcard = ({
   const handleMark = (isKnown: boolean) => {
     onMark(isKnown)
     window.clearTimeout(advanceTimer.current)
-    advanceTimer.current = window.setTimeout(onNext, AUTO_ADVANCE_MS)
+    advanceTimer.current = window.setTimeout(onNext, FLASHCARD_AUTO_ADVANCE_MS)
   }
 
   useFlashcardKeys({

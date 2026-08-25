@@ -21,6 +21,8 @@ import {
 } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
+import { ICON_SIZE } from "@/constants/icons"
+import { APP_ROUTES } from "@/constants/routes"
 import { useGoogleConnectContext } from "@/hooks/GoogleConnectContext"
 import { useLocale } from "@/i18n/useLocale"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
@@ -68,8 +70,8 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               size="xs"
               variant="subtle"
               component={Link}
-              to="/"
-              leftSection={<IconHome size={18} />}
+              to={APP_ROUTES.home}
+              leftSection={<IconHome size={ICON_SIZE} />}
             >
               {t("common.home")}
             </Button>
@@ -80,7 +82,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               <Button
                 size="xs"
                 variant="default"
-                leftSection={<IconSettings size={18} />}
+                leftSection={<IconSettings size={ICON_SIZE} />}
               >
                 {t("common.settingsMenu")}
               </Button>
@@ -89,7 +91,11 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               <Menu.Item
                 aria-pressed={isDark}
                 leftSection={
-                  isDark ? <IconSun size={18} /> : <IconMoon size={18} />
+                  isDark ? (
+                    <IconSun size={ICON_SIZE} />
+                  ) : (
+                    <IconMoon size={ICON_SIZE} />
+                  )
                 }
                 onClick={toggleColorScheme}
               >
@@ -98,7 +104,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
 
               <Tooltip label={t("common.languageTooltip")}>
                 <Menu.Item
-                  leftSection={<IconLanguage size={18} />}
+                  leftSection={<IconLanguage size={ICON_SIZE} />}
                   onClick={toggleLocale}
                 >
                   {locale === "he"
@@ -109,7 +115,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
 
               <Menu.Item
                 closeMenuOnClick
-                leftSection={<IconMicrophone size={18} />}
+                leftSection={<IconMicrophone size={ICON_SIZE} />}
                 onClick={speechHandlers.open}
               >
                 {t("common.voiceSettings")}
@@ -117,7 +123,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
 
               <Menu.Item
                 closeMenuOnClick
-                leftSection={<IconLink size={18} />}
+                leftSection={<IconLink size={ICON_SIZE} />}
                 onClick={syncHandlers.open}
               >
                 {t("common.syncDevices")}
@@ -130,7 +136,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               size="xs"
               variant={dyslexiaFont ? "filled" : "default"}
               aria-pressed={dyslexiaFont}
-              leftSection={<IconTextSize size={18} />}
+              leftSection={<IconTextSize size={ICON_SIZE} />}
               onClick={() => dispatch(toggleDyslexiaFont())}
             >
               {t("common.dyslexiaFont")}
@@ -142,7 +148,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               size="xs"
               variant="default"
               leftSection={
-                <GoogleIcon style={{ width: "1.125rem", height: "1.125rem" }} />
+                <GoogleIcon style={{ width: ICON_SIZE, height: ICON_SIZE }} />
               }
               loading={googleConnect.connecting}
               onClick={
@@ -165,7 +171,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
               variant="default"
               className={classes.syncButton}
               color={googleConnect.needsReconnect ? "red" : undefined}
-              leftSection={<IconRefresh size={18} />}
+              leftSection={<IconRefresh size={ICON_SIZE} />}
               disabled={!googleConnect.needsReconnect && googleConnect.syncing}
               aria-busy={!googleConnect.needsReconnect && googleConnect.syncing}
               onClick={

@@ -2,19 +2,20 @@ import { Card, Container, SimpleGrid, Stack, Text, Title } from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { TopBar } from "@/components/TopBar/TopBar"
+import { APP_ROUTES } from "@/constants/routes"
 import classes from "./HubPage.module.css"
 
 /** The two practice apps, as in the original `index.html`. */
 const links = [
   {
-    to: "/unseen",
+    to: APP_ROUTES.unseen,
     icon: "📖",
     titleKey: "hub.unseenTitle",
     descriptionKey: "hub.unseenDescription",
     ctaKey: "hub.unseenCta",
   },
   {
-    to: "/modules",
+    to: APP_ROUTES.modules,
     icon: "🩵",
     titleKey: "hub.modulesTitle",
     descriptionKey: "hub.modulesDescription",
