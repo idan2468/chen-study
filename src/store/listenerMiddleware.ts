@@ -36,7 +36,7 @@ import {
 
 /**
  * Writes state through to localStorage, keeping the exact keys the original
- * HTML apps used (see `src/utils/storageKeys.ts` for why that matters).
+ * HTML apps used (see `src/utils/sync/storageKeys.ts` for why that matters).
  *
  * Because one slice maps to several keys, each effect compares
  * `getOriginalState()` with the new state and writes only what actually

@@ -203,9 +203,12 @@ time.
       retries. Wired into `useGoogleConnect.ts`'s pull-or-push so the
       baseline is already correct by the time step 6's timer exists.
 - [x] 6. **Triggers and reconnect UI** — `useDriveSync.ts`'s 30-second timer,
-      page-hide push (`keepalive`), and manual "Sync now"; a silent GIS
+      page-hide push (`keepalive`), and a manual "Sync now" button (spinning
+      icon while in flight, success toast on completion); a silent GIS
       re-issue retried once on a mid-session 401, falling back to a red
-      "tap to reconnect" icon next to the `TopBar` Google button.
+      "Tap to reconnect" button in its place. Both stay visible in the
+      `TopBar` alongside Home and Google connect, while the bar's other,
+      rarely-used toggles moved behind a ⚙️ Settings menu.
 - [x] 7. **Docs** — README section, note in `storageKeys.ts` that its keys are
       now a wire format for the Drive file too.
 

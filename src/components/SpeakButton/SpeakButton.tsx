@@ -1,6 +1,5 @@
 import { ActionIcon, Tooltip } from "@mantine/core"
 import { IconPlayerStopFilled, IconVolume } from "@tabler/icons-react"
-
 import type { MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
 import type { SpeechItem } from "@/utils/speech/speech"

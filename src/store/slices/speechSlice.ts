@@ -5,7 +5,7 @@ import { createAppSlice } from "@/store/createAppSlice"
  * Which control currently owns `window.speechSynthesis` -- a browser
  * singleton, so this is app-level state rather than local to one page. The
  * utterance object and queue stay out of the store (non-serializable) and
- * live in `src/utils/speech.ts` instead.
+ * live in `src/utils/speech/speech.ts` instead.
  */
 export type SpeechState = {
   /** `null` when nothing is playing. `ownerId !== null` *is* "is speaking". */
