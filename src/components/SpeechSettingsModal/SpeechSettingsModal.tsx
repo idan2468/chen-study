@@ -20,7 +20,7 @@ import {
   setSpeechRate,
   setSystemVoiceUri,
 } from "@/store/slices/settingsSlice"
-import { voicesForLanguage } from "@/utils/voices"
+import { voicesForLanguage } from "@/utils/speech/voices"
 
 export type SpeechSettingsModalProps = {
   opened: boolean
@@ -32,7 +32,7 @@ const SAMPLE_TEXT = "The quick brown fox jumps over the lazy dog."
 
 /**
  * Choosing a *specific* system voice: the browser's default for a language is
- * often the lowest-quality one installed (see `utils/voices.ts`), so this lets
+ * often the lowest-quality one installed (see `utils/speech/voices.ts`), so this lets
  * the user override it.
  *
  * A local neural engine (kokoro-js) used to live alongside this picker but was

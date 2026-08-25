@@ -29,3 +29,6 @@ dist-ssr
 yalc.lock
 /.agentbridge/
 /old/
+
+# Scratch screenshots from AI-assisted UI mock reviews, never committed.
+/ui-mocks/

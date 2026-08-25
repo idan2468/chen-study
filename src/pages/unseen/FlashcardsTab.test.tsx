@@ -54,8 +54,8 @@ describe("FlashcardsTab", () => {
   })
 
   test.each([
-    [true, "✔ Known"],
-    [false, "✖ Not known"],
+    [true, "Known"],
+    [false, "Not known"],
   ])(
     "clicking %s dispatches markFlashcard for the current word",
     async (isKnown, label) => {
@@ -90,7 +90,7 @@ describe("FlashcardsTab", () => {
     expect(screen.getByText("Challenging")).toBeInTheDocument()
   })
 
-  test.each([["✔ Known" as const], ["✖ Not known" as const]])(
+  test.each([["Known" as const], ["Not known" as const]])(
     "clicking %s auto-advances to the next card after a short delay",
     async label => {
       const { user } = renderWithProviders(<FlashcardsTab />, {
@@ -113,7 +113,7 @@ describe("FlashcardsTab", () => {
       preloadedState: baseState({ cardIndex: exercise.flashcards.length - 1 }),
     })
 
-    await user.click(screen.getByRole("button", { name: "✔ Known" }))
+    await user.click(screen.getByRole("button", { name: "Known" }))
 
     // Give the auto-advance timer a chance to fire, then confirm it was a
     // no-op: `nextFlashcard` already clamps at the last index, same as
@@ -132,7 +132,7 @@ describe("FlashcardsTab", () => {
     expect(screen.getByText("Known: 0")).toBeInTheDocument()
     expect(screen.getByText("Not known: 0")).toBeInTheDocument()
 
-    await user.click(screen.getByRole("button", { name: "✔ Known" }))
+    await user.click(screen.getByRole("button", { name: "Known" }))
 
     expect(screen.getByText("Known: 1")).toBeInTheDocument()
     expect(screen.getByText("Not known: 0")).toBeInTheDocument()

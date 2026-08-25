@@ -1,8 +1,9 @@
 import { ActionIcon, Tooltip } from "@mantine/core"
+import { IconPlayerStopFilled, IconVolume } from "@tabler/icons-react"
 import type { MouseEvent } from "react"
 import { useTranslation } from "react-i18next"
-import type { SpeechItem } from "@/utils/speech"
-import { isSpeechSupported } from "@/utils/speech"
+import type { SpeechItem } from "@/utils/speech/speech"
+import { isSpeechSupported } from "@/utils/speech/speech"
 import { useSpeech } from "@/hooks/useSpeech"
 
 export type SpeakButtonProps = {
@@ -14,6 +15,12 @@ export type SpeakButtonProps = {
   size?: "xs" | "sm" | "md" | "lg"
   variant?: "filled" | "light" | "default" | "subtle"
 }
+
+/** Roughly Mantine's own icon-to-ActionIcon size ratio, since an SVG icon needs an explicit pixel size. */
+const ICON_SIZE_BY_ACTION_ICON_SIZE: Record<
+  NonNullable<SpeakButtonProps["size"]>,
+  number
+> = { xs: 14, sm: 16, md: 20, lg: 24 }
 
 /**
  * The one play/stop control in the app.
@@ -62,7 +69,11 @@ export const SpeakButton = ({
         aria-pressed={isPlaying}
         onClick={handleClick}
       >
-        {isPlaying ? "⏹" : "🔊"}
+        {isPlaying ? (
+          <IconPlayerStopFilled size={ICON_SIZE_BY_ACTION_ICON_SIZE[size]} />
+        ) : (
+          <IconVolume size={ICON_SIZE_BY_ACTION_ICON_SIZE[size]} />
+        )}
       </ActionIcon>
     </Tooltip>
   )

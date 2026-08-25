@@ -3,7 +3,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { deleteEntry } from "@/store/records"
 import { readJson, readString } from "@/store/storage"
-import { flashcardStatusKey, StorageKeys } from "@/utils/storageKeys"
+import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { defaultExercise } from "@/data/defaultExercise"
 import type {
   AnswerRecord,
@@ -52,7 +52,7 @@ const readAllFlashcardProgress = (
   return progress
 }
 
-const readInitialState = (): UnseenState => {
+const loadFromStorage = (): UnseenState => {
   const library = readJson<Record<string, Exercise>>(
     StorageKeys.exerciseLibrary,
     {},
@@ -89,7 +89,7 @@ export const unseenSlice = createAppSlice({
   name: "unseen",
   // Lazy initializer, so localStorage is read at store-creation time -- after
   // any `?sync=` payload has been imported. See `src/main.tsx`.
-  initialState: readInitialState,
+  initialState: loadFromStorage,
   reducers: create => ({
     switchExercise: create.reducer((state, action: PayloadAction<string>) => {
       if (!(action.payload in state.library)) {
@@ -190,6 +190,8 @@ export const unseenSlice = createAppSlice({
     prevFlashcard: create.reducer(state => {
       state.cardIndex = Math.max(state.cardIndex - 1, 0)
     }),
+
+    reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
     selectLibrary: state => state.library,
@@ -212,6 +214,7 @@ export const {
   setFlashcardIndex,
   nextFlashcard,
   prevFlashcard,
+  reloadFromStorage,
 } = unseenSlice.actions
 
 export const {

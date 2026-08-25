@@ -1,7 +1,7 @@
 import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
 import { at } from "@test/helpers"
 import type { PracticeModule } from "@/types/module"
-import { StorageKeys } from "@/utils/storageKeys"
+import { StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "@/store/store"
 import type { ModulesState } from "./modulesSlice"
 import {
@@ -9,6 +9,7 @@ import {
   deleteModule,
   markCard,
   mergeModules,
+  reloadFromStorage,
   resetCurrentModuleProgress,
   selectActiveCards,
   selectCurrentModuleId,
@@ -23,12 +24,12 @@ import {
 
 const customModule: PracticeModule = {
   id: "custom_1",
-  tabName: "שלי",
-  title: "מודול שלי",
+  tabName: "Mine",
+  title: "My module",
   rule: "",
   cards: [
-    { en: "ZAP", he: "זַפ", meaning: "זפ" },
-    { en: "QUIZ", he: "קְוִיז", meaning: "מבחן" },
+    { en: "ZAP", he: "zap", meaning: "zap" },
+    { en: "QUIZ", he: "quiz", meaning: "test" },
   ],
 }
 
@@ -40,10 +41,10 @@ const customModule: PracticeModule = {
  */
 const otherCustomModule: PracticeModule = {
   id: "custom_2",
-  tabName: "שלי 2",
-  title: "מודול שלי 2",
+  tabName: "Mine 2",
+  title: "My module 2",
   rule: "",
-  cards: [{ en: "QUIZ", he: "קְוִיז", meaning: "מבחן" }],
+  cards: [{ en: "QUIZ", he: "quiz", meaning: "test" }],
 }
 
 const firstBuiltInId = at(builtInModuleIds, 0)
@@ -81,10 +82,10 @@ describe("mergeModules", () => {
   })
 
   test("a stored copy of a built-in wins, so user edits survive", () => {
-    const edited = { ...at(defaultModules, 0), tabName: "ערכתי" }
+    const edited = { ...at(defaultModules, 0), tabName: "Edited" }
     const merged = mergeModules([edited], [])
 
-    expect(at(merged, 0).tabName).toBe("ערכתי")
+    expect(at(merged, 0).tabName).toBe("Edited")
   })
 
   test("honours deleted built-ins instead of re-seeding them", () => {
@@ -280,6 +281,64 @@ describe("hydration", () => {
 
     expect(current).toBeDefined()
     expect(selectModuleCardIndex(state)).toBe((current?.cards.length ?? 1) - 1)
+  })
+
+  test("reopens with stored modules merged in alongside the built-ins", () => {
+    localStorage.setItem(StorageKeys.allModules, JSON.stringify([customModule]))
+
+    const store = makeStore()
+
+    expect(selectModules(store.getState()).map(m => m.id)).toStrictEqual([
+      ...builtInModuleIds,
+      "custom_1",
+    ])
+  })
+
+  test("reopens with the stored progress", () => {
+    localStorage.setItem(
+      StorageKeys.modulesProgress,
+      JSON.stringify({ [firstCard.en]: "known" }),
+    )
+
+    const store = makeStore()
+
+    expect(selectModulesProgress(store.getState())).toStrictEqual({
+      [firstCard.en]: "known",
+    })
+  })
+
+  test("reopens without a deleted built-in, and does not re-seed it", () => {
+    localStorage.setItem(
+      StorageKeys.deletedBuiltInModules,
+      JSON.stringify([secondBuiltInId]),
+    )
+
+    const store = makeStore()
+    const state = store.getState()
+
+    expect(selectModules(state).map(m => m.id)).not.toContain(secondBuiltInId)
+    expect(state.modules.deletedBuiltInIds).toStrictEqual([secondBuiltInId])
+  })
+})
+
+describe("reloadFromStorage", () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  test("discards in-memory changes and re-reads whatever is in storage now, e.g. after a Drive pull", () => {
+    const store = makeStore({ modules: baseState() })
+    store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
+
+    localStorage.setItem(
+      StorageKeys.modulesProgress,
+      JSON.stringify({ [firstCard.en]: "unknown" }),
+    )
+    store.dispatch(reloadFromStorage())
+
+    expect(selectModulesProgress(store.getState())).toStrictEqual({
+      [firstCard.en]: "unknown",
+    })
   })
 })
 

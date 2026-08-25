@@ -3,7 +3,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { deleteEntry } from "@/store/records"
 import { readJson, readString } from "@/store/storage"
-import { StorageKeys } from "@/utils/storageKeys"
+import { StorageKeys } from "@/utils/sync/storageKeys"
 import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
 import type {
   ModuleCard,
@@ -83,7 +83,7 @@ const resolveCurrentId = (
   return preferred?.id ?? modules[0]?.id ?? ""
 }
 
-const readInitialState = (): ModulesState => {
+const loadFromStorage = (): ModulesState => {
   const stored = readJson<PracticeModule[]>(StorageKeys.allModules, [])
   const deletedBuiltInIds = readJson<string[]>(
     StorageKeys.deletedBuiltInModules,
@@ -120,7 +120,7 @@ export const modulesSlice = createAppSlice({
   name: "modules",
   // Lazy initializer, so localStorage is read at store-creation time -- after
   // any `?sync=` payload has been imported. See `src/main.tsx`.
-  initialState: readInitialState,
+  initialState: loadFromStorage,
   reducers: create => ({
     selectModule: create.reducer((state, action: PayloadAction<string>) => {
       state.currentModuleId = action.payload
@@ -218,6 +218,8 @@ export const modulesSlice = createAppSlice({
         state.filterMissed = false
       }
     }),
+
+    reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
     selectModules: state => state.modules,
@@ -241,6 +243,7 @@ export const {
   resetCurrentModuleProgress,
   addModules,
   deleteModule,
+  reloadFromStorage,
 } = modulesSlice.actions
 
 export const {

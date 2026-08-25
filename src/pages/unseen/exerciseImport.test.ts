@@ -4,21 +4,21 @@ import { parseExerciseJson } from "./exerciseImport"
 const NOW = 1_700_000_000_000
 
 const valid = {
-  title: "כותרת",
-  subtitle: "תת כותרת",
+  title: "Title",
+  subtitle: "Subtitle",
   exerciseId: "mine",
   paragraphs: ["A cat sat."],
   questions: [
     {
       id: "q1",
-      title: "שאלה?",
+      title: "Question?",
       options: [
         { text: "a) no", isCorrect: false },
         { text: "b) yes", isCorrect: true },
       ],
     },
   ],
-  flashcards: [{ en: "Cat", he: "חתול", trans: "קֶט" }],
+  flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
 }
 
 const parse = (value: unknown) => parseExerciseJson(JSON.stringify(value), NOW)

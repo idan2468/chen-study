@@ -7,9 +7,11 @@ import {
   Text,
   TextInput,
 } from "@mantine/core"
+import { IconCheck } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { buildSyncUrl } from "@/utils/syncUrl"
+import { ICON_SIZE } from "@/constants/icons"
+import { buildSyncUrl } from "@/utils/sync/syncUrl"
 
 export type SyncModalProps = {
   opened: boolean
@@ -58,6 +60,7 @@ const SyncLink = ({ onClose }: Pick<SyncModalProps, "onClose">) => {
               onClick={copy}
               disabled={building}
               color={copied ? "success" : undefined}
+              leftSection={copied ? <IconCheck size={ICON_SIZE} /> : undefined}
             >
               {copied ? t("sync.copied") : t("sync.copyLink")}
             </Button>

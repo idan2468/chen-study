@@ -1,0 +1,15 @@
+/* The Sync now icon rotates while `aria-busy` -- a real spin, not just a
+ * generic Loader swap, so the button keeps its label instead of losing it
+ * mid-sync. */
+.syncButton[aria-busy="true"] svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

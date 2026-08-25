@@ -1,11 +1,5 @@
-import {
-  buildSyncPayload,
-  decodeSyncPayload,
-  encodeSyncPayload,
-  parseSyncUrl,
-  type SyncPayload,
-} from "./syncUrl"
-import { StorageKeys } from "./storageKeys"
+import { decodeSyncPayload, encodeSyncPayload, parseSyncUrl } from "./syncUrl"
+import type { SyncPayload } from "@/types/schemas/syncPayload"
 
 const payload = {
   english_reading_practice_progress_v3: JSON.stringify({ HAT: "known" }),
@@ -91,18 +85,4 @@ test("ignores a HashRouter route, and a URL with no payload at all", async () =>
 
 test("returns null for a malformed URL", async () => {
   expect(await parseSyncUrl("not a url")).toBeNull()
-})
-
-test("collects progress from localStorage, but never the chosen voice", () => {
-  localStorage.setItem(
-    StorageKeys.modulesProgress,
-    JSON.stringify({ HAT: "known" }),
-  )
-  localStorage.setItem(StorageKeys.darkMode, "1")
-  localStorage.setItem(StorageKeys.systemVoice, "Microsoft David - English")
-
-  expect(buildSyncPayload()).toStrictEqual({
-    [StorageKeys.modulesProgress]: JSON.stringify({ HAT: "known" }),
-    [StorageKeys.darkMode]: "1",
-  })
 })

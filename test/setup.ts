@@ -1,9 +1,30 @@
 import "@testing-library/jest-dom/vitest"
+import { notifications } from "@mantine/notifications"
 import { initI18n } from "@/i18n"
 
 // The app defaults to Hebrew, but tests run in English so assertions and
 // fixtures in test files stay readable without mixing scripts.
 initI18n("en")
+
+// Mantine's notification queue is a module-level store outside the React
+// tree, so unmounting a test's <Notifications /> never clears it -- a toast
+// left showing (e.g. no autoClose wait) would otherwise leak into the next
+// test's queries.
+afterEach(() => {
+  notifications.clean()
+})
+
+// jsdom has no ResizeObserver; Mantine's ScrollArea (used inside Modal, Select,
+// Menu, etc.) needs it just to mount.
+class ResizeObserverStub {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+}
+Object.defineProperty(window, "ResizeObserver", {
+  writable: true,
+  value: ResizeObserverStub,
+})
 
 // jsdom does not implement matchMedia; Mantine's colour-scheme hooks need it.
 Object.defineProperty(window, "matchMedia", {

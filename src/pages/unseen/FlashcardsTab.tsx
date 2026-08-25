@@ -8,6 +8,7 @@ import { confirmDanger } from "@/utils/confirmModal"
 import { FlipCard } from "@/components/FlipCard/FlipCard"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import { StatCounts } from "@/components/StatCounts/StatCounts"
+import { FLASHCARD_AUTO_ADVANCE_MS } from "@/constants/flashcards"
 import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
 import { useSpeech } from "@/hooks/useSpeech"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
@@ -23,9 +24,6 @@ import {
   selectFlashcardStats,
 } from "@/store/slices/unseenSlice"
 import classes from "./FlashcardsTab.module.css"
-
-/** Matches `ModuleFlashcard`'s auto-advance, which the original also used. */
-const AUTO_ADVANCE_MS = 250
 
 export const FlashcardsTab = () => {
   const { t } = useTranslation()
@@ -73,7 +71,7 @@ export const FlashcardsTab = () => {
     window.clearTimeout(advanceTimer.current)
     advanceTimer.current = window.setTimeout(
       () => dispatch(nextFlashcard(total)),
-      AUTO_ADVANCE_MS,
+      FLASHCARD_AUTO_ADVANCE_MS,
     )
   }
 

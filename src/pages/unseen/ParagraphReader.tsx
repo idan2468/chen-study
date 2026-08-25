@@ -10,7 +10,7 @@ import {
   selectVocabSet,
   toggleMarkedWord,
 } from "@/store/slices/unseenSlice"
-import { cleanWord } from "@/utils/speech"
+import { cleanWord } from "@/utils/speech/speech"
 import { cx } from "@/utils/cx"
 import classes from "./ParagraphReader.module.css"
 

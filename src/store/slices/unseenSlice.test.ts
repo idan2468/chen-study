@@ -1,6 +1,6 @@
 import { defaultExercise } from "@/data/defaultExercise"
 import type { Exercise } from "@/types/exercise"
-import { StorageKeys } from "@/utils/storageKeys"
+import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "@/store/store"
 import type { UnseenState } from "./unseenSlice"
 import {
@@ -8,8 +8,12 @@ import {
   answerQuestion,
   deleteExercise,
   markFlashcard,
+  reloadFromStorage,
   resetFlashcardProgress,
+  selectAllMarkedWords,
+  selectAllProgress,
   selectAnswers,
+  selectCurrentExerciseId,
   selectCurrentProgress,
   selectFlashcardIndex,
   selectFlashcardStats,
@@ -20,12 +24,12 @@ import {
 } from "./unseenSlice"
 
 const otherExercise: Exercise = {
-  title: "אחר",
-  subtitle: "תרגיל שני",
+  title: "Other",
+  subtitle: "Second exercise",
   exerciseId: "other_1",
   paragraphs: ["A cat sat."],
   questions: [],
-  flashcards: [{ en: "Cat", he: "חתול", trans: "קֶט" }],
+  flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
 }
 
 const baseState = (overrides: Partial<UnseenState> = {}): UnseenState => ({
@@ -216,6 +220,123 @@ describe("hydration", () => {
     const store = makeStore()
 
     expect(selectFlashcardIndex(store.getState())).toBe(2)
+  })
+
+  test("reopens with the stored answers and marked words", () => {
+    localStorage.setItem(
+      StorageKeys.quizAnswers,
+      JSON.stringify({ q1: { selected: 1, correct: true } }),
+    )
+    localStorage.setItem(
+      StorageKeys.markedWords,
+      JSON.stringify({ [defaultExercise.exerciseId]: ["Maya"] }),
+    )
+
+    const store = makeStore()
+    const state = store.getState()
+
+    expect(selectAnswers(state)).toStrictEqual({
+      q1: { selected: 1, correct: true },
+    })
+    expect(selectAllMarkedWords(state)).toStrictEqual({
+      [defaultExercise.exerciseId]: ["Maya"],
+    })
+  })
+
+  test("reopens with per-exercise flashcard progress, keyed by exercise", () => {
+    localStorage.setItem(
+      StorageKeys.exerciseLibrary,
+      JSON.stringify({
+        [defaultExercise.exerciseId]: defaultExercise,
+        other_1: otherExercise,
+      }),
+    )
+    localStorage.setItem(
+      flashcardStatusKey(defaultExercise.exerciseId),
+      JSON.stringify({ Delicate: true }),
+    )
+    localStorage.setItem(
+      flashcardStatusKey("other_1"),
+      JSON.stringify({ Cat: false }),
+    )
+
+    const store = makeStore()
+    const progress = selectAllProgress(store.getState())
+
+    expect(progress[defaultExercise.exerciseId]).toStrictEqual({
+      Delicate: true,
+    })
+    expect(progress.other_1).toStrictEqual({ Cat: false })
+  })
+
+  describe("currentId resolution", () => {
+    beforeEach(() => {
+      localStorage.setItem(
+        StorageKeys.exerciseLibrary,
+        JSON.stringify({
+          [defaultExercise.exerciseId]: defaultExercise,
+          other_1: otherExercise,
+        }),
+      )
+    })
+
+    test("prefers a stored id that is still in the library", () => {
+      localStorage.setItem(StorageKeys.currentExerciseId, "other_1")
+
+      const store = makeStore()
+
+      expect(selectCurrentExerciseId(store.getState())).toBe("other_1")
+    })
+
+    test("falls back to the legacy single-exercise mirror when the stored id is gone", () => {
+      localStorage.setItem(StorageKeys.currentExerciseId, "no-such-exercise")
+      localStorage.setItem(
+        StorageKeys.currentExerciseData,
+        JSON.stringify(otherExercise),
+      )
+
+      const store = makeStore()
+
+      expect(selectCurrentExerciseId(store.getState())).toBe("other_1")
+    })
+
+    test("falls back to the built-in default when neither the stored id nor the legacy mirror resolve", () => {
+      localStorage.setItem(StorageKeys.currentExerciseId, "no-such-exercise")
+
+      const store = makeStore()
+
+      expect(selectCurrentExerciseId(store.getState())).toBe(
+        defaultExercise.exerciseId,
+      )
+    })
+  })
+})
+
+describe("reloadFromStorage", () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  test("discards in-memory changes and re-reads whatever is in storage now, e.g. after a Drive pull", () => {
+    const store = makeStore({ unseen: baseState() })
+    store.dispatch(markFlashcard({ word: "Delicate", isKnown: true }))
+
+    localStorage.setItem(
+      StorageKeys.exerciseLibrary,
+      JSON.stringify({ other_1: otherExercise }),
+    )
+    localStorage.setItem(StorageKeys.currentExerciseId, "other_1")
+    store.dispatch(reloadFromStorage())
+
+    const state = store.getState()
+    expect(selectCurrentExerciseId(state)).toBe("other_1")
+    // The built-in default is always re-seeded if missing from storage -- see
+    // `loadFromStorage`'s "first run" comment.
+    expect(selectLibrary(state)).toStrictEqual({
+      other_1: otherExercise,
+      [defaultExercise.exerciseId]: defaultExercise,
+    })
+    expect(selectCurrentProgress(state)).toStrictEqual({})
   })
 })
 

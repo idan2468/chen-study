@@ -1,7 +1,7 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
-import { readFlag, readString, removeKey } from "@/store/storage"
-import { StorageKeys } from "@/utils/storageKeys"
+import { readFlag, readString } from "@/store/storage"
+import { StorageKeys } from "@/utils/sync/storageKeys"
 
 /**
  * Cross-page user preferences.
@@ -29,25 +29,11 @@ const clampRate = (value: number) => {
   return Math.min(MAX_SPEECH_RATE, Math.max(MIN_SPEECH_RATE, value))
 }
 
-/**
- * The two original pages wrote the dyslexia preference under two different
- * keys. Either one being set counts as enabled, so the setting carries over
- * whichever page the user last used.
- */
-const readInitialState = (): SettingsState => {
+const loadFromStorage = (): SettingsState => {
   const storedSystemVoice = readString(StorageKeys.systemVoice, "")
 
-  // Drops leftovers from the removed neural TTS engine (see
-  // docs/remove-neural-tts.md), so they stop riding along in sync links.
-  // Inlined rather than added back to StorageKeys: the app no longer reads
-  // either key, so they do not belong in the registry of keys it uses.
-  removeKey("english_tts_engine")
-  removeKey("english_neural_voice")
-
   return {
-    dyslexiaFont:
-      readFlag(StorageKeys.dyslexiaFont, false) ||
-      readFlag(StorageKeys.dyslexiaFontModules, false),
+    dyslexiaFont: readFlag(StorageKeys.dyslexiaFont, false),
     speechRate: clampRate(
       Number.parseFloat(readString(StorageKeys.speechRate, "")),
     ),
@@ -59,7 +45,7 @@ export const settingsSlice = createAppSlice({
   name: "settings",
   // Lazy initializer: localStorage is read when the store is created, not when
   // this module is imported, so `importSyncFromUrl()` can run first.
-  initialState: readInitialState,
+  initialState: loadFromStorage,
   reducers: create => ({
     toggleDyslexiaFont: create.reducer(state => {
       state.dyslexiaFont = !state.dyslexiaFont
@@ -75,6 +61,7 @@ export const settingsSlice = createAppSlice({
         state.systemVoiceUri = action.payload
       },
     ),
+    reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
     selectDyslexiaFont: settings => settings.dyslexiaFont,
@@ -88,6 +75,7 @@ export const {
   setDyslexiaFont,
   setSpeechRate,
   setSystemVoiceUri,
+  reloadFromStorage,
 } = settingsSlice.actions
 
 export const { selectDyslexiaFont, selectSpeechRate, selectSystemVoiceUri } =

@@ -63,7 +63,7 @@ export const renderWithProviders = (
   const Wrapper = ({ children }: PropsWithChildren) => (
     <Provider store={store}>
       <DirectionProvider>
-        <MantineProvider theme={theme} defaultColorScheme="dark">
+        <MantineProvider theme={theme} defaultColorScheme="dark" env="test">
           <ModalsProvider>
             <Notifications />
             <MemoryRouter>{children}</MemoryRouter>

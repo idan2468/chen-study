@@ -8,7 +8,9 @@ import {
   Text,
   Textarea,
 } from "@mantine/core"
+import { IconCheck, IconClipboardText, IconPlus } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
+import { ICON_SIZE } from "@/constants/icons"
 
 /** What a page's parser reports back to the loader, already translated. */
 export type JsonParseResult = {
@@ -57,6 +59,7 @@ export const JsonLoader = ({
           <Button
             size="xs"
             variant="default"
+            leftSection={<IconClipboardText size={ICON_SIZE} />}
             onClick={() => {
               setText(sampleJson)
               setResult(null)
@@ -72,6 +75,7 @@ export const JsonLoader = ({
               size="xs"
               variant="default"
               disabled={text.trim() === ""}
+              leftSection={copied ? <IconCheck size={ICON_SIZE} /> : undefined}
               onClick={copy}
             >
               {copied ? t("json.copied") : t("json.copyContent")}
@@ -99,7 +103,11 @@ export const JsonLoader = ({
         </Alert>
       ) : null}
 
-      <Button onClick={handleLoad} disabled={text.trim() === ""}>
+      <Button
+        leftSection={<IconPlus size={ICON_SIZE} />}
+        onClick={handleLoad}
+        disabled={text.trim() === ""}
+      >
         {t("json.loadAndAdd")}
       </Button>
     </Stack>

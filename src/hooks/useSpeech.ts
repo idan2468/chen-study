@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { SpeechItem } from "@/utils/speech"
-import { cancelSpeech, isSpeechSupported, speakQueue } from "@/utils/speech"
-import { loadVoices, resolveVoice } from "@/utils/voices"
+import type { SpeechItem } from "@/utils/speech/speech"
+import {
+  cancelSpeech,
+  isSpeechSupported,
+  speakQueue,
+} from "@/utils/speech/speech"
+import { loadVoices, resolveVoice } from "@/utils/speech/voices"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   selectSpeechRate,
@@ -41,7 +45,7 @@ const ensureVoices = () => {
  *
  * `loadVoices()` is async, so a user who presses play during the first second
  * of a cold page would otherwise hit an empty cache and silently fall back to
- * the browser's default voice -- precisely what `utils/voices.ts` exists to
+ * the browser's default voice -- precisely what `utils/speech/voices.ts` exists to
  * avoid. Re-reading `getVoices()` costs nothing and is usually populated by the
  * time the first utterance is actually queued.
  */

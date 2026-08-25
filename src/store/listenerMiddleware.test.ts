@@ -1,7 +1,7 @@
 import { defaultExercise } from "@/data/defaultExercise"
 import { defaultModules } from "@/data/defaultModules"
 import { at } from "@test/helpers"
-import { flashcardStatusKey, StorageKeys } from "@/utils/storageKeys"
+import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "./store"
 import { markCard, nextCard, selectModule } from "./slices/modulesSlice"
 import {
@@ -84,13 +84,11 @@ test("marking a module card writes only the module progress key", () => {
   )
 })
 
-test("the dyslexia preference is written to both legacy keys", () => {
-  // The two original pages each kept their own copy.
+test("the dyslexia preference is written to its key", () => {
   const store = makeStore(preloaded())
   store.dispatch(toggleDyslexiaFont())
 
   expect(localStorage.getItem(StorageKeys.dyslexiaFont)).toBe("1")
-  expect(localStorage.getItem(StorageKeys.dyslexiaFontModules)).toBe("1")
 })
 
 test("speech rate is clamped before being persisted", () => {

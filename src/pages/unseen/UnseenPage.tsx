@@ -10,7 +10,15 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core"
+import {
+  IconBook2,
+  IconBooks,
+  IconCards,
+  IconSettings,
+  IconTrash,
+} from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
+import { ICON_SIZE } from "@/constants/icons"
 import { importErrorMessage } from "@/i18n/importErrorMessage"
 import { confirmDanger, notifyCannotDelete } from "@/utils/confirmModal"
 import type { JsonParseResult } from "@/components/JsonLoader/JsonLoader"
@@ -86,32 +94,7 @@ export const UnseenPage = () => {
   return (
     <Container size="lg" py="xl">
       <Stack gap="lg">
-        <TopBar>
-          <Select
-            data={options}
-            value={currentId}
-            onChange={value => {
-              if (value !== null) {
-                dispatch(switchExercise(value))
-              }
-            }}
-            allowDeselect={false}
-            w={300}
-            size="xs"
-            leftSection="📚"
-            aria-label={t("unseen.selectExercise")}
-          />
-          <Tooltip label={t("unseen.deleteExercise")}>
-            <ActionIcon
-              variant="default"
-              size="lg"
-              onClick={handleDelete}
-              aria-label={t("unseen.deleteExercise")}
-            >
-              🗑️
-            </ActionIcon>
-          </Tooltip>
-        </TopBar>
+        <TopBar />
 
         <Stack gap={4} ta="center">
           {/* Exercise title and subtitle are author-supplied content. */}
@@ -122,6 +105,37 @@ export const UnseenPage = () => {
             {exercise?.subtitle}
           </Text>
         </Stack>
+
+        <Group justify="center" gap="xs">
+          <Select
+            data={options}
+            value={currentId}
+            onChange={value => {
+              if (value !== null) {
+                dispatch(switchExercise(value))
+              }
+            }}
+            allowDeselect={false}
+            w={460}
+            size="md"
+            leftSection={<IconBooks size={ICON_SIZE} />}
+            aria-label={t("unseen.selectExercise")}
+          />
+          <Tooltip label={t("unseen.deleteExercise")}>
+            <ActionIcon
+              variant="default"
+              size="xl"
+              onClick={handleDelete}
+              aria-label={t("unseen.deleteExercise")}
+            >
+              <IconTrash size={ICON_SIZE} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+
+        <Text size="sm" c="dimmed" ta="center">
+          {t("unseen.usageHint")}
+        </Text>
 
         <Tabs
           value={tab}
@@ -134,12 +148,25 @@ export const UnseenPage = () => {
           keepMounted={false}
         >
           <Tabs.List grow>
-            <Tabs.Tab value="reading">{t("unseen.tabReading")}</Tabs.Tab>
-            <Tabs.Tab value="flashcards">
+            <Tabs.Tab
+              value="reading"
+              leftSection={<IconBook2 size={ICON_SIZE} />}
+            >
+              {t("unseen.tabReading")}
+            </Tabs.Tab>
+            <Tabs.Tab
+              value="flashcards"
+              leftSection={<IconCards size={ICON_SIZE} />}
+            >
               {t("unseen.tabFlashcards")}
               {stats.total > 0 ? ` (${String(stats.total)})` : ""}
             </Tabs.Tab>
-            <Tabs.Tab value="json">{t("unseen.tabJson")}</Tabs.Tab>
+            <Tabs.Tab
+              value="json"
+              leftSection={<IconSettings size={ICON_SIZE} />}
+            >
+              {t("unseen.tabJson")}
+            </Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="reading" pt="md">

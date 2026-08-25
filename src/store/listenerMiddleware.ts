@@ -1,7 +1,7 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit"
 import type { AppDispatch, RootState } from "./store"
 import { removeKey, writeFlag, writeJson, writeString } from "./storage"
-import { flashcardStatusKey, StorageKeys } from "@/utils/storageKeys"
+import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import {
   setDyslexiaFont,
   setSpeechRate,
@@ -36,7 +36,7 @@ import {
 
 /**
  * Writes state through to localStorage, keeping the exact keys the original
- * HTML apps used (see `src/utils/storageKeys.ts` for why that matters).
+ * HTML apps used (see `src/utils/sync/storageKeys.ts` for why that matters).
  *
  * Because one slice maps to several keys, each effect compares
  * `getOriginalState()` with the new state and writes only what actually
@@ -64,9 +64,7 @@ startListening({
     const next = api.getState().settings
 
     if (previous.dyslexiaFont !== next.dyslexiaFont) {
-      // Both original pages kept their own copy of this preference.
       writeFlag(StorageKeys.dyslexiaFont, next.dyslexiaFont)
-      writeFlag(StorageKeys.dyslexiaFontModules, next.dyslexiaFont)
     }
 
     if (previous.speechRate !== next.speechRate) {
