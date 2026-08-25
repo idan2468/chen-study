@@ -51,6 +51,11 @@ const triggerLoginError = () => {
   latestLoginOptions?.onError?.({})
 }
 
+/** Simulates a popup/ad blocker preventing GIS's popup from opening at all. */
+const triggerPopupBlocked = () => {
+  latestLoginOptions?.onNonOAuthError?.({ type: "popup_failed_to_open" })
+}
+
 const Host = ({ skipBootSync = false }: { skipBootSync?: boolean }) => {
   const { connecting, connectedEmail, disconnect, reissueForSync } =
     useGoogleConnect(skipBootSync)
@@ -141,6 +146,24 @@ test("a 401 at boot falls back to signed-out when the silent re-issue fails", as
     expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
   })
   triggerLoginError()
+
+  await waitFor(() => {
+    expect(screen.getByText("idle")).toBeInTheDocument()
+  })
+  expect(screen.getByText("signed-out")).toBeInTheDocument()
+  expect(getAccessToken()).toBeNull()
+})
+
+test("a 401 at boot falls back to signed-out when the silent re-issue's popup is blocked", async () => {
+  setAccessToken("ya29.expired")
+  vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({}, 401))
+
+  renderWithProviders(<Host />)
+
+  await waitFor(() => {
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
+  })
+  triggerPopupBlocked()
 
   await waitFor(() => {
     expect(screen.getByText("idle")).toBeInTheDocument()
@@ -315,6 +338,28 @@ test("reissueForSync refreshes the token and reports success, without fetching e
   })
   expect(getAccessToken()).toBe("ya29.refreshed")
   expect(fetch).not.toHaveBeenCalled()
+})
+
+test("reissueForSync reports failure without clearing an existing token when the popup is blocked", async () => {
+  setAccessToken("ya29.token")
+  vi.mocked(fetch).mockResolvedValueOnce(
+    jsonResponse({ email: "chen@example.com" }),
+  )
+  const { user } = renderWithProviders(<Host />)
+  await waitFor(() => {
+    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
+  })
+
+  await user.click(screen.getByRole("button", { name: "Reissue" }))
+  await waitFor(() => {
+    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
+  })
+  triggerPopupBlocked()
+
+  await waitFor(() => {
+    expect(screen.getByText("reissue-failed")).toBeInTheDocument()
+  })
+  expect(getAccessToken()).toBe("ya29.token")
 })
 
 test("reissueForSync reports failure without clearing an existing token", async () => {

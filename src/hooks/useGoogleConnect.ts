@@ -156,6 +156,13 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     onError: () => {
       handleLoginResult(null)
     },
+    // GIS's token client always opens a popup, even for a silent `prompt:
+    // "none"` re-issue -- a popup/ad blocker can block it outright, which
+    // fires neither onSuccess nor onError and would hang forever without
+    // this (e.g. the boot restore spinner stuck until the blocker is off).
+    onNonOAuthError: () => {
+      handleLoginResult(null)
+    },
   })
 
   /** A silent GIS re-issue for `useDriveSync.ts`'s mid-session 401s -- only refreshes the token, never pulls, since only Connect and boot may (see docs/google-account-sync.md). */
