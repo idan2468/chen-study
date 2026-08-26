@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { Paper, useMantineColorScheme } from "@mantine/core"
-import { useDisclosure, useMediaQuery } from "@mantine/hooks"
+import { useDisclosure } from "@mantine/hooks"
 import {
   IconLanguage,
   IconLink,
@@ -14,6 +14,7 @@ import { SpeechSettingsModal } from "@/components/SpeechSettingsModal/SpeechSett
 import { SyncModal } from "@/components/SyncModal/SyncModal"
 import { ICON_SIZE } from "@/constants/icons"
 import { useGoogleConnectContext } from "@/hooks/GoogleConnectContext"
+import { useIsMobile } from "@/hooks/useIsMobile"
 import { useLocale } from "@/i18n/useLocale"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
@@ -63,7 +64,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
   const [syncOpened, syncHandlers] = useDisclosure(false)
   const [speechOpened, speechHandlers] = useDisclosure(false)
   const googleConnect = useGoogleConnectContext()
-  const isMobile = useMediaQuery("(max-width: 36em)")
+  const isMobile = useIsMobile()
 
   const isDark = colorScheme === "dark"
   const googleAvailable = isGoogleSyncAvailable()

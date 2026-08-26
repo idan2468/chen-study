@@ -6,6 +6,7 @@ import { GoogleConnectProvider } from "@/hooks/GoogleConnectContext"
 import type * as GoogleAuthModule from "@/utils/sync/google/googleAuth"
 import * as googleAuth from "@/utils/sync/google/googleAuth"
 import { getAccessToken, setAccessToken } from "@/utils/sync/google/googleAuth"
+import { MOBILE_MAX_WIDTH_QUERY } from "@/constants/breakpoints"
 import { StorageKeys } from "@/utils/sync/storageKeys"
 import { TopBar } from "./TopBar"
 
@@ -49,14 +50,11 @@ const renderTopBar = () =>
     </GoogleConnectProvider>,
   )
 
-/** Below this, the bar collapses Home + hamburger-drawer instead of a full row. */
-const MOBILE_QUERY = "(max-width: 36em)"
-
 const mockMobileViewport = () => {
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query: string) => ({
-      matches: query === MOBILE_QUERY,
+      matches: query === MOBILE_MAX_WIDTH_QUERY,
       media: query,
       onchange: null,
       addListener: () => undefined,
