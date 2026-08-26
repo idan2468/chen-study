@@ -19,7 +19,10 @@ export type DeletableSelectProps = {
   leftSection: ReactNode
 }
 
-/** Picker plus delete. The trash button fills danger red on hover. */
+/**
+ * Picker plus delete. `w={460}` overflowed a phone row and dropped the trash
+ * underneath; the select fills the row up to that max so both stay together.
+ */
 export const DeletableSelect = ({
   data,
   value,
@@ -29,7 +32,7 @@ export const DeletableSelect = ({
   deleteLabel,
   leftSection,
 }: DeletableSelectProps) => (
-  <Group justify="center" gap="xs">
+  <Group justify="center" gap="xs" wrap="nowrap" w="100%">
     <Select
       data={[...data]}
       value={value}
@@ -39,7 +42,8 @@ export const DeletableSelect = ({
         }
       }}
       allowDeselect={false}
-      w={460}
+      w="100%"
+      maw={460}
       size="md"
       leftSection={leftSection}
       aria-label={selectLabel}

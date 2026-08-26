@@ -119,13 +119,17 @@ export const ModulesPage = () => {
   }
 
   return (
-    <Container size="lg" py="xl">
+    <Container
+      size="lg"
+      py={{ base: "md", sm: "xl" }}
+      px={{ base: "xs", sm: "md" }}
+    >
       <Stack gap="lg" align="center">
         <TopBar />
 
         {reviewingMissed ? (
           <Stack gap={4} align="center" ta="center">
-            <Title order={1} c="brand">
+            <Title order={1} c="brand" fz={{ base: 22, sm: 34 }}>
               {t("modules.missedReviewTitle")}
             </Title>
             <Text c="dimmed">
@@ -148,7 +152,7 @@ export const ModulesPage = () => {
               {/* Module titles are author-supplied content of unknown
                   language, so direction is derived from the text rather than
                   assumed. */}
-              <Title order={1} c="brand" dir="auto">
+              <Title order={1} c="brand" dir="auto" fz={{ base: 22, sm: 34 }}>
                 {currentModule?.title ?? t("modules.fallbackTitle")}
               </Title>
               {/* The original never updated this line, despite the title

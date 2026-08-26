@@ -14,11 +14,13 @@
     box-shadow 0.25s ease;
 }
 
-.card:hover {
-  transform: translateY(-4px);
-  border-color: var(--mantine-color-brand-filled);
-  box-shadow: 0 15px 30px
-    rgb(from var(--mantine-color-brand-filled) r g b / 15%);
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--mantine-color-brand-filled);
+    box-shadow: 0 15px 30px
+      rgb(from var(--mantine-color-brand-filled) r g b / 15%);
+  }
 }
 
 .icon {
@@ -40,7 +42,9 @@
     color 0.2s ease;
 }
 
-.card:hover .cta {
-  background-color: var(--mantine-color-brand-filled);
-  color: var(--mantine-color-brand-contrast);
+@media (hover: hover) {
+  .card:hover .cta {
+    background-color: var(--mantine-color-brand-filled);
+    color: var(--mantine-color-brand-contrast);
+  }
 }

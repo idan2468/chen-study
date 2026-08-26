@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { ICON_SIZE } from "@/constants/icons"
+import { useIsMobile } from "@/hooks/useIsMobile"
 import { importErrorMessage } from "@/i18n/importErrorMessage"
 import { confirmDanger, notifyCannotDelete } from "@/utils/confirmModal"
 import { DeletableSelect } from "@/components/DeletableSelect/DeletableSelect"
@@ -41,6 +42,7 @@ export const UnseenPage = () => {
   const stats = useAppSelector(selectFlashcardStats)
 
   const [tab, setTab] = useState<TabValue>("reading")
+  const isMobile = useIsMobile()
 
   // The subtitle is the more descriptive label, but it may be an empty string
   // (which is why this is not a `??`).
@@ -82,16 +84,20 @@ export const UnseenPage = () => {
   }
 
   return (
-    <Container size="lg" py="xl">
+    <Container
+      size="lg"
+      py={{ base: "md", sm: "xl" }}
+      px={{ base: "xs", sm: "md" }}
+    >
       <Stack gap="lg">
         <TopBar />
 
         <Stack gap={4} ta="center">
           {/* Exercise title and subtitle are author-supplied content. */}
-          <Title order={1} c="brand" dir="auto">
+          <Title order={1} c="brand" dir="auto" fz={{ base: 22, sm: 34 }}>
             {exercise?.title ?? t("unseen.fallbackTitle")}
           </Title>
-          <Text c="dimmed" dir="auto">
+          <Text c="dimmed" dir="auto" size={isMobile ? "sm" : "md"}>
             {exercise?.subtitle}
           </Text>
         </Stack>
@@ -106,7 +112,7 @@ export const UnseenPage = () => {
           leftSection={<IconBooks size={ICON_SIZE} />}
         />
 
-        <Text size="sm" c="dimmed" ta="center">
+        <Text size={isMobile ? "xs" : "sm"} c="dimmed" ta="center">
           {t("unseen.usageHint")}
         </Text>
 

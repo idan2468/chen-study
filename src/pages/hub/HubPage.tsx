@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { TopBar } from "@/components/TopBar/TopBar"
 import { APP_ROUTES } from "@/constants/routes"
+import { useIsMobile } from "@/hooks/useIsMobile"
 import classes from "./HubPage.module.css"
 
 /** The two practice apps, as in the original `index.html`. */
@@ -26,17 +27,22 @@ const links = [
 
 export const HubPage = () => {
   const { t } = useTranslation()
+  const isMobile = useIsMobile()
 
   return (
-    <Container size="md" py="xl">
+    <Container
+      size="md"
+      py={{ base: "md", sm: "xl" }}
+      px={{ base: "xs", sm: "md" }}
+    >
       <Stack gap="xl" align="center">
         <TopBar withHomeLink={false} />
 
         <Stack gap="xs" align="center" ta="center">
-          <Title order={1} c="brand">
+          <Title order={1} c="brand" fz={{ base: 22, sm: 34 }}>
             {t("hub.title")}
           </Title>
-          <Text c="dimmed" size="lg">
+          <Text c="dimmed" size={isMobile ? "sm" : "lg"}>
             {t("hub.subtitle")}
           </Text>
         </Stack>
@@ -49,7 +55,7 @@ export const HubPage = () => {
               to={link.to}
               withBorder
               radius="lg"
-              padding="xl"
+              padding={isMobile ? "md" : "xl"}
               shadow="md"
               className={classes.card}
             >
