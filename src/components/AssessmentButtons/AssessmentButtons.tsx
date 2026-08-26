@@ -25,7 +25,7 @@ export const AssessmentButtons = ({
   knownLabel,
   unknownLabel,
 }: AssessmentButtonsProps) => (
-  <Group gap="sm" justify="center">
+  <Group gap="sm" justify="center" w="100%" maw={480} grow>
     <Button
       color="success"
       variant={isKnown === true ? "filled" : "light"}

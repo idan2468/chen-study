@@ -10,6 +10,7 @@ import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import { StatCounts } from "@/components/StatCounts/StatCounts"
 import { FLASHCARD_AUTO_ADVANCE_MS } from "@/constants/flashcards"
 import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
+import { useIsMobile } from "@/hooks/useIsMobile"
 import { useSpeech } from "@/hooks/useSpeech"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
@@ -27,6 +28,7 @@ import classes from "./FlashcardsTab.module.css"
 
 export const FlashcardsTab = () => {
   const { t } = useTranslation()
+  const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
   const exercise = useAppSelector(selectCurrentExercise)
   const card = useAppSelector(selectCurrentFlashcard)
@@ -139,7 +141,8 @@ export const FlashcardsTab = () => {
           setFlipped(current => !current)
         }}
         status={status === undefined ? "none" : status ? "known" : "unknown"}
-        label={t("common.cardAriaLabel")}
+        minHeight={isMobile ? 200 : 260}
+        label={t(isMobile ? "common.cardAriaLabelTap" : "common.cardAriaLabel")}
         front={
           <>
             {status !== undefined ? (

@@ -8,6 +8,7 @@ import { FlipCard } from "@/components/FlipCard/FlipCard"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import { FLASHCARD_AUTO_ADVANCE_MS } from "@/constants/flashcards"
 import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
+import { useIsMobile } from "@/hooks/useIsMobile"
 import { useSpeech } from "@/hooks/useSpeech"
 import type { CardStatus, ModuleCard } from "@/types/module"
 import classes from "./ModuleFlashcard.module.css"
@@ -32,6 +33,7 @@ export const ModuleFlashcard = ({
   onPrev,
 }: ModuleFlashcardProps) => {
   const { t } = useTranslation()
+  const isMobile = useIsMobile()
   const [flipped, setFlipped] = useState(false)
   const { speak, stop } = useSpeech()
   const advanceTimer = useRef<number | undefined>(undefined)
@@ -85,7 +87,8 @@ export const ModuleFlashcard = ({
           setFlipped(current => !current)
         }}
         status={status ?? "none"}
-        label={t("common.cardAriaLabel")}
+        minHeight={isMobile ? 200 : 260}
+        label={t(isMobile ? "common.cardAriaLabelTap" : "common.cardAriaLabel")}
         front={<CardWord text={card.en} className={classes.word} />}
         back={
           /* Card content: direction derived from the text, not the UI language. */
@@ -120,7 +123,7 @@ export const ModuleFlashcard = ({
         onNext={onNext}
       />
 
-      <Text size="sm" c="dimmed" ta="center">
+      <Text size="sm" c="dimmed" ta="center" visibleFrom="sm">
         💡 <b>{t("modules.shortcutsLabel")}</b>
         {t("modules.shortcuts")}
       </Text>

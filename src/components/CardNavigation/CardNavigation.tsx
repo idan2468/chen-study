@@ -28,14 +28,24 @@ export const CardNavigation = ({
   const { t } = useTranslation()
 
   return (
-    <Group gap="md" justify="center">
-      <Button variant="default" onClick={onPrev} disabled={index === 0}>
+    <Group gap="xs" justify="center" w="100%" maw={480} wrap="nowrap">
+      <Button
+        variant="default"
+        flex={1}
+        onClick={onPrev}
+        disabled={index === 0}
+      >
         {t("common.previous")}
       </Button>
       <Text fw={700} miw={70} ta="center">
         {index + 1} / {total}
       </Text>
-      <Button variant="default" onClick={onNext} disabled={index >= total - 1}>
+      <Button
+        variant="default"
+        flex={1}
+        onClick={onNext}
+        disabled={index >= total - 1}
+      >
         {t("common.next")}
       </Button>
     </Group>
