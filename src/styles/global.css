@@ -6,8 +6,15 @@
  * through Mantine components and `src/theme.ts`.
  */
 
+html {
+  min-width: 360px;
+}
+
 body {
   line-height: 1.8;
+  min-width: 360px;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 /*
