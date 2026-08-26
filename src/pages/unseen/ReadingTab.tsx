@@ -1,6 +1,7 @@
 import { Group, Paper, Stack, Text } from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
+import { useIsMobile } from "@/hooks/useIsMobile"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   answerQuestion,
@@ -12,6 +13,7 @@ import { QuestionCard } from "./QuestionCard"
 
 export const ReadingTab = () => {
   const { t } = useTranslation()
+  const isMobile = useIsMobile()
   const dispatch = useAppDispatch()
   const exercise = useAppSelector(selectCurrentExercise)
   const answers = useAppSelector(selectAnswers)
@@ -43,7 +45,7 @@ export const ReadingTab = () => {
 
       <Paper withBorder radius="md" p="sm" bg="var(--mantine-color-default)">
         <Text size="sm" c="dimmed">
-          {t("unseen.readingHint")}
+          {t(isMobile ? "unseen.readingHintTap" : "unseen.readingHint")}
         </Text>
       </Paper>
 

@@ -190,7 +190,7 @@ export const ParagraphReader = ({ paragraphs }: ParagraphReaderProps) => {
                 .slice(paragraphIndex)
                 .map(text => ({ text, lang: "en-US" }))}
               label={t("unseen.paragraphPlay", { number: paragraphIndex + 1 })}
-              size="sm"
+              size="md"
             />
 
             <p className={classes.paragraph}>

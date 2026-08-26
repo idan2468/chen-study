@@ -35,7 +35,7 @@ export const QuestionCard = ({
               ...question.options.map(option => ({ text: option.text })),
             ]}
             label={t("unseen.speakQuestion")}
-            size="sm"
+            size="md"
           />
           {/* Question text is author-supplied; direction comes from the text. */}
           <Text dir="auto" fw={600} className={classes.questionText}>

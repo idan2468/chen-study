@@ -33,7 +33,9 @@ export const en: Messages = {
     previous: "← Previous",
     next: "Next →",
     flipHint: "Click to flip the card",
+    flipHintTap: "Tap to flip the card",
     cardAriaLabel: "Flashcard - click to flip",
+    cardAriaLabelTap: "Flashcard - tap to flip",
     speakWord: "Read the word {{word}} aloud",
     stopSpeaking: "Stop reading: {{label}}",
     deleteItem: "Delete {{name}}",
@@ -137,6 +139,8 @@ export const en: Messages = {
     playAllLabel: "Read the whole passage aloud",
     readingHint:
       "💡 Click a word to hear it • Double-click to highlight it • Emphasised words also appear in the vocabulary cards",
+    readingHintTap:
+      "💡 Tap a word to hear it • Double-tap to highlight it • Emphasised words also appear in the vocabulary cards",
     usageHint:
       "New here? Start with the Vocabulary cards to learn the key words, then move on to Reading & questions.",
     paragraphPlay: "Read from paragraph {{number}} onwards",
