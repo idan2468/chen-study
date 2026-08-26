@@ -99,6 +99,8 @@ export const en: Messages = {
     shortcutsLabel: "Keyboard shortcuts:",
     shortcuts:
       " [space] flip | [arrows] navigate | [S] read aloud | [1] got it | [2] needs practice",
+    selectModule: "Choose a module",
+    deleteModule: "Delete the current module",
     deleteTitle: "Delete module",
     deleteBody:
       'Delete the module "{{name}}"? Progress on the words themselves is kept.',

@@ -27,7 +27,7 @@ body.dyslexiaFont {
 }
 
 /*
- * The `pills` Tabs variant (`UnseenPage`, `DeletableTabs`) paints unselected
+ * The `pills` Tabs variant (`UnseenPage`) paints unselected
  * tabs with `background-color: transparent` by default, which leaves them
  * indistinguishable from whatever is behind them. Targets Mantine's own
  * `role`/`data-*` attributes rather than a hashed CSS-Module class name, since

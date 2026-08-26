@@ -1,26 +1,16 @@
 import { useState } from "react"
-import {
-  ActionIcon,
-  Container,
-  Group,
-  Select,
-  Stack,
-  Tabs,
-  Text,
-  Title,
-  Tooltip,
-} from "@mantine/core"
+import { Container, Group, Stack, Tabs, Text, Title } from "@mantine/core"
 import {
   IconBook2,
   IconBooks,
   IconCards,
   IconSettings,
-  IconTrash,
 } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { ICON_SIZE } from "@/constants/icons"
 import { importErrorMessage } from "@/i18n/importErrorMessage"
 import { confirmDanger, notifyCannotDelete } from "@/utils/confirmModal"
+import { DeletableSelect } from "@/components/DeletableSelect/DeletableSelect"
 import type { JsonParseResult } from "@/components/JsonLoader/JsonLoader"
 import { JsonLoader } from "@/components/JsonLoader/JsonLoader"
 import { StatCounts } from "@/components/StatCounts/StatCounts"
@@ -106,32 +96,15 @@ export const UnseenPage = () => {
           </Text>
         </Stack>
 
-        <Group justify="center" gap="xs">
-          <Select
-            data={options}
-            value={currentId}
-            onChange={value => {
-              if (value !== null) {
-                dispatch(switchExercise(value))
-              }
-            }}
-            allowDeselect={false}
-            w={460}
-            size="md"
-            leftSection={<IconBooks size={ICON_SIZE} />}
-            aria-label={t("unseen.selectExercise")}
-          />
-          <Tooltip label={t("unseen.deleteExercise")}>
-            <ActionIcon
-              variant="default"
-              size="xl"
-              onClick={handleDelete}
-              aria-label={t("unseen.deleteExercise")}
-            >
-              <IconTrash size={ICON_SIZE} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+        <DeletableSelect
+          data={options}
+          value={currentId}
+          onChange={id => dispatch(switchExercise(id))}
+          onDelete={handleDelete}
+          selectLabel={t("unseen.selectExercise")}
+          deleteLabel={t("unseen.deleteExercise")}
+          leftSection={<IconBooks size={ICON_SIZE} />}
+        />
 
         <Text size="sm" c="dimmed" ta="center">
           {t("unseen.usageHint")}

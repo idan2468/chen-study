@@ -93,6 +93,8 @@ export const he = {
     shortcutsLabel: "קיצורי מקלדת:",
     shortcuts:
       " [רווח] הפיכה | [חצים] מעבר | [S] הקראה | [1] הצלחתי | [2] צריכה תרגול",
+    selectModule: "בחירת מודול",
+    deleteModule: "מחיקת המודול הנוכחי",
     deleteTitle: "מחיקת מודול",
     deleteBody: 'למחוק את המודול "{{name}}"? ההתקדמות על המילים עצמן תישמר.',
     cannotDeleteTitle: "לא ניתן למחוק",

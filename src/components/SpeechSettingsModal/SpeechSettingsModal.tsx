@@ -7,8 +7,10 @@ import {
   Stack,
   Text,
 } from "@mantine/core"
+import { IconMicrophone } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
+import { ICON_SIZE } from "@/constants/icons"
 import { useSystemVoices } from "@/hooks/useSpeech"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
@@ -77,7 +79,8 @@ export const SpeechSettingsModal = ({
             dispatch(setSystemVoiceUri(value === "" ? null : value))
           }}
           allowDeselect={false}
-          searchable
+          size="md"
+          leftSection={<IconMicrophone size={ICON_SIZE} />}
         />
 
         <Stack gap={2}>

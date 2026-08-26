@@ -11,7 +11,7 @@ export type ModuleCard = {
 
 export type PracticeModule = {
   id: string
-  /** Short label shown on the tab. */
+  /** Short label shown in the module picker. */
   tabName: string
   title: string
   /** Author-supplied HTML for the rule box. Rendered as markup, see `RuleBox`. */

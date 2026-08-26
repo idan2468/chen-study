@@ -1,0 +1,4 @@
+.deleteButton:hover {
+  background-color: var(--mantine-color-danger-5);
+  color: var(--mantine-color-white);
+}

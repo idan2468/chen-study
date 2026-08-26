@@ -8,14 +8,19 @@ import {
   Text,
   Title,
 } from "@mantine/core"
-import { IconArrowLeft, IconRepeat, IconSettings } from "@tabler/icons-react"
+import {
+  IconArrowLeft,
+  IconCards,
+  IconRepeat,
+  IconSettings,
+} from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { ICON_SIZE } from "@/constants/icons"
 import { importErrorMessage } from "@/i18n/importErrorMessage"
 import { confirmDanger, notifyCannotDelete } from "@/utils/confirmModal"
+import { DeletableSelect } from "@/components/DeletableSelect/DeletableSelect"
 import type { JsonParseResult } from "@/components/JsonLoader/JsonLoader"
 import { JsonLoader } from "@/components/JsonLoader/JsonLoader"
-import { DeletableTabs } from "@/components/DeletableTabs/DeletableTabs"
 import { StatCounts } from "@/components/StatCounts/StatCounts"
 import { TopBar } from "@/components/TopBar/TopBar"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
@@ -62,9 +67,8 @@ export const ModulesPage = () => {
   const progress = useAppSelector(selectModulesProgress)
   const stats = useAppSelector(selectModuleStats)
 
-  const handleDeleteModule = (id: string) => {
-    const target = modules.find(module => module.id === id)
-    if (!target) {
+  const handleDeleteModule = () => {
+    if (currentModule === undefined) {
       return
     }
 
@@ -79,9 +83,9 @@ export const ModulesPage = () => {
     // Replaces the original's native `confirm()`.
     confirmDanger(t, {
       title: t("modules.deleteTitle"),
-      body: t("modules.deleteBody", { name: target.tabName }),
+      body: t("modules.deleteBody", { name: currentModule.tabName }),
       confirmLabel: t("common.delete"),
-      onConfirm: () => dispatch(deleteModule(id)),
+      onConfirm: () => dispatch(deleteModule(currentModule.id)),
     })
   }
 
@@ -172,14 +176,17 @@ export const ModulesPage = () => {
               </Button>
             ) : null}
 
-            <DeletableTabs
-              items={modules.map(module => ({
+            <DeletableSelect
+              data={modules.map(module => ({
                 value: module.id,
                 label: module.tabName,
               }))}
               value={currentModuleId}
               onChange={id => dispatch(selectModuleAction(id))}
               onDelete={handleDeleteModule}
+              selectLabel={t("modules.selectModule")}
+              deleteLabel={t("modules.deleteModule")}
+              leftSection={<IconCards size={ICON_SIZE} />}
             />
 
             {currentModule && currentModule.rule !== "" ? (
