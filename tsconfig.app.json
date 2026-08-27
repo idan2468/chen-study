@@ -29,7 +29,8 @@
     "types": ["vitest/globals"],
     "paths": {
       "@/*": ["./src/*"],
-      "@test/*": ["./test/*"]
+      "@test/*": ["./test/*"],
+      "@resources/*": ["./resources/*"]
     }
   },
   "include": ["src", "test"]

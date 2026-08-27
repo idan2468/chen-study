@@ -5,7 +5,8 @@
  *
  * Reads:  old/Modules Practice.html  (defaultModulesData, SAMPLE_MODULE_TEMPLATE)
  *         old/Unseen New.html        (defaultExercise)
- * Writes: src/data/*.ts
+ * Writes: resources/chen-english-course-full.json (the module array)
+ *         src/data/*.ts (the sample module, built-in ids, and default exercise)
  *
  * Run from the repo root:  node scripts/extract-legacy-data.cjs
  */
@@ -14,6 +15,7 @@ const path = require("node:path")
 
 const repoRoot = path.join(__dirname, "..")
 const outDir = path.join(repoRoot, "src", "data")
+const resourcesDir = path.join(repoRoot, "resources")
 
 const sliceLiteral = (src, marker, endMarker, closer) => {
   const start = src.indexOf(marker)
@@ -64,12 +66,23 @@ const exercise = evalLiteral(
 )
 
 fs.writeFileSync(
-  path.join(outDir, "defaultModuleExercises.ts"),
-  `${banner("Modules Practice.html")}
-import type { ModuleExercise } from "../types/module"
+  path.join(resourcesDir, "chen-english-course-full.json"),
+  `${JSON.stringify(modules, null, 2)}\n`,
+)
 
-/** The five built-in phonics modules. */
-export const defaultModuleExercises: ModuleExercise[] = ${JSON.stringify(modules, null, 2)}
+fs.writeFileSync(
+  path.join(outDir, "defaultModuleExercises.ts"),
+  `/**
+ * \`sampleModuleExercise\` below is seed content extracted verbatim from
+ * \`Modules Practice.html\` by \`scripts/extract-legacy-data.cjs\` -- do not edit
+ * it by hand. \`defaultModuleExercises\` itself now comes from
+ * \`resources/chen-english-course-full.json\`, the full course content.
+ */
+import type { ModuleExercise } from "../types/module"
+import moduleExercisesData from "@resources/chen-english-course-full.json"
+
+/** The full built-in phonics course. */
+export const defaultModuleExercises: ModuleExercise[] = moduleExercisesData
 
 /** Prefilled into the JSON loader's textarea as a starting point. */
 export const sampleModuleExercise: ModuleExercise = ${JSON.stringify(sampleModule, null, 2)}

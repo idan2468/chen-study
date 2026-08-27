@@ -32,3 +32,4 @@ yalc.lock
 
 # Scratch screenshots from AI-assisted UI mock reviews, never committed.
 /ui-mocks/
+/.kiro/settings/
