@@ -93,19 +93,6 @@ export const JsonLoader = ({
         </CopyButton>
       </Group>
 
-      <Textarea
-        value={text}
-        onChange={event => {
-          setText(event.currentTarget.value)
-        }}
-        placeholder='{ "id": "...", "cards": [ ... ] }'
-        autosize
-        minRows={8}
-        maxRows={20}
-        styles={{ input: { direction: "ltr", textAlign: "left" } }}
-        aria-label={t("json.contentLabel")}
-      />
-
       {result ? (
         <Alert color={result.ok ? "success" : "danger"} variant="light">
           <Stack gap="xs">
@@ -122,6 +109,19 @@ export const JsonLoader = ({
           </Stack>
         </Alert>
       ) : null}
+
+      <Textarea
+        value={text}
+        onChange={event => {
+          setText(event.currentTarget.value)
+        }}
+        placeholder='{ "id": "...", "cards": [ ... ] }'
+        autosize
+        minRows={8}
+        maxRows={20}
+        styles={{ input: { direction: "ltr", textAlign: "left" } }}
+        aria-label={t("json.contentLabel")}
+      />
 
       <Button
         leftSection={<IconPlus size={ICON_SIZE} />}
