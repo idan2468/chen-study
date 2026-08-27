@@ -8,18 +8,6 @@
 
 html {
   min-width: 360px;
-  /*
-   * scrollbar-gutter only takes effect on a box with overflow other than
-   * visible, so the root needs an explicit overflow-y here. A plain "stable"
-   * gutter reserves the space only on one edge (the scrollbar's physical
-   * side), which in this RTL app is the left -- that still drags the whole
-   * layout box left relative to the viewport and creates real horizontal
-   * scroll room. "both-edges" reserves matching space on the opposite edge
-   * too, so the content box stays centered/anchored regardless of writing
-   * direction.
-   */
-  overflow-y: auto;
-  scrollbar-gutter: stable both-edges;
 }
 
 body {
@@ -30,11 +18,17 @@ body {
 }
 
 /*
- * Dyslexia-friendly mode. Overriding the Mantine font variable in one rule
- * replaces the whole duplicated `body.dyslexia-font` cascade that both original
- * pages carried (`Unseen New.html:630-652`, `Modules Practice.html:561-577`).
- * The class is toggled from `settingsSlice` state, see `App.tsx`.
+ * react-remove-scroll-bar (used by Mantine's Modal/Drawer scroll lock) bakes
+ * window.innerWidth - html.clientWidth as margin-right into every
+ * .width-before-scroll-bar element, including the unrelated Notifications
+ * portal. That gap can be nonzero with no real scrollbar (mobile browser
+ * chrome resizing the viewport), and in RTL the margin drags this fixed
+ * overlay past the left edge. It never needs scrollbar-gap compensation.
  */
+.mantine-Notifications-root.width-before-scroll-bar {
+  margin-right: 0 !important;
+}
+
 body.dyslexiaFont {
   --mantine-font-family: "Lexend", "Segoe UI", Tahoma, Arial, sans-serif;
   --mantine-font-family-headings:
