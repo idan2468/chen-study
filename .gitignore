@@ -32,3 +32,6 @@ yalc.lock
 # Scratch screenshots from AI-assisted UI mock reviews, never committed.
 /ui-mocks/
 /.kiro/settings/
+
+# Playwright MCP's screenshots/snapshots from browser-driven verification, never committed.
+/.playwright-mcp/
