@@ -6,7 +6,7 @@
 import type { ModuleExercise } from "@/types/module"
 
 /** The five built-in phonics modules. */
-export const defaultModules: ModuleExercise[] = [
+export const defaultModuleExercises: ModuleExercise[] = [
   {
     id: "mod1_short_a",
     tabName: "מודול 1 (A)",
@@ -3199,7 +3199,7 @@ export const defaultModules: ModuleExercise[] = [
 ]
 
 /** Prefilled into the JSON loader's textarea as a starting point. */
-export const sampleModule: ModuleExercise = {
+export const sampleModuleExercise: ModuleExercise = {
   id: "mod_sample_e",
   tabName: "מודול (E)",
   title: "מודול דוגמה: תנועת E קצרה (Short E)",

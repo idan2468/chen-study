@@ -5,7 +5,7 @@
  */
 import type { UnseenExercise } from "@/types/exercise"
 
-export const defaultExercise: UnseenExercise = {
+export const defaultUnseenExercise: UnseenExercise = {
   title: "📖 תרגול קריאה באנגלית (Reading Practice)",
   subtitle: "נושא: אפיית סופלה (Baking a Soufflé) • רמה בינונית-מתקדמת",
   exerciseId: "souffle_v1",

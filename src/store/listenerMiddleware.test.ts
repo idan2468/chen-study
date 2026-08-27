@@ -1,5 +1,5 @@
-import { defaultExercise } from "@/data/defaultExercise"
-import { defaultModules } from "@/data/defaultModules"
+import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
+import { defaultModuleExercises } from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
 import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "./store"
@@ -17,18 +17,18 @@ const otherId = "other_1"
 const preloaded = () => ({
   unseen: {
     library: {
-      [defaultExercise.exerciseId]: defaultExercise,
-      [otherId]: { ...defaultExercise, exerciseId: otherId },
+      [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
+      [otherId]: { ...defaultUnseenExercise, exerciseId: otherId },
     },
-    currentId: defaultExercise.exerciseId,
+    currentId: defaultUnseenExercise.exerciseId,
     cardIndex: 0,
     answers: {},
     markedWords: {},
-    progress: { [defaultExercise.exerciseId]: {}, [otherId]: {} },
+    progress: { [defaultUnseenExercise.exerciseId]: {}, [otherId]: {} },
   },
   modules: {
-    modules: [...defaultModules],
-    currentModuleId: at(defaultModules, 0).id,
+    modules: [...defaultModuleExercises],
+    currentModuleId: at(defaultModuleExercises, 0).id,
     cardIndex: 0,
     filterMissed: false,
     reviewingMissed: false,
@@ -47,7 +47,7 @@ test("marking a flashcard writes only that exercise's status key", () => {
 
   const written = Object.keys(localStorage)
   expect(written).toStrictEqual([
-    flashcardStatusKey(defaultExercise.exerciseId),
+    flashcardStatusKey(defaultUnseenExercise.exerciseId),
   ])
   // The other exercise's key, and the library itself, are left untouched.
   expect(localStorage.getItem(flashcardStatusKey(otherId))).toBeNull()
@@ -60,7 +60,7 @@ test("stores flashcard progress in the original's shape", () => {
   store.dispatch(markFlashcard({ word: "Batter", isKnown: false }))
 
   expect(
-    localStorage.getItem(flashcardStatusKey(defaultExercise.exerciseId)),
+    localStorage.getItem(flashcardStatusKey(defaultUnseenExercise.exerciseId)),
   ).toBe(JSON.stringify({ Delicate: true, Batter: false }))
 })
 
@@ -70,7 +70,7 @@ test("highlighting a word writes only the marked-words key", () => {
 
   expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.markedWords])
   expect(localStorage.getItem(StorageKeys.markedWords)).toBe(
-    JSON.stringify({ [defaultExercise.exerciseId]: ["Maya"] }),
+    JSON.stringify({ [defaultUnseenExercise.exerciseId]: ["Maya"] }),
   )
 })
 
@@ -112,7 +112,7 @@ test("answering a question writes only the quiz-answers key", () => {
 
 test("advancing a flashcard writes only the flashcard-index key", () => {
   const store = makeStore(preloaded())
-  store.dispatch(nextFlashcard(defaultExercise.flashcards.length))
+  store.dispatch(nextFlashcard(defaultUnseenExercise.flashcards.length))
 
   expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.flashcardIndex])
   expect(localStorage.getItem(StorageKeys.flashcardIndex)).toBe("1")
@@ -120,7 +120,7 @@ test("advancing a flashcard writes only the flashcard-index key", () => {
 
 test("advancing a module card writes only the module-card-index key", () => {
   const store = makeStore(preloaded())
-  store.dispatch(nextCard(at(defaultModules, 0).cards.length))
+  store.dispatch(nextCard(at(defaultModuleExercises, 0).cards.length))
 
   expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.moduleCardIndex])
   expect(localStorage.getItem(StorageKeys.moduleCardIndex)).toBe("1")
@@ -128,7 +128,7 @@ test("advancing a module card writes only the module-card-index key", () => {
 
 test("switching modules writes only the current-module-id key", () => {
   const store = makeStore(preloaded())
-  const secondModuleId = at(defaultModules, 1).id
+  const secondModuleId = at(defaultModuleExercises, 1).id
   store.dispatch(selectModule(secondModuleId))
 
   expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.currentModuleId])

@@ -64,15 +64,15 @@ const exercise = evalLiteral(
 )
 
 fs.writeFileSync(
-  path.join(outDir, "defaultModules.ts"),
+  path.join(outDir, "defaultModuleExercises.ts"),
   `${banner("Modules Practice.html")}
 import type { ModuleExercise } from "../types/module"
 
 /** The five built-in phonics modules. */
-export const defaultModules: ModuleExercise[] = ${JSON.stringify(modules, null, 2)}
+export const defaultModuleExercises: ModuleExercise[] = ${JSON.stringify(modules, null, 2)}
 
 /** Prefilled into the JSON loader's textarea as a starting point. */
-export const sampleModule: ModuleExercise = ${JSON.stringify(sampleModule, null, 2)}
+export const sampleModuleExercise: ModuleExercise = ${JSON.stringify(sampleModule, null, 2)}
 
 /** Ids of the built-in modules, used to tell them apart from user-added ones. */
 export const builtInModuleIds: readonly string[] = ${JSON.stringify(
@@ -82,11 +82,11 @@ export const builtInModuleIds: readonly string[] = ${JSON.stringify(
 )
 
 fs.writeFileSync(
-  path.join(outDir, "defaultExercise.ts"),
+  path.join(outDir, "defaultUnseenExercise.ts"),
   `${banner("Unseen New.html")}
 import type { UnseenExercise } from "../types/exercise"
 
-export const defaultExercise: UnseenExercise = ${JSON.stringify(exercise, null, 2)}
+export const defaultUnseenExercise: UnseenExercise = ${JSON.stringify(exercise, null, 2)}
 `,
 )
 

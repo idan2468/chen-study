@@ -4,7 +4,10 @@ import { createAppSlice } from "@/store/createAppSlice"
 import { deleteEntry } from "@/store/records"
 import { readJson, readString } from "@/store/storage"
 import { StorageKeys } from "@/utils/sync/storageKeys"
-import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
+import {
+  builtInModuleIds,
+  defaultModuleExercises,
+} from "@/data/defaultModuleExercises"
 import type {
   ModuleCard,
   ModuleExercise,
@@ -26,8 +29,9 @@ export type ModulesState = {
 
 /**
  * The original app opened on the fourth module (`currentModuleIndex = 3`).
- * Was stuck at the stale id `"mod3"` after `defaultModules.ts` renamed its
- * ids to `mod3_short_i` etc, silently falling back to `modules[0]` always.
+ * Was stuck at the stale id `"mod3"` after `defaultModuleExercises.ts`
+ * renamed its ids to `mod3_short_i` etc, silently falling back to
+ * `modules[0]` always.
  */
 const PREFERRED_DEFAULT_MODULE_ID = "mod3_short_i"
 
@@ -51,7 +55,7 @@ export const mergeModules = (
   const merged: ModuleExercise[] = []
 
   // Built-ins keep their canonical order.
-  for (const builtIn of defaultModules) {
+  for (const builtIn of defaultModuleExercises) {
     if (deleted.has(builtIn.id)) {
       continue
     }

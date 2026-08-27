@@ -1,4 +1,7 @@
-import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
+import {
+  builtInModuleIds,
+  defaultModuleExercises,
+} from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
 import type { ModuleExercise } from "@/types/module"
 import { StorageKeys } from "@/utils/sync/storageKeys"
@@ -35,9 +38,9 @@ const customModule: ModuleExercise = {
 
 /**
  * A second custom module sharing `QUIZ` with `customModule`, standing in for
- * the real content's now-unique words -- `defaultModules` no longer repeats a
- * word across modules, so cross-module sharing has to be constructed
- * explicitly rather than relied upon from the built-in data.
+ * the real content's now-unique words -- `defaultModuleExercises` no longer
+ * repeats a word across modules, so cross-module sharing has to be
+ * constructed explicitly rather than relied upon from the built-in data.
  */
 const otherCustomModule: ModuleExercise = {
   id: "custom_2",
@@ -50,10 +53,10 @@ const otherCustomModule: ModuleExercise = {
 const firstBuiltInId = at(builtInModuleIds, 0)
 const secondBuiltInId = at(builtInModuleIds, 1)
 const thirdBuiltInId = at(builtInModuleIds, 2)
-const firstCard = at(at(defaultModules, 0).cards, 0)
+const firstCard = at(at(defaultModuleExercises, 0).cards, 0)
 
 const baseState = (overrides: Partial<ModulesState> = {}): ModulesState => ({
-  modules: [...defaultModules],
+  modules: [...defaultModuleExercises],
   currentModuleId: firstBuiltInId,
   cardIndex: 0,
   filterMissed: false,
@@ -72,7 +75,7 @@ describe("mergeModules", () => {
     // The original replaced the built-in list wholesale with whatever was
     // stored, so a user who had only the first built-in never saw the rest
     // again.
-    const stored = [at(defaultModules, 0), customModule]
+    const stored = [at(defaultModuleExercises, 0), customModule]
     const merged = mergeModules(stored, [])
 
     expect(merged.map(m => m.id)).toStrictEqual([
@@ -82,7 +85,7 @@ describe("mergeModules", () => {
   })
 
   test("a stored copy of a built-in wins, so user edits survive", () => {
-    const edited = { ...at(defaultModules, 0), tabName: "Edited" }
+    const edited = { ...at(defaultModuleExercises, 0), tabName: "Edited" }
     const merged = mergeModules([edited], [])
 
     expect(at(merged, 0).tabName).toBe("Edited")
@@ -137,11 +140,11 @@ describe("progress", () => {
   })
 
   test("resetting clears only the current module's words", () => {
-    const secondCard = at(at(defaultModules, 1).cards, 0)
+    const secondCard = at(at(defaultModuleExercises, 1).cards, 0)
     const store = makeStore({
       modules: baseState({
         currentModuleId: "custom_1",
-        modules: [...defaultModules, customModule],
+        modules: [...defaultModuleExercises, customModule],
         progress: { ZAP: "known", [secondCard.en]: "unknown" },
       }),
     })
@@ -378,7 +381,7 @@ describe("deleteModule", () => {
   test("re-adding a deleted built-in clears its deletion record", () => {
     const store = makeStore({ modules: baseState() })
     store.dispatch(deleteModule(secondBuiltInId))
-    store.dispatch(addModules([at(defaultModules, 1)]))
+    store.dispatch(addModules([at(defaultModuleExercises, 1)]))
 
     expect(store.getState().modules.deletedBuiltInIds).toStrictEqual([])
   })
