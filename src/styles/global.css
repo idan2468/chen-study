@@ -8,6 +8,18 @@
 
 html {
   min-width: 360px;
+  /*
+   * scrollbar-gutter only takes effect on a box with overflow other than
+   * visible, so the root needs an explicit overflow-y here. A plain "stable"
+   * gutter reserves the space only on one edge (the scrollbar's physical
+   * side), which in this RTL app is the left -- that still drags the whole
+   * layout box left relative to the viewport and creates real horizontal
+   * scroll room. "both-edges" reserves matching space on the opposite edge
+   * too, so the content box stays centered/anchored regardless of writing
+   * direction.
+   */
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
 }
 
 body {
