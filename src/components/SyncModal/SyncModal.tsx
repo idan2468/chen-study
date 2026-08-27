@@ -91,6 +91,7 @@ export const SyncModal = ({ opened, onClose }: SyncModalProps) => {
       title={t("sync.title")}
       centered
       size="lg"
+      removeScrollProps={{ removeScrollBar: false }}
     >
       <Text size="sm" c="dimmed" mb="md">
         {t("sync.description")}

@@ -62,6 +62,7 @@ export const SpeechSettingsModal = ({
       title={t("speech.title")}
       centered
       size="lg"
+      removeScrollProps={{ removeScrollBar: false }}
     >
       <Stack gap="md">
         <Select
