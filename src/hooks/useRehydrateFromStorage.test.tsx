@@ -14,7 +14,7 @@ import { selectCurrentExerciseId } from "@/store/slices/unseenSlice"
 import { selectCurrentModuleId } from "@/store/slices/modulesSlice"
 import { colorSchemeManager, theme } from "@/theme"
 import { builtInModuleIds } from "@/data/defaultModuleExercises"
-import type { UnseenExercise } from "@/types/exercise"
+import type { UnseenExercise } from "@/types/unseenExercise"
 import { StorageKeys } from "@/utils/sync/storageKeys"
 import { useRehydrateFromStorage } from "./useRehydrateFromStorage"
 

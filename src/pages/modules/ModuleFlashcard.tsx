@@ -10,7 +10,7 @@ import { FLASHCARD_AUTO_ADVANCE_MS } from "@/constants/flashcards"
 import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
 import { useIsMobile } from "@/hooks/useIsMobile"
 import { useSpeech } from "@/hooks/useSpeech"
-import type { CardStatus, ModuleCard } from "@/types/module"
+import type { CardStatus, ModuleCard } from "@/types/moduleExercise"
 import classes from "./ModuleFlashcard.module.css"
 
 export type ModuleFlashcardProps = {

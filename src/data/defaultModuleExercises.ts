@@ -4,7 +4,7 @@
  * it by hand. `defaultModuleExercises` itself now comes from
  * `resources/chen-english-course-full.json`, the full course content.
  */
-import type { ModuleExercise } from "@/types/module"
+import type { ModuleExercise } from "@/types/moduleExercise"
 import moduleExercisesData from "@resources/chen-english-course-full.json"
 
 /** The full built-in phonics course. */

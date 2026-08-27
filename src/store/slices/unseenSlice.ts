@@ -9,7 +9,7 @@ import type {
   AnswerRecord,
   FlashcardProgress,
   UnseenExercise,
-} from "@/types/exercise"
+} from "@/types/unseenExercise"
 
 export type UnseenState = {
   library: Record<string, UnseenExercise>

@@ -4,7 +4,7 @@ import type {
   Question,
   QuestionOption,
   UnseenExercise,
-} from "@/types/exercise"
+} from "@/types/unseenExercise"
 
 /**
  * `isCorrect` is the only optional option field -- defaulted to `false` via

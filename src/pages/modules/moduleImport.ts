@@ -1,6 +1,6 @@
 import { z } from "zod"
-import { buildModuleExercisesSchema } from "@/types/schemas/module"
-import type { ModuleExercise } from "@/types/module"
+import { buildModuleExercisesSchema } from "@/types/schemas/moduleExercise"
+import type { ModuleExercise } from "@/types/moduleExercise"
 
 /**
  * Why a code and not a message: this parser is pure and locale-agnostic, so it

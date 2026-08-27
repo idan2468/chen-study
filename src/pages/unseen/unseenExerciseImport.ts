@@ -1,6 +1,6 @@
 import { z } from "zod"
-import { buildUnseenExercisesSchema } from "@/types/schemas/exercise"
-import type { UnseenExercise } from "@/types/exercise"
+import { buildUnseenExercisesSchema } from "@/types/schemas/unseenExercise"
+import type { UnseenExercise } from "@/types/unseenExercise"
 
 /**
  * Locale-agnostic failure codes; the caller maps these to `importErrors.*`.

@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
-import type { UnseenExercise } from "@/types/exercise"
+import type { UnseenExercise } from "@/types/unseenExercise"
 import type { RootState } from "@/store/store"
 import { FlashcardsTab } from "./FlashcardsTab"
 

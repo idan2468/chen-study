@@ -3,7 +3,7 @@ import {
   defaultModuleExercises,
 } from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
-import type { ModuleExercise } from "@/types/module"
+import type { ModuleExercise } from "@/types/moduleExercise"
 import { StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "@/store/store"
 import type { ModulesState } from "./modulesSlice"

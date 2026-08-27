@@ -1,5 +1,5 @@
 import { z } from "zod"
-import type { ModuleCard, ModuleExercise } from "@/types/module"
+import type { ModuleCard, ModuleExercise } from "@/types/moduleExercise"
 
 /** Every field is mandatory -- a malformed card is a shape violation. */
 export const moduleCardSchema = z.object({

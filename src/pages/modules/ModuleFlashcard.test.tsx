@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
-import type { ModuleCard } from "@/types/module"
+import type { ModuleCard } from "@/types/moduleExercise"
 import { ModuleFlashcard } from "./ModuleFlashcard"
 
 const card: ModuleCard = { en: "HAT", he: "hat-translit", meaning: "a hat" }

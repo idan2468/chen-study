@@ -12,7 +12,7 @@ import type {
   ModuleCard,
   ModuleExercise,
   ModulesProgress,
-} from "@/types/module"
+} from "@/types/moduleExercise"
 
 export type ModulesState = {
   modules: ModuleExercise[]
