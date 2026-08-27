@@ -51,10 +51,6 @@ test("numbers questions that arrive without an id", () => {
   expect(at(exercise.questions, 0).id).toBe("q1")
 })
 
-test("an exercise with no questions or flashcards is still valid", () => {
-  expect(parse({ ...valid, questions: [], flashcards: [] }).ok).toBe(true)
-})
-
 describe("rejections", () => {
   test("malformed JSON", () => {
     expect(expectFailure(parseExerciseJson("{ nope", NOW)).error.code).toBe(
@@ -62,55 +58,54 @@ describe("rejections", () => {
     )
   })
 
-  test("an array instead of a single exercise", () => {
-    expect(expectFailure(parse([valid])).error.code).toBe("exerciseNotObject")
-  })
+  // Every other failure -- an array instead of an object, a missing or
+  // mistyped field, an empty array, a question with no correct option --
+  // collapses to one code. The `debugInfo` dump (raw zod issues) is what
+  // points at the offending field, not the code itself.
+  test.each([
+    ["an array instead of a single exercise", [valid]],
+    ["a missing paragraphs field", omitKey(valid, "paragraphs")],
+    ["a missing questions field", omitKey(valid, "questions")],
+    ["a missing flashcards field", omitKey(valid, "flashcards")],
+    ["empty paragraphs", { ...valid, paragraphs: [] }],
+    ["empty questions", { ...valid, questions: [] }],
+    ["empty flashcards", { ...valid, flashcards: [] }],
+    ["a missing exercise title", omitKey(valid, "title")],
+    [
+      "a question with no title",
+      {
+        ...valid,
+        questions: [{ id: "q1", options: [{ text: "a", isCorrect: true }] }],
+      },
+    ],
+    [
+      "a question with no options",
+      { ...valid, questions: [{ id: "q1", title: "?" }] },
+    ],
+    [
+      "an option with no text",
+      {
+        ...valid,
+        questions: [{ id: "q1", title: "?", options: [{ isCorrect: true }] }],
+      },
+    ],
+    [
+      "a flashcard missing a field",
+      { ...valid, flashcards: [{ en: "Cat", he: "cat" }] },
+    ],
+    [
+      "a question with no correct answer",
+      {
+        ...valid,
+        questions: [
+          { id: "q1", title: "?", options: [{ text: "a", isCorrect: false }] },
+        ],
+      },
+    ],
+  ])("%s", (_, input) => {
+    const error = expectFailure(parse(input)).error
 
-  test("a missing paragraphs field", () => {
-    expect(expectFailure(parse(omitKey(valid, "paragraphs"))).error.code).toBe(
-      "exerciseMissingParagraphs",
-    )
-  })
-
-  test("a missing questions field", () => {
-    expect(expectFailure(parse(omitKey(valid, "questions"))).error.code).toBe(
-      "exerciseMissingQuestions",
-    )
-  })
-
-  test("a missing flashcards field", () => {
-    expect(expectFailure(parse(omitKey(valid, "flashcards"))).error.code).toBe(
-      "exerciseMissingFlashcards",
-    )
-  })
-
-  test("empty paragraphs", () => {
-    expect(expectFailure(parse({ ...valid, paragraphs: [] })).error.code).toBe(
-      "exerciseMissingParagraphs",
-    )
-  })
-
-  test("a question with no correct answer", () => {
-    expect(
-      expectFailure(
-        parse({
-          ...valid,
-          questions: [
-            {
-              id: "q1",
-              title: "?",
-              options: [{ text: "a", isCorrect: false }],
-            },
-          ],
-        }),
-      ).error,
-    ).toStrictEqual({ code: "questionNoCorrectAnswer", position: 1 })
-  })
-
-  test("a question with no options", () => {
-    expect(
-      expectFailure(parse({ ...valid, questions: [{ id: "q1", title: "?" }] }))
-        .error,
-    ).toStrictEqual({ code: "questionMissingOptions", position: 1 })
+    expect(error.code).toBe("invalidShape")
+    expect(error).toHaveProperty("debugInfo")
   })
 })

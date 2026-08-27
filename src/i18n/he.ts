@@ -76,6 +76,9 @@ export const he = {
     copied: "הועתק",
     contentLabel: "תוכן JSON",
     loadAndAdd: "טעינה והוספה",
+    viewDebugInfo: "צפייה בפרטי דיבוג",
+    debugInfoTitle: "פרטי דיבוג",
+    copyDebugInfo: "העתקת פרטי הדיבוג",
   },
 
   modules: {
@@ -169,17 +172,9 @@ export const he = {
   /** Validation failures from the JSON importers. */
   importErrors: {
     invalidJson: "ה-JSON אינו תקין. בדקו סוגריים ופסיקים.",
-    noModules: "לא נמצאו מודולים לטעינה.",
-    moduleBadShape: "מודול {{position}}: מבנה לא תקין.",
-    moduleMissingCards: 'מודול {{position}}: חסרה רשימת קלפים ("cards").',
-    moduleMissingCardWord:
-      'מודול {{position}}, קלף {{cardPosition}}: חסרה המילה באנגלית ("en").',
-    exerciseNotObject: "יש להדביק אובייקט JSON אחד של תרגיל.",
-    exerciseMissingParagraphs: 'חסר שדה "paragraphs" (מערך של פסקאות טקסט).',
-    exerciseMissingQuestions: 'חסר שדה "questions".',
-    exerciseMissingFlashcards: 'חסר שדה "flashcards".',
-    questionMissingOptions:
-      'שאלה {{position}}: חסרה רשימת אפשרויות ("options").',
-    questionNoCorrectAnswer: "שאלה {{position}}: אין אף אפשרות מסומנת כנכונה.",
+    moduleInvalidShape:
+      "המודול לא תואם למבנה הצפוי. אפשר להעתיק את פרטי הדיבוג למטה כדי לתקן.",
+    exerciseInvalidShape:
+      "התרגיל לא תואם למבנה הצפוי. אפשר להעתיק את פרטי הדיבוג למטה כדי לתקן.",
   },
 } as const

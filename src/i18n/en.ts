@@ -82,6 +82,9 @@ export const en: Messages = {
     copied: "Copied",
     contentLabel: "JSON content",
     loadAndAdd: "Load and add",
+    viewDebugInfo: "View debug info",
+    debugInfoTitle: "Debug info",
+    copyDebugInfo: "Copy debug info",
   },
 
   modules: {
@@ -176,19 +179,9 @@ export const en: Messages = {
 
   importErrors: {
     invalidJson: "The JSON is not valid. Check the brackets and commas.",
-    noModules: "No modules found to load.",
-    moduleBadShape: "Module {{position}}: invalid structure.",
-    moduleMissingCards: 'Module {{position}}: missing the "cards" list.',
-    moduleMissingCardWord:
-      'Module {{position}}, card {{cardPosition}}: missing the English word ("en").',
-    exerciseNotObject: "Paste a single exercise JSON object.",
-    exerciseMissingParagraphs:
-      'Missing the "paragraphs" field (an array of text paragraphs).',
-    exerciseMissingQuestions: 'Missing the "questions" field.',
-    exerciseMissingFlashcards: 'Missing the "flashcards" field.',
-    questionMissingOptions:
-      'Question {{position}}: missing the "options" list.',
-    questionNoCorrectAnswer:
-      "Question {{position}}: no option is marked as correct.",
+    moduleInvalidShape:
+      "This module doesn't match the expected structure. Copy the debug info below for help fixing it.",
+    exerciseInvalidShape:
+      "The exercise doesn't match the expected structure. Copy the debug info below for help fixing it.",
   },
 }

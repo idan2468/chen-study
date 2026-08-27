@@ -29,30 +29,10 @@ test("generates ids from the timestamp and position when absent", () => {
   ).toStrictEqual([`custom_${String(NOW)}_0`, `custom_${String(NOW)}_1`])
 })
 
-test("falls back to the title for a missing tab name", () => {
-  const { modules } = expectOk(parse(omitKey(valid, "tabName")))
+test("id is the only optional field -- everything else must be present", () => {
+  const { modules } = expectOk(parse(omitKey(valid, "id")))
 
-  expect(at(modules, 0).tabName).toBe("Title")
-})
-
-test("falls back to the id when neither tab name nor title is given", () => {
-  // Deliberately not a translated default -- a stored name must not be frozen
-  // in whichever language the UI happened to be in.
-  const bare = omitKey(omitKey(valid, "tabName"), "title")
-  const { modules } = expectOk(parse(bare))
-
-  expect(at(modules, 0).tabName).toBe("m1")
-  expect(at(modules, 0).title).toBe("")
-})
-
-test("fills in optional card fields rather than rejecting", () => {
-  const { modules } = expectOk(parse({ ...valid, cards: [{ en: "HAT" }] }))
-
-  expect(at(at(modules, 0).cards, 0)).toStrictEqual({
-    en: "HAT",
-    he: "",
-    meaning: "",
-  })
+  expect(at(modules, 0).id).toBe(`custom_${String(NOW)}_0`)
 })
 
 describe("rejections", () => {
@@ -62,35 +42,27 @@ describe("rejections", () => {
     )
   })
 
-  test("missing cards", () => {
-    expect(expectFailure(parse(omitKey(valid, "cards"))).error).toStrictEqual({
-      code: "moduleMissingCards",
-      position: 1,
-    })
-  })
+  // Every other failure -- an empty array, a non-object entry, a missing or
+  // mistyped field -- collapses to one code. The `debugInfo` dump (raw zod
+  // issues) is what points at the offending field, not the code itself.
+  test.each([
+    ["an empty array", []],
+    ["a non-object entry", ["nope"]],
+    ["missing cards", omitKey(valid, "cards")],
+    ["empty cards", { ...valid, cards: [] }],
+    ["a card with no English word", { ...valid, cards: [{ he: "hat" }] }],
+    ["a missing tab name", omitKey(valid, "tabName")],
+    ["a missing title", omitKey(valid, "title")],
+    ["a missing rule", omitKey(valid, "rule")],
+    [
+      "a card with no Hebrew word",
+      { ...valid, cards: [{ en: "HAT", meaning: "hat" }] },
+    ],
+    ["a card with no meaning", { ...valid, cards: [{ en: "HAT", he: "hat" }] }],
+  ])("%s", (_, input) => {
+    const error = expectFailure(parse(input)).error
 
-  test("empty cards", () => {
-    expect(expectFailure(parse({ ...valid, cards: [] })).error.code).toBe(
-      "moduleMissingCards",
-    )
-  })
-
-  test("a card with no English word", () => {
-    // The error points at the offending card, as the original's message did.
-    expect(
-      expectFailure(parse({ ...valid, cards: [{ he: "hat" }] })).error,
-    ).toStrictEqual({
-      code: "moduleMissingCardWord",
-      position: 1,
-      cardPosition: 1,
-    })
-  })
-
-  test("an empty array", () => {
-    expect(expectFailure(parse([])).error.code).toBe("noModules")
-  })
-
-  test("a non-object entry", () => {
-    expect(expectFailure(parse(["nope"])).error.code).toBe("moduleBadShape")
+    expect(error.code).toBe("invalidShape")
+    expect(error).toHaveProperty("debugInfo")
   })
 })

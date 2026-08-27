@@ -103,7 +103,7 @@ export const ModulesPage = () => {
     if (!result.ok) {
       // The parser is locale-agnostic and reports a code; the wording lives in
       // `importErrorMessage`.
-      return { ok: false, message: importErrorMessage(t, result.error) }
+      return { ok: false, ...importErrorMessage(t, result.error, "module") }
     }
 
     dispatch(addModules(result.modules))
