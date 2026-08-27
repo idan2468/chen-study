@@ -1,6 +1,7 @@
-import { Button, CopyButton, Modal, Stack, Text } from "@mantine/core"
+import { Button, CopyButton, Stack, Text } from "@mantine/core"
 import { IconCheck } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
+import { AppModal } from "@/components/AppModal/AppModal"
 import { ICON_SIZE } from "@/constants/icons"
 
 export type ImportDebugModalProps = {
@@ -23,13 +24,12 @@ export const ImportDebugModal = ({
   const { t } = useTranslation()
 
   return (
-    <Modal
+    <AppModal
       opened={opened}
       onClose={onClose}
       title={t("json.debugInfoTitle")}
       centered
       size="lg"
-      removeScrollProps={{ gapMode: "padding" }}
     >
       <Stack gap="sm">
         <Text
@@ -58,6 +58,6 @@ export const ImportDebugModal = ({
           )}
         </CopyButton>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }

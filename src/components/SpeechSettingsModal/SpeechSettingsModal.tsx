@@ -1,14 +1,7 @@
-import {
-  Button,
-  Group,
-  Modal,
-  Select,
-  Slider,
-  Stack,
-  Text,
-} from "@mantine/core"
+import { Button, Group, Select, Slider, Stack, Text } from "@mantine/core"
 import { IconMicrophone } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
+import { AppModal } from "@/components/AppModal/AppModal"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import { ICON_SIZE } from "@/constants/icons"
 import { useSystemVoices } from "@/hooks/useSpeech"
@@ -56,13 +49,12 @@ export const SpeechSettingsModal = ({
   const englishVoices = voicesForLanguage(voices, "en")
 
   return (
-    <Modal
+    <AppModal
       opened={opened}
       onClose={onClose}
       title={t("speech.title")}
       centered
       size="lg"
-      removeScrollProps={{ gapMode: "padding" }}
     >
       <Stack gap="md">
         <Select
@@ -114,6 +106,6 @@ export const SpeechSettingsModal = ({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }

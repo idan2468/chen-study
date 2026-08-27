@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Button, Drawer, Group, NavLink } from "@mantine/core"
+import { Button, Group, NavLink } from "@mantine/core"
 import { useDisclosure } from "@mantine/hooks"
 import {
   IconCheck,
@@ -9,6 +9,7 @@ import {
 } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
+import { AppDrawer } from "@/components/AppModal/AppDrawer"
 import { GoogleIcon } from "@/components/GoogleIcon/GoogleIcon"
 import { ICON_SIZE } from "@/constants/icons"
 import { APP_ROUTES } from "@/constants/routes"
@@ -98,12 +99,11 @@ export const TopBarMobile = ({
         </Button>
       </Group>
 
-      <Drawer
+      <AppDrawer
         opened={drawerOpened}
         onClose={drawerHandlers.close}
         position="top"
         title={t("common.settingsMenu")}
-        removeScrollProps={{ gapMode: "padding" }}
       >
         {googleAvailable ? (
           <NavLink
@@ -136,7 +136,7 @@ export const TopBarMobile = ({
         ) : null}
 
         {settingsItems.map(renderDrawerItem)}
-      </Drawer>
+      </AppDrawer>
     </>
   )
 }

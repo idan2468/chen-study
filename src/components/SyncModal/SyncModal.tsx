@@ -3,13 +3,13 @@ import {
   CopyButton,
   Group,
   Loader,
-  Modal,
   Text,
   TextInput,
 } from "@mantine/core"
 import { IconCheck } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { AppModal } from "@/components/AppModal/AppModal"
 import { ICON_SIZE } from "@/constants/icons"
 import { buildSyncUrl } from "@/utils/sync/syncUrl"
 
@@ -85,19 +85,18 @@ export const SyncModal = ({ opened, onClose }: SyncModalProps) => {
   const { t } = useTranslation()
 
   return (
-    <Modal
+    <AppModal
       opened={opened}
       onClose={onClose}
       title={t("sync.title")}
       centered
       size="lg"
-      removeScrollProps={{ gapMode: "padding" }}
     >
       <Text size="sm" c="dimmed" mb="md">
         {t("sync.description")}
       </Text>
 
       <SyncLink onClose={onClose} />
-    </Modal>
+    </AppModal>
   )
 }
