@@ -7,12 +7,12 @@ import { StorageKeys } from "@/utils/sync/storageKeys"
 import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
 import type {
   ModuleCard,
+  ModuleExercise,
   ModulesProgress,
-  PracticeModule,
 } from "@/types/module"
 
 export type ModulesState = {
-  modules: PracticeModule[]
+  modules: ModuleExercise[]
   currentModuleId: string
   cardIndex: number
   /** "Show only the words I got wrong". */
@@ -41,14 +41,14 @@ const PREFERRED_DEFAULT_MODULE_ID = "mod3_short_i"
  * deleted them, and a stored copy of a built-in wins so edits are kept.
  */
 export const mergeModules = (
-  stored: readonly PracticeModule[],
+  stored: readonly ModuleExercise[],
   deletedIds: readonly string[],
-): PracticeModule[] => {
+): ModuleExercise[] => {
   const deleted = new Set(deletedIds)
   const storedById = new Map(stored.map(module => [module.id, module]))
   const builtIns = new Set(builtInModuleIds)
 
-  const merged: PracticeModule[] = []
+  const merged: ModuleExercise[] = []
 
   // Built-ins keep their canonical order.
   for (const builtIn of defaultModules) {
@@ -71,7 +71,7 @@ export const mergeModules = (
 /** Prefers the stored module id; falls back to the preferred default, then
  *  the first module, when nothing is stored or the id no longer exists. */
 const resolveCurrentId = (
-  modules: readonly PracticeModule[],
+  modules: readonly ModuleExercise[],
   storedId: string,
 ) => {
   if (storedId && modules.some(module => module.id === storedId)) {
@@ -84,7 +84,7 @@ const resolveCurrentId = (
 }
 
 const loadFromStorage = (): ModulesState => {
-  const stored = readJson<PracticeModule[]>(StorageKeys.allModules, [])
+  const stored = readJson<ModuleExercise[]>(StorageKeys.allModules, [])
   const deletedBuiltInIds = readJson<string[]>(
     StorageKeys.deletedBuiltInModules,
     [],
@@ -175,7 +175,7 @@ export const modulesSlice = createAppSlice({
     /** Appends imported modules; selecting one is left to the caller (see
      *  `ModulesPage.tsx`). */
     addModules: create.reducer(
-      (state, action: PayloadAction<PracticeModule[]>) => {
+      (state, action: PayloadAction<ModuleExercise[]>) => {
         if (action.payload.length === 0) {
           return
         }

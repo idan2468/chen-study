@@ -1,10 +1,10 @@
 import { screen, waitFor } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
-import type { Exercise } from "@/types/exercise"
+import type { UnseenExercise } from "@/types/exercise"
 import type { RootState } from "@/store/store"
 import { FlashcardsTab } from "./FlashcardsTab"
 
-const exercise: Exercise = {
+const exercise: UnseenExercise = {
   title: "Sample exercise",
   subtitle: "Sample subtitle",
   exerciseId: "sample_1",

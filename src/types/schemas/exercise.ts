@@ -1,9 +1,9 @@
 import { z } from "zod"
 import type {
-  Exercise,
   Flashcard,
   Question,
   QuestionOption,
+  UnseenExercise,
 } from "@/types/exercise"
 
 /**
@@ -17,8 +17,8 @@ const rawQuestionOptionSchema = z.object({
 
 /**
  * `id` is optional on the raw JSON -- numbered `q<position>` via
- * `.transform()` on `buildExerciseSchema` below, since numbering needs the
- * question's position within the exercise, not just within itself.
+ * `.transform()` on `buildUnseenExerciseSchema` below, since numbering needs
+ * the question's position within the exercise, not just within itself.
  */
 const rawQuestionSchema = z
   .object({
@@ -63,13 +63,14 @@ const normalizeQuestion = (
 })
 
 /**
- * Validates and normalizes a pasted exercise into an `Exercise`, ready to add
- * to the store. `now` is passed in (rather than read from `Date.now()`) so
- * parsing stays pure and testable -- the original appended a timestamp to the
- * id so a re-import never silently overwrote an existing exercise.
+ * Validates and normalizes a pasted exercise into an `UnseenExercise`, ready
+ * to add to the store. `now` is passed in (rather than read from
+ * `Date.now()`) so parsing stays pure and testable -- the original appended a
+ * timestamp to the id so a re-import never silently overwrote an existing
+ * exercise.
  */
-export const buildExerciseSchema = (now: number) =>
-  rawExerciseSchema.transform((exercise): Exercise => ({
+export const buildUnseenExerciseSchema = (now: number) =>
+  rawExerciseSchema.transform((exercise): UnseenExercise => ({
     title: exercise.title,
     subtitle: exercise.subtitle ?? "",
     exerciseId: `${exercise.exerciseId ?? "exercise"}_${String(now)}`,

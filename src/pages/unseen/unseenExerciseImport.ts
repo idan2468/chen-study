@@ -1,6 +1,6 @@
 import { z } from "zod"
-import { buildExerciseSchema } from "@/types/schemas/exercise"
-import type { Exercise } from "@/types/exercise"
+import { buildUnseenExerciseSchema } from "@/types/schemas/exercise"
+import type { UnseenExercise } from "@/types/exercise"
 
 /**
  * Locale-agnostic failure codes; the caller maps these to `importErrors.*`.
@@ -11,11 +11,12 @@ import type { Exercise } from "@/types/exercise"
  * zod issues, which the UI offers as a copyable block for a human or an AI
  * to diagnose.
  */
-export type ExerciseImportError =
+export type UnseenExerciseImportError =
   { code: "invalidJson" } | { code: "invalidShape"; debugInfo: string }
 
-export type ExerciseImportResult =
-  { ok: true; exercise: Exercise } | { ok: false; error: ExerciseImportError }
+export type UnseenExerciseImportResult =
+  | { ok: true; exercise: UnseenExercise }
+  | { ok: false; error: UnseenExerciseImportError }
 
 /**
  * Validates and normalizes pasted exercise JSON.
@@ -23,13 +24,13 @@ export type ExerciseImportResult =
  * Ported from `loadContentFromJSONInput` (`Unseen New.html:2068`), which
  * required `paragraphs` + `questions` + `flashcards` and generated an
  * `exerciseId` when one was missing. All normalization (id generation,
- * defaults) lives in `buildExerciseSchema`; this function just parses and
- * reports. `now` is passed in to keep this pure.
+ * defaults) lives in `buildUnseenExerciseSchema`; this function just parses
+ * and reports. `now` is passed in to keep this pure.
  */
-export const parseExerciseJson = (
+export const parseUnseenExerciseJson = (
   text: string,
   now: number,
-): ExerciseImportResult => {
+): UnseenExerciseImportResult => {
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
@@ -37,7 +38,7 @@ export const parseExerciseJson = (
     return { ok: false, error: { code: "invalidJson" } }
   }
 
-  const result = buildExerciseSchema(now).safeParse(parsed)
+  const result = buildUnseenExerciseSchema(now).safeParse(parsed)
   if (!result.success) {
     return {
       ok: false,

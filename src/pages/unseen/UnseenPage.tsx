@@ -29,7 +29,7 @@ import {
 import { defaultExercise } from "@/data/defaultExercise"
 import { FlashcardsTab } from "./FlashcardsTab"
 import { ReadingTab } from "./ReadingTab"
-import { parseExerciseJson } from "./exerciseImport"
+import { parseUnseenExerciseJson } from "./unseenExerciseImport"
 
 type TabValue = "reading" | "flashcards" | "json"
 
@@ -70,7 +70,7 @@ export const UnseenPage = () => {
   }
 
   const handleParseJson = (text: string): JsonParseResult => {
-    const result = parseExerciseJson(text, Date.now())
+    const result = parseUnseenExerciseJson(text, Date.now())
     if (!result.ok) {
       // The parser is locale-agnostic and reports a code; the wording lives in
       // `importErrorMessage`.

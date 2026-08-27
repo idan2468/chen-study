@@ -1,5 +1,5 @@
 import { defaultExercise } from "@/data/defaultExercise"
-import type { Exercise } from "@/types/exercise"
+import type { UnseenExercise } from "@/types/exercise"
 import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "@/store/store"
 import type { UnseenState } from "./unseenSlice"
@@ -23,7 +23,7 @@ import {
   toggleMarkedWord,
 } from "./unseenSlice"
 
-const otherExercise: Exercise = {
+const otherExercise: UnseenExercise = {
   title: "Other",
   subtitle: "Second exercise",
   exerciseId: "other_1",

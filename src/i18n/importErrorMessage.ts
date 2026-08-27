@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next"
 import type { ModuleImportError } from "@/pages/modules/moduleImport"
-import type { ExerciseImportError } from "@/pages/unseen/exerciseImport"
+import type { UnseenExerciseImportError } from "@/pages/unseen/unseenExerciseImport"
 
 /**
  * Turns a parser's locale-agnostic error code into a message for the user,
@@ -16,7 +16,7 @@ import type { ExerciseImportError } from "@/pages/unseen/exerciseImport"
  */
 export const importErrorMessage = (
   t: TFunction,
-  error: ModuleImportError | ExerciseImportError,
+  error: ModuleImportError | UnseenExerciseImportError,
   kind: "module" | "exercise",
 ): { message: string; debugInfo?: string } => {
   switch (error.code) {

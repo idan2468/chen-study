@@ -7,12 +7,12 @@ import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { defaultExercise } from "@/data/defaultExercise"
 import type {
   AnswerRecord,
-  Exercise,
   FlashcardProgress,
+  UnseenExercise,
 } from "@/types/exercise"
 
 export type UnseenState = {
-  library: Record<string, Exercise>
+  library: Record<string, UnseenExercise>
   currentId: string
   cardIndex: number
   /** Quiz answers for the active exercise, keyed by question id. */
@@ -30,9 +30,9 @@ export type UnseenState = {
  * optimistically above without first confirming it is still in the library.
  */
 const resolveCurrentExerciseId = (
-  library: Record<string, Exercise>,
+  library: Record<string, UnseenExercise>,
   storedId: string,
-  legacy: Exercise | null,
+  legacy: UnseenExercise | null,
 ): string => {
   const candidate =
     storedId && storedId in library
@@ -43,7 +43,7 @@ const resolveCurrentExerciseId = (
 
 /** Progress lives in one key per exercise, so hydrate them all up front. */
 const readAllFlashcardProgress = (
-  library: Record<string, Exercise>,
+  library: Record<string, UnseenExercise>,
 ): Record<string, FlashcardProgress> => {
   const progress: Record<string, FlashcardProgress> = {}
   for (const id of Object.keys(library)) {
@@ -53,7 +53,7 @@ const readAllFlashcardProgress = (
 }
 
 const loadFromStorage = (): UnseenState => {
-  const library = readJson<Record<string, Exercise>>(
+  const library = readJson<Record<string, UnseenExercise>>(
     StorageKeys.exerciseLibrary,
     {},
   )
@@ -64,7 +64,7 @@ const loadFromStorage = (): UnseenState => {
   const currentId = resolveCurrentExerciseId(
     library,
     readString(StorageKeys.currentExerciseId, ""),
-    readJson<Exercise | null>(StorageKeys.currentExerciseData, null),
+    readJson<UnseenExercise | null>(StorageKeys.currentExerciseData, null),
   )
 
   return {
@@ -101,14 +101,16 @@ export const unseenSlice = createAppSlice({
     }),
 
     /** Upserts an imported exercise and makes it current. */
-    addExercise: create.reducer((state, action: PayloadAction<Exercise>) => {
-      const exercise = action.payload
-      state.library[exercise.exerciseId] = exercise
-      state.progress[exercise.exerciseId] ??= {}
-      state.currentId = exercise.exerciseId
-      state.cardIndex = 0
-      state.answers = {}
-    }),
+    addExercise: create.reducer(
+      (state, action: PayloadAction<UnseenExercise>) => {
+        const exercise = action.payload
+        state.library[exercise.exerciseId] = exercise
+        state.progress[exercise.exerciseId] ??= {}
+        state.currentId = exercise.exerciseId
+        state.cardIndex = 0
+        state.answers = {}
+      },
+    ),
 
     deleteExercise: create.reducer((state, action: PayloadAction<string>) => {
       const ids = Object.keys(state.library)

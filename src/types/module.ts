@@ -9,7 +9,7 @@ export type ModuleCard = {
   meaning: string
 }
 
-export type PracticeModule = {
+export type ModuleExercise = {
   id: string
   /** Short label shown in the module picker. */
   tabName: string

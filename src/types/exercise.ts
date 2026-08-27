@@ -21,7 +21,7 @@ export type Flashcard = {
   trans: string
 }
 
-export type Exercise = {
+export type UnseenExercise = {
   title: string
   subtitle: string
   exerciseId: string

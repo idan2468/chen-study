@@ -1,5 +1,5 @@
 import { at, expectFailure, expectOk, omitKey } from "@test/helpers"
-import { parseExerciseJson } from "./exerciseImport"
+import { parseUnseenExerciseJson } from "./unseenExerciseImport"
 
 const NOW = 1_700_000_000_000
 
@@ -21,7 +21,8 @@ const valid = {
   flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
 }
 
-const parse = (value: unknown) => parseExerciseJson(JSON.stringify(value), NOW)
+const parse = (value: unknown) =>
+  parseUnseenExerciseJson(JSON.stringify(value), NOW)
 
 test("accepts a valid exercise", () => {
   const { exercise } = expectOk(parse(valid))
@@ -53,9 +54,9 @@ test("numbers questions that arrive without an id", () => {
 
 describe("rejections", () => {
   test("malformed JSON", () => {
-    expect(expectFailure(parseExerciseJson("{ nope", NOW)).error.code).toBe(
-      "invalidJson",
-    )
+    expect(
+      expectFailure(parseUnseenExerciseJson("{ nope", NOW)).error.code,
+    ).toBe("invalidJson")
   })
 
   // Every other failure -- an array instead of an object, a missing or

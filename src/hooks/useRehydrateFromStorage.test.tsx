@@ -14,11 +14,11 @@ import { selectCurrentExerciseId } from "@/store/slices/unseenSlice"
 import { selectCurrentModuleId } from "@/store/slices/modulesSlice"
 import { colorSchemeManager, theme } from "@/theme"
 import { builtInModuleIds } from "@/data/defaultModules"
-import type { Exercise } from "@/types/exercise"
+import type { UnseenExercise } from "@/types/exercise"
 import { StorageKeys } from "@/utils/sync/storageKeys"
 import { useRehydrateFromStorage } from "./useRehydrateFromStorage"
 
-const otherExercise: Exercise = {
+const otherExercise: UnseenExercise = {
   title: "Other",
   subtitle: "Second exercise",
   exerciseId: "other_1",

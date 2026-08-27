@@ -1,6 +1,6 @@
 import { builtInModuleIds, defaultModules } from "@/data/defaultModules"
 import { at } from "@test/helpers"
-import type { PracticeModule } from "@/types/module"
+import type { ModuleExercise } from "@/types/module"
 import { StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "@/store/store"
 import type { ModulesState } from "./modulesSlice"
@@ -22,7 +22,7 @@ import {
   toggleMissedReview,
 } from "./modulesSlice"
 
-const customModule: PracticeModule = {
+const customModule: ModuleExercise = {
   id: "custom_1",
   tabName: "Mine",
   title: "My module",
@@ -39,7 +39,7 @@ const customModule: PracticeModule = {
  * word across modules, so cross-module sharing has to be constructed
  * explicitly rather than relied upon from the built-in data.
  */
-const otherCustomModule: PracticeModule = {
+const otherCustomModule: ModuleExercise = {
   id: "custom_2",
   tabName: "Mine 2",
   title: "My module 2",
