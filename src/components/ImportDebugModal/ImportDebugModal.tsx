@@ -34,7 +34,12 @@ export const ImportDebugModal = ({
         <Text
           component="pre"
           size="xs"
-          style={{ whiteSpace: "pre-wrap", overflowWrap: "break-word" }}
+          dir="ltr"
+          style={{
+            whiteSpace: "pre-wrap",
+            overflowWrap: "break-word",
+            textAlign: "left",
+          }}
         >
           {debugInfo}
         </Text>
