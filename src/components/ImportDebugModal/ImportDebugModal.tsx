@@ -29,7 +29,7 @@ export const ImportDebugModal = ({
       title={t("json.debugInfoTitle")}
       centered
       size="lg"
-      removeScrollProps={{ removeScrollBar: false }}
+      removeScrollProps={{ gapMode: "padding" }}
     >
       <Stack gap="sm">
         <Text

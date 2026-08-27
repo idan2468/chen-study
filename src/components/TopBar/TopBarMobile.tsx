@@ -103,7 +103,7 @@ export const TopBarMobile = ({
         onClose={drawerHandlers.close}
         position="top"
         title={t("common.settingsMenu")}
-        removeScrollProps={{ removeScrollBar: false }}
+        removeScrollProps={{ gapMode: "padding" }}
       >
         {googleAvailable ? (
           <NavLink

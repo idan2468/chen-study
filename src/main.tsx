@@ -65,15 +65,17 @@ const bootstrap = async () => {
             defaultColorScheme="dark"
           >
             {/*
-             * `removeScrollBar: false` stops react-remove-scroll (used to
-             * lock body scroll while a modal is open) from padding/margining
-             * body to compensate for a hidden desktop scrollbar. On touch
-             * viewports there's no scrollbar to compensate for, so that
-             * compensation just pushes body 15px past the edge -- in this
-             * RTL app, off the left side -- causing real horizontal overflow.
+             * react-remove-scroll (used to lock body scroll while a modal is
+             * open) defaults to compensating for the hidden scrollbar with
+             * `margin-right` on body. In this RTL app that margin pushes
+             * body's box past the *left* edge instead of the right, causing
+             * real horizontal overflow on touch viewports (which have no
+             * scrollbar to compensate for in the first place). `gapMode:
+             * "padding"` uses `padding-right` instead, which doesn't shift
+             * body's box, while still keeping the scroll lock itself intact.
              */}
             <ModalsProvider
-              modalProps={{ removeScrollProps: { removeScrollBar: false } }}
+              modalProps={{ removeScrollProps: { gapMode: "padding" } }}
             >
               <Notifications position="top-center" />
               <GoogleAuthGate>
