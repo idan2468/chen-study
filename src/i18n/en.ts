@@ -163,7 +163,7 @@ export const en: Messages = {
     noFlashcards: "This exercise has no vocabulary cards.",
     jsonInstructions:
       "Paste an exercise JSON object here. Required fields: paragraphs, questions, flashcards. The exercise id is generated automatically.",
-    jsonLoaded: "The exercise was loaded and added to the library.",
+    jsonLoaded: "Added {{count}} exercises to the library.",
   },
 
   speech: {

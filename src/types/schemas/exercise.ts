@@ -17,7 +17,7 @@ const rawQuestionOptionSchema = z.object({
 
 /**
  * `id` is optional on the raw JSON -- numbered `q<position>` via
- * `.transform()` on `buildUnseenExerciseSchema` below, since numbering needs
+ * `.transform()` on `buildUnseenExercisesSchema` below, since numbering needs
  * the question's position within the exercise, not just within itself.
  */
 const rawQuestionSchema = z
@@ -63,20 +63,25 @@ const normalizeQuestion = (
 })
 
 /**
- * Validates and normalizes a pasted exercise into an `UnseenExercise`, ready
- * to add to the store. `now` is passed in (rather than read from
- * `Date.now()`) so parsing stays pure and testable -- the original appended a
- * timestamp to the id so a re-import never silently overwrote an existing
- * exercise.
+ * Validates and normalizes an array of pasted exercises into
+ * `UnseenExercise`s, ready to add to the store. `now` is passed in (rather
+ * than read from `Date.now()`) so parsing stays pure and testable -- the
+ * original appended a timestamp to the id so a re-import never silently
+ * overwrote an existing exercise.
  */
-export const buildUnseenExerciseSchema = (now: number) =>
-  rawExerciseSchema.transform((exercise): UnseenExercise => ({
-    title: exercise.title,
-    subtitle: exercise.subtitle ?? "",
-    exerciseId: `${exercise.exerciseId ?? "exercise"}_${String(now)}`,
-    paragraphs: exercise.paragraphs,
-    questions: exercise.questions.map((question, index) =>
-      normalizeQuestion(question, index + 1),
-    ),
-    flashcards: exercise.flashcards,
-  }))
+export const buildUnseenExercisesSchema = (now: number) =>
+  z
+    .array(rawExerciseSchema)
+    .min(1)
+    .transform(exercises =>
+      exercises.map((exercise, exerciseIndex): UnseenExercise => ({
+        title: exercise.title,
+        subtitle: exercise.subtitle ?? "",
+        exerciseId: `${exercise.exerciseId ?? "exercise"}_${String(now)}_${String(exerciseIndex)}`,
+        paragraphs: exercise.paragraphs,
+        questions: exercise.questions.map((question, index) =>
+          normalizeQuestion(question, index + 1),
+        ),
+        flashcards: exercise.flashcards,
+      })),
+    )

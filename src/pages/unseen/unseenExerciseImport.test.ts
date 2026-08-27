@@ -24,32 +24,39 @@ const valid = {
 const parse = (value: unknown) =>
   parseUnseenExerciseJson(JSON.stringify(value), NOW)
 
-test("accepts a valid exercise", () => {
-  const { exercise } = expectOk(parse(valid))
+test("accepts a single exercise object", () => {
+  const { exercises } = expectOk(parse(valid))
 
-  expect(exercise.paragraphs).toStrictEqual(["A cat sat."])
-  expect(exercise.flashcards).toHaveLength(1)
+  expect(exercises).toHaveLength(1)
+  expect(at(exercises, 0).paragraphs).toStrictEqual(["A cat sat."])
+  expect(at(exercises, 0).flashcards).toHaveLength(1)
 })
 
-test("appends a timestamp to the id so a re-import never overwrites", () => {
-  expect(expectOk(parse(valid)).exercise.exerciseId).toBe(`mine_${String(NOW)}`)
+test("accepts an array of exercises", () => {
+  expect(expectOk(parse([valid, valid])).exercises).toHaveLength(2)
+})
+
+test("appends a timestamp and position to the id so a re-import never overwrites", () => {
+  expect(
+    expectOk(parse([valid, valid])).exercises.map(e => e.exerciseId),
+  ).toStrictEqual([`mine_${String(NOW)}_0`, `mine_${String(NOW)}_1`])
 })
 
 test("generates an id when none is supplied", () => {
   expect(
-    expectOk(parse(omitKey(valid, "exerciseId"))).exercise.exerciseId,
-  ).toBe(`exercise_${String(NOW)}`)
+    at(expectOk(parse(omitKey(valid, "exerciseId"))).exercises, 0).exerciseId,
+  ).toBe(`exercise_${String(NOW)}_0`)
 })
 
 test("numbers questions that arrive without an id", () => {
-  const { exercise } = expectOk(
+  const { exercises } = expectOk(
     parse({
       ...valid,
       questions: [{ title: "?", options: [{ text: "a", isCorrect: true }] }],
     }),
   )
 
-  expect(at(exercise.questions, 0).id).toBe("q1")
+  expect(at(at(exercises, 0).questions, 0).id).toBe("q1")
 })
 
 describe("rejections", () => {
@@ -59,12 +66,12 @@ describe("rejections", () => {
     ).toBe("invalidJson")
   })
 
-  // Every other failure -- an array instead of an object, a missing or
-  // mistyped field, an empty array, a question with no correct option --
-  // collapses to one code. The `debugInfo` dump (raw zod issues) is what
-  // points at the offending field, not the code itself.
+  // Every other failure -- a non-object entry, a missing or mistyped field,
+  // an empty array, a question with no correct option -- collapses to one
+  // code. The `debugInfo` dump (raw zod issues) is what points at the
+  // offending field, not the code itself.
   test.each([
-    ["an array instead of a single exercise", [valid]],
+    ["a non-object entry", ["nope"]],
     ["a missing paragraphs field", omitKey(valid, "paragraphs")],
     ["a missing questions field", omitKey(valid, "questions")],
     ["a missing flashcards field", omitKey(valid, "flashcards")],
@@ -103,6 +110,7 @@ describe("rejections", () => {
         ],
       },
     ],
+    ["an empty array", []],
   ])("%s", (_, input) => {
     const error = expectFailure(parse(input)).error
 

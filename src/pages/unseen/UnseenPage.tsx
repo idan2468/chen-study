@@ -18,7 +18,7 @@ import { StatCounts } from "@/components/StatCounts/StatCounts"
 import { TopBar } from "@/components/TopBar/TopBar"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
-  addExercise,
+  addExercises,
   deleteExercise,
   selectCurrentExercise,
   selectCurrentExerciseId,
@@ -26,7 +26,7 @@ import {
   selectFlashcardStats,
   switchExercise,
 } from "@/store/slices/unseenSlice"
-import { defaultExercise } from "@/data/defaultExercise"
+import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import { FlashcardsTab } from "./FlashcardsTab"
 import { ReadingTab } from "./ReadingTab"
 import { parseUnseenExerciseJson } from "./unseenExerciseImport"
@@ -77,10 +77,13 @@ export const UnseenPage = () => {
       return { ok: false, ...importErrorMessage(t, result.error, "exercise") }
     }
 
-    dispatch(addExercise(result.exercise))
+    dispatch(addExercises(result.exercises))
     // The original jumped back to the reading tab after a successful import.
     setTab("reading")
-    return { ok: true, message: t("unseen.jsonLoaded") }
+    return {
+      ok: true,
+      message: t("unseen.jsonLoaded", { count: result.exercises.length }),
+    }
   }
 
   return (
@@ -161,7 +164,7 @@ export const UnseenPage = () => {
               <Stack gap="md" maw={720} w="100%">
                 <JsonLoader
                   instructions={t("unseen.jsonInstructions")}
-                  sampleJson={JSON.stringify(defaultExercise, null, 2)}
+                  sampleJson={JSON.stringify(defaultUnseenExercise, null, 2)}
                   onParse={handleParseJson}
                 />
               </Stack>

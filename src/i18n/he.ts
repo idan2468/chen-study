@@ -155,7 +155,7 @@ export const he = {
     noFlashcards: "אין כרטיסיות מילים בתרגיל הזה.",
     jsonInstructions:
       "הדביקו כאן אובייקט JSON של תרגיל. שדות החובה: paragraphs, questions, flashcards. מזהה התרגיל נוצר אוטומטית.",
-    jsonLoaded: "התרגיל נטען ונוסף לספרייה בהצלחה.",
+    jsonLoaded: "נוספו {{count}} תרגילים לספרייה.",
   },
 
   speech: {

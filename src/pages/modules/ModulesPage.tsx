@@ -46,7 +46,7 @@ import {
   toggleFilterMissed,
   toggleMissedReview,
 } from "@/store/slices/modulesSlice"
-import { sampleModule } from "@/data/defaultModules"
+import { sampleModuleExercise } from "@/data/defaultModuleExercises"
 import { ModuleFlashcard } from "./ModuleFlashcard"
 import { RuleBox } from "./RuleBox"
 import { parseModulesJson } from "./moduleImport"
@@ -301,7 +301,7 @@ export const ModulesPage = () => {
             <Accordion.Panel>
               <JsonLoader
                 instructions={t("modules.jsonInstructions")}
-                sampleJson={JSON.stringify(sampleModule, null, 2)}
+                sampleJson={JSON.stringify(sampleModuleExercise, null, 2)}
                 onParse={handleParseJson}
               />
             </Accordion.Panel>

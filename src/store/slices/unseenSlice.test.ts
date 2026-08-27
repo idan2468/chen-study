@@ -1,10 +1,11 @@
-import { defaultExercise } from "@/data/defaultExercise"
+import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type { UnseenExercise } from "@/types/exercise"
 import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "@/store/store"
 import type { UnseenState } from "./unseenSlice"
 import {
   addExercise,
+  addExercises,
   answerQuestion,
   deleteExercise,
   markFlashcard,
@@ -32,9 +33,18 @@ const otherExercise: UnseenExercise = {
   flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
 }
 
+const thirdExercise: UnseenExercise = {
+  title: "Third",
+  subtitle: "Third exercise",
+  exerciseId: "third_1",
+  paragraphs: ["A dog ran."],
+  questions: [],
+  flashcards: [{ en: "Dog", he: "dog", trans: "dog" }],
+}
+
 const baseState = (overrides: Partial<UnseenState> = {}): UnseenState => ({
-  library: { [defaultExercise.exerciseId]: defaultExercise },
-  currentId: defaultExercise.exerciseId,
+  library: { [defaultUnseenExercise.exerciseId]: defaultUnseenExercise },
+  currentId: defaultUnseenExercise.exerciseId,
   cardIndex: 0,
   answers: {},
   markedWords: {},
@@ -75,7 +85,7 @@ describe("markFlashcard", () => {
     const store = makeStore({
       unseen: baseState({
         library: {
-          [defaultExercise.exerciseId]: defaultExercise,
+          [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
           other_1: otherExercise,
         },
       }),
@@ -85,7 +95,7 @@ describe("markFlashcard", () => {
 
     expect(selectCurrentProgress(store.getState())).toStrictEqual({})
 
-    store.dispatch(switchExercise(defaultExercise.exerciseId))
+    store.dispatch(switchExercise(defaultUnseenExercise.exerciseId))
     expect(selectCurrentProgress(store.getState())).toStrictEqual({
       Delicate: true,
     })
@@ -107,7 +117,7 @@ describe("markFlashcard", () => {
     const store = makeStore({
       unseen: baseState({
         library: {
-          [defaultExercise.exerciseId]: defaultExercise,
+          [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
           other_1: otherExercise,
         },
         progress: { other_1: { Cat: true } },
@@ -128,12 +138,12 @@ describe("markedWords", () => {
 
     store.dispatch(toggleMarkedWord("Maya"))
     expect(
-      store.getState().unseen.markedWords[defaultExercise.exerciseId],
+      store.getState().unseen.markedWords[defaultUnseenExercise.exerciseId],
     ).toStrictEqual(["Maya"])
 
     store.dispatch(toggleMarkedWord("Maya"))
     expect(
-      store.getState().unseen.markedWords[defaultExercise.exerciseId],
+      store.getState().unseen.markedWords[defaultUnseenExercise.exerciseId],
     ).toStrictEqual([])
   })
 })
@@ -154,9 +164,29 @@ describe("library", () => {
     expect(state.unseen.answers).toStrictEqual({})
   })
 
+  test("adding multiple exercises upserts all of them and selects the first", () => {
+    const store = makeStore({
+      unseen: baseState({
+        cardIndex: 3,
+        answers: { q1: { selected: 0, correct: true } },
+      }),
+    })
+    store.dispatch(addExercises([otherExercise, thirdExercise]))
+
+    const state = store.getState()
+    expect(Object.keys(selectLibrary(state))).toStrictEqual([
+      defaultUnseenExercise.exerciseId,
+      "other_1",
+      "third_1",
+    ])
+    expect(state.unseen.currentId).toBe("other_1")
+    expect(state.unseen.cardIndex).toBe(0)
+    expect(state.unseen.answers).toStrictEqual({})
+  })
+
   test("refuses to delete the last exercise", () => {
     const store = makeStore({ unseen: baseState() })
-    store.dispatch(deleteExercise(defaultExercise.exerciseId))
+    store.dispatch(deleteExercise(defaultUnseenExercise.exerciseId))
 
     expect(Object.keys(selectLibrary(store.getState()))).toHaveLength(1)
   })
@@ -165,7 +195,7 @@ describe("library", () => {
     const store = makeStore({
       unseen: baseState({
         library: {
-          [defaultExercise.exerciseId]: defaultExercise,
+          [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
           other_1: otherExercise,
         },
         currentId: "other_1",
@@ -176,7 +206,7 @@ describe("library", () => {
     store.dispatch(deleteExercise("other_1"))
 
     const state = store.getState()
-    expect(state.unseen.currentId).toBe(defaultExercise.exerciseId)
+    expect(state.unseen.currentId).toBe(defaultUnseenExercise.exerciseId)
     expect(state.unseen.progress.other_1).toBeUndefined()
     expect(state.unseen.markedWords.other_1).toBeUndefined()
   })
@@ -229,7 +259,7 @@ describe("hydration", () => {
     )
     localStorage.setItem(
       StorageKeys.markedWords,
-      JSON.stringify({ [defaultExercise.exerciseId]: ["Maya"] }),
+      JSON.stringify({ [defaultUnseenExercise.exerciseId]: ["Maya"] }),
     )
 
     const store = makeStore()
@@ -239,7 +269,7 @@ describe("hydration", () => {
       q1: { selected: 1, correct: true },
     })
     expect(selectAllMarkedWords(state)).toStrictEqual({
-      [defaultExercise.exerciseId]: ["Maya"],
+      [defaultUnseenExercise.exerciseId]: ["Maya"],
     })
   })
 
@@ -247,12 +277,12 @@ describe("hydration", () => {
     localStorage.setItem(
       StorageKeys.exerciseLibrary,
       JSON.stringify({
-        [defaultExercise.exerciseId]: defaultExercise,
+        [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
         other_1: otherExercise,
       }),
     )
     localStorage.setItem(
-      flashcardStatusKey(defaultExercise.exerciseId),
+      flashcardStatusKey(defaultUnseenExercise.exerciseId),
       JSON.stringify({ Delicate: true }),
     )
     localStorage.setItem(
@@ -263,7 +293,7 @@ describe("hydration", () => {
     const store = makeStore()
     const progress = selectAllProgress(store.getState())
 
-    expect(progress[defaultExercise.exerciseId]).toStrictEqual({
+    expect(progress[defaultUnseenExercise.exerciseId]).toStrictEqual({
       Delicate: true,
     })
     expect(progress.other_1).toStrictEqual({ Cat: false })
@@ -274,7 +304,7 @@ describe("hydration", () => {
       localStorage.setItem(
         StorageKeys.exerciseLibrary,
         JSON.stringify({
-          [defaultExercise.exerciseId]: defaultExercise,
+          [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
           other_1: otherExercise,
         }),
       )
@@ -306,7 +336,7 @@ describe("hydration", () => {
       const store = makeStore()
 
       expect(selectCurrentExerciseId(store.getState())).toBe(
-        defaultExercise.exerciseId,
+        defaultUnseenExercise.exerciseId,
       )
     })
   })
@@ -334,7 +364,7 @@ describe("reloadFromStorage", () => {
     // `loadFromStorage`'s "first run" comment.
     expect(selectLibrary(state)).toStrictEqual({
       other_1: otherExercise,
-      [defaultExercise.exerciseId]: defaultExercise,
+      [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
     })
     expect(selectCurrentProgress(state)).toStrictEqual({})
   })

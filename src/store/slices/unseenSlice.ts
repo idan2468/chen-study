@@ -4,7 +4,7 @@ import { createAppSlice } from "@/store/createAppSlice"
 import { deleteEntry } from "@/store/records"
 import { readJson, readString } from "@/store/storage"
 import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
-import { defaultExercise } from "@/data/defaultExercise"
+import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type {
   AnswerRecord,
   FlashcardProgress,
@@ -37,8 +37,8 @@ const resolveCurrentExerciseId = (
   const candidate =
     storedId && storedId in library
       ? storedId
-      : (legacy?.exerciseId ?? defaultExercise.exerciseId)
-  return candidate in library ? candidate : defaultExercise.exerciseId
+      : (legacy?.exerciseId ?? defaultUnseenExercise.exerciseId)
+  return candidate in library ? candidate : defaultUnseenExercise.exerciseId
 }
 
 /** Progress lives in one key per exercise, so hydrate them all up front. */
@@ -59,7 +59,7 @@ const loadFromStorage = (): UnseenState => {
   )
 
   // The original seeded the built-in exercise on first run (`initApp`).
-  library[defaultExercise.exerciseId] ??= defaultExercise
+  library[defaultUnseenExercise.exerciseId] ??= defaultUnseenExercise
 
   const currentId = resolveCurrentExerciseId(
     library,
@@ -107,6 +107,25 @@ export const unseenSlice = createAppSlice({
         state.library[exercise.exerciseId] = exercise
         state.progress[exercise.exerciseId] ??= {}
         state.currentId = exercise.exerciseId
+        state.cardIndex = 0
+        state.answers = {}
+      },
+    ),
+
+    /** Upserts multiple imported exercises and makes the first one current. */
+    addExercises: create.reducer(
+      (state, action: PayloadAction<UnseenExercise[]>) => {
+        if (action.payload.length === 0) {
+          return
+        }
+        for (const exercise of action.payload) {
+          state.library[exercise.exerciseId] = exercise
+          state.progress[exercise.exerciseId] ??= {}
+        }
+        const [first] = action.payload
+        if (first) {
+          state.currentId = first.exerciseId
+        }
         state.cardIndex = 0
         state.answers = {}
       },
@@ -208,6 +227,7 @@ export const unseenSlice = createAppSlice({
 export const {
   switchExercise,
   addExercise,
+  addExercises,
   deleteExercise,
   answerQuestion,
   markFlashcard,
