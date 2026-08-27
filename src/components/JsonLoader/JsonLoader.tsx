@@ -8,14 +8,22 @@ import {
   Text,
   Textarea,
 } from "@mantine/core"
+import { useDisclosure } from "@mantine/hooks"
 import { IconCheck, IconClipboardText, IconPlus } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
+import { ImportDebugModal } from "@/components/ImportDebugModal/ImportDebugModal"
 import { ICON_SIZE } from "@/constants/icons"
 
 /** What a page's parser reports back to the loader, already translated. */
 export type JsonParseResult = {
   ok: boolean
   message: string
+  /**
+   * Raw validation detail (e.g. zod issues) for a shape-mismatch failure.
+   * Too long and too technical to show inline -- offered via
+   * `ImportDebugModal` instead, for a human or an AI to diagnose.
+   */
+  debugInfo?: string
 }
 
 export type JsonLoaderProps = {
@@ -43,6 +51,7 @@ export const JsonLoader = ({
   const { t } = useTranslation()
   const [text, setText] = useState("")
   const [result, setResult] = useState<JsonParseResult | null>(null)
+  const [debugInfoOpened, debugInfoHandlers] = useDisclosure(false)
 
   const handleLoad = () => {
     setResult(onParse(text))
@@ -99,7 +108,18 @@ export const JsonLoader = ({
 
       {result ? (
         <Alert color={result.ok ? "success" : "danger"} variant="light">
-          {result.message}
+          <Stack gap="xs">
+            <Text size="sm">{result.message}</Text>
+            {result.debugInfo !== undefined ? (
+              <Button
+                size="xs"
+                variant="default"
+                onClick={debugInfoHandlers.open}
+              >
+                {t("json.viewDebugInfo")}
+              </Button>
+            ) : null}
+          </Stack>
         </Alert>
       ) : null}
 
@@ -110,6 +130,12 @@ export const JsonLoader = ({
       >
         {t("json.loadAndAdd")}
       </Button>
+
+      <ImportDebugModal
+        opened={debugInfoOpened}
+        onClose={debugInfoHandlers.close}
+        debugInfo={result?.debugInfo ?? ""}
+      />
     </Stack>
   )
 }
