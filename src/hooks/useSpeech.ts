@@ -10,6 +10,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   selectSpeechRate,
   selectSystemVoiceUri,
+  SpeechLang,
 } from "@/store/slices/settingsSlice"
 import {
   selectSpeechOwnerId,
@@ -82,16 +83,36 @@ export const useSystemVoices = () => {
 export const useSpeech = () => {
   const dispatch = useAppDispatch()
   const ownerId = useAppSelector(selectSpeechOwnerId)
-  const speechRate = useAppSelector(selectSpeechRate)
-  const systemVoiceUri = useAppSelector(selectSystemVoiceUri)
+  const speechRateEn = useAppSelector(state =>
+    selectSpeechRate(state, SpeechLang.English),
+  )
+  const speechRateHe = useAppSelector(state =>
+    selectSpeechRate(state, SpeechLang.Hebrew),
+  )
+  const systemVoiceUriEn = useAppSelector(state =>
+    selectSystemVoiceUri(state, SpeechLang.English),
+  )
+  const systemVoiceUriHe = useAppSelector(state =>
+    selectSystemVoiceUri(state, SpeechLang.Hebrew),
+  )
 
   // Read at call time, so changing a setting mid-session takes effect on the
   // next utterance without every caller re-creating its handlers. Written
   // from an effect (not during render) since mutating a ref is a side
   // effect; no dependency array, so it re-syncs after every commit.
-  const settingsRef = useRef({ speechRate, systemVoiceUri })
+  const settingsRef = useRef({
+    speechRateEn,
+    speechRateHe,
+    systemVoiceUriEn,
+    systemVoiceUriHe,
+  })
   useEffect(() => {
-    settingsRef.current = { speechRate, systemVoiceUri }
+    settingsRef.current = {
+      speechRateEn,
+      speechRateHe,
+      systemVoiceUriEn,
+      systemVoiceUriHe,
+    }
   })
 
   // Warm the voice list so the first utterance already has a good voice rather
@@ -114,12 +135,20 @@ export const useSpeech = () => {
       const current = settingsRef.current
       dispatch(speechStarted(id))
 
+      /** `detectLang()`/an explicit `SpeechItem.lang` reports a BCP-47 tag
+       *  (`"he-IL"`, `"en-US"`), not a `SpeechLang` -- narrow to the base
+       *  language before looking up the per-language preference. */
+      const preferenceFor = (lang: string) =>
+        lang.toLowerCase().startsWith(SpeechLang.Hebrew)
+          ? { rate: current.speechRateHe, voiceUri: current.systemVoiceUriHe }
+          : { rate: current.speechRateEn, voiceUri: current.systemVoiceUriEn }
+
       speakQueue(
         items,
         {
-          rate: current.speechRate,
+          resolveRate: lang => preferenceFor(lang).rate,
           resolveVoice: lang =>
-            resolveVoice(currentVoices(), lang, current.systemVoiceUri),
+            resolveVoice(currentVoices(), lang, preferenceFor(lang).voiceUri),
         },
         {
           onIndex: index => {

@@ -170,7 +170,9 @@ export const en: Messages = {
 
   speech: {
     title: "Speech settings",
-    systemVoiceLabel: "English voice",
+    systemVoiceLabel: "Voice",
+    tabEnglish: "English",
+    tabHebrew: "Hebrew",
     systemVoiceHint:
       "Browsers default to a basic voice. On a Mac you can download enhanced voices in System Settings.",
     bestAvailable: "Best available",

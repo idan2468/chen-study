@@ -14,13 +14,20 @@ export const StorageKeys = {
   darkMode: "dark_mode_enabled",
   /** `'1'` / `'0'`. Written by the Unseen page in the originals. */
   dyslexiaFont: "dyslexia_font_enabled",
-  /** Speech rate as a decimal string. New: the originals read it live off the
-   *  slider and never persisted it. `english_` prefixed so it also syncs. */
+  /** Speech rate as a decimal string, for English content. New: the
+   *  originals read it live off the slider and never persisted it. */
   speechRate: "english_speech_rate",
+  /** Speech rate as a decimal string, for Hebrew content (module rules).
+   *  Separate from `speechRate` so the two languages can run at different
+   *  speeds. */
+  speechRateHe: "hebrew_speech_rate",
   /** UI language, `'he'` or `'en'`. New in the React app. */
   locale: "english_locale",
-  /** `voiceURI` of the chosen system speech voice. New in the React app. */
+  /** `voiceURI` of the chosen system speech voice for English content. New in the React app. */
   systemVoice: "english_system_voice",
+  /** `voiceURI` of the chosen system speech voice for Hebrew content (module
+   *  rules, UI-adjacent Hebrew text). New in the React app. */
+  systemVoiceHe: "hebrew_system_voice",
   /** GIS access token. Device-local — must never appear in `?s=` or Drive. */
   googleAccessToken: "google_access_token",
   /** Hash of the payload as of the last successful Drive sync (push or pulled
@@ -62,6 +69,7 @@ export const flashcardStatusKey = (exerciseId: string) =>
  */
 const DEVICE_LOCAL_KEYS = new Set<string>([
   StorageKeys.systemVoice,
+  StorageKeys.systemVoiceHe,
   StorageKeys.googleAccessToken,
   StorageKeys.googleLastSyncedHash,
 ])
@@ -71,5 +79,6 @@ export const isSyncableKey = (key: string) =>
   !DEVICE_LOCAL_KEYS.has(key) &&
   (key.startsWith("flashcards_status_") ||
     key.startsWith("english_") ||
+    key.startsWith("hebrew_") ||
     key.includes("dyslexia") ||
     key.includes("dark_mode"))

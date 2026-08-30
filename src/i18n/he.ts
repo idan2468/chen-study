@@ -163,7 +163,9 @@ export const he = {
 
   speech: {
     title: "הגדרות הקראה",
-    systemVoiceLabel: "קול לאנגלית",
+    systemVoiceLabel: "קול",
+    tabEnglish: "אנגלית",
+    tabHebrew: "עברית",
     systemVoiceHint:
       "הדפדפן בוחר כברירת מחדל קול בסיסי. במק אפשר להוריד קולות משופרים בהגדרות המערכת.",
     bestAvailable: "הקול הטוב ביותר שזמין",

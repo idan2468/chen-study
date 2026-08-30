@@ -27,7 +27,9 @@ export type SpeechHandlers = {
 }
 
 export type SpeakQueueOptions = {
-  rate: number
+  /** Resolves the utterance rate for a language, so a mixed-language queue
+   *  can read each item at its own language's preferred speed. */
+  resolveRate: (lang: string) => number
   /** Resolves the system voice for a language. See `utils/voices.ts`. */
   resolveVoice?: (lang: string) => SpeechSynthesisVoice | undefined
 }
@@ -89,7 +91,7 @@ const speakWithSystem = (
 
     const lang = item.lang ?? detectLang(item.text)
     const utterance = new SpeechSynthesisUtterance(cleanSpeechText(item.text))
-    utterance.rate = options.rate
+    utterance.rate = options.resolveRate(lang)
 
     // The whole point of `utils/voices.ts`: without this the browser silently
     // uses its default voice for the language, often the worst one installed.

@@ -10,7 +10,11 @@ import {
   nextFlashcard,
   toggleMarkedWord,
 } from "./slices/unseenSlice"
-import { setSpeechRate, toggleDyslexiaFont } from "./slices/settingsSlice"
+import {
+  setSpeechRate,
+  SpeechLang,
+  toggleDyslexiaFont,
+} from "./slices/settingsSlice"
 
 const otherId = "other_1"
 
@@ -93,7 +97,7 @@ test("the dyslexia preference is written to its key", () => {
 
 test("speech rate is clamped before being persisted", () => {
   const store = makeStore(preloaded())
-  store.dispatch(setSpeechRate(99))
+  store.dispatch(setSpeechRate({ lang: SpeechLang.English, rate: 99 }))
 
   expect(localStorage.getItem(StorageKeys.speechRate)).toBe("1")
 })

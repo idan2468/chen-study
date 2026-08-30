@@ -10,12 +10,34 @@ import { StorageKeys } from "@/utils/sync/storageKeys"
  * `useMantineColorScheme` and the custom manager in `src/theme.ts`. Neither is
  * the UI language, which `react-i18next` owns; see `i18n/useLocale.ts`.
  */
+
+/**
+ * The two languages speech settings are tracked for. Distinct from
+ * `i18n`'s `Locale` -- the UI chrome language and the language an utterance
+ * is spoken in happen to share the same two values today, but are
+ * conceptually independent, so they are not the same type.
+ */
+export enum SpeechLang {
+  English = "en",
+  Hebrew = "he",
+}
+
 export type SettingsState = {
   dyslexiaFont: boolean
-  /** `speechSynthesis` utterance rate, 0.1 - 1.0. */
-  speechRate: number
-  /** `voiceURI` of the preferred system voice, or `null` for "best available". */
-  systemVoiceUri: string | null
+  /**
+   * `speechSynthesis` utterance rate per language, 0.1 - 1.0. Separate from
+   * each other since English and Hebrew content are read at independent
+   * speeds (e.g. slower for a Hebrew explanation than a memorized English
+   * passage).
+   */
+  speechRateByLang: Record<SpeechLang, number>
+  /**
+   * Preferred system voice per language, or `null` for "best available".
+   * Separate from each other since a language switch (`detectLang()`) picks
+   * a different entry -- an English-voice preference must never apply to
+   * Hebrew content, and vice versa.
+   */
+  systemVoiceUriByLang: Record<SpeechLang, string | null>
 }
 
 export const MIN_SPEECH_RATE = 0.1
@@ -31,13 +53,23 @@ const clampRate = (value: number) => {
 
 const loadFromStorage = (): SettingsState => {
   const storedSystemVoice = readString(StorageKeys.systemVoice, "")
+  const storedSystemVoiceHe = readString(StorageKeys.systemVoiceHe, "")
 
   return {
     dyslexiaFont: readFlag(StorageKeys.dyslexiaFont, false),
-    speechRate: clampRate(
-      Number.parseFloat(readString(StorageKeys.speechRate, "")),
-    ),
-    systemVoiceUri: storedSystemVoice === "" ? null : storedSystemVoice,
+    speechRateByLang: {
+      [SpeechLang.English]: clampRate(
+        Number.parseFloat(readString(StorageKeys.speechRate, "")),
+      ),
+      [SpeechLang.Hebrew]: clampRate(
+        Number.parseFloat(readString(StorageKeys.speechRateHe, "")),
+      ),
+    },
+    systemVoiceUriByLang: {
+      [SpeechLang.English]: storedSystemVoice === "" ? null : storedSystemVoice,
+      [SpeechLang.Hebrew]:
+        storedSystemVoiceHe === "" ? null : storedSystemVoiceHe,
+    },
   }
 }
 
@@ -53,20 +85,29 @@ export const settingsSlice = createAppSlice({
     setDyslexiaFont: create.reducer((state, action: PayloadAction<boolean>) => {
       state.dyslexiaFont = action.payload
     }),
-    setSpeechRate: create.reducer((state, action: PayloadAction<number>) => {
-      state.speechRate = clampRate(action.payload)
-    }),
+    setSpeechRate: create.reducer(
+      (state, action: PayloadAction<{ lang: SpeechLang; rate: number }>) => {
+        state.speechRateByLang[action.payload.lang] = clampRate(
+          action.payload.rate,
+        )
+      },
+    ),
     setSystemVoiceUri: create.reducer(
-      (state, action: PayloadAction<string | null>) => {
-        state.systemVoiceUri = action.payload
+      (
+        state,
+        action: PayloadAction<{ lang: SpeechLang; uri: string | null }>,
+      ) => {
+        state.systemVoiceUriByLang[action.payload.lang] = action.payload.uri
       },
     ),
     reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
     selectDyslexiaFont: settings => settings.dyslexiaFont,
-    selectSpeechRate: settings => settings.speechRate,
-    selectSystemVoiceUri: settings => settings.systemVoiceUri,
+    selectSpeechRate: (settings, lang: SpeechLang) =>
+      settings.speechRateByLang[lang],
+    selectSystemVoiceUri: (settings, lang: SpeechLang) =>
+      settings.systemVoiceUriByLang[lang],
   },
 })
 

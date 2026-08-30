@@ -2,10 +2,12 @@ import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit"
 import type { AppDispatch, RootState } from "./store"
 import { removeKey, writeFlag, writeJson, writeString } from "./storage"
 import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
+import type { SettingsState } from "./slices/settingsSlice"
 import {
   setDyslexiaFont,
   setSpeechRate,
   setSystemVoiceUri,
+  SpeechLang,
   toggleDyslexiaFont,
 } from "./slices/settingsSlice"
 import type { UnseenState } from "./slices/unseenSlice"
@@ -52,6 +54,42 @@ const startListening = listenerMiddleware.startListening.withTypes<
 
 /* ----------------------------- settings ----------------------------- */
 
+const persistDyslexiaFont = (previous: SettingsState, next: SettingsState) => {
+  if (previous.dyslexiaFont !== next.dyslexiaFont) {
+    writeFlag(StorageKeys.dyslexiaFont, next.dyslexiaFont)
+  }
+}
+
+/** Rate and voice each have an English and a Hebrew key -- looping the pair
+ *  keeps this from being four copies of the same three lines. */
+const persistSpeechPreferences = (
+  previous: SettingsState,
+  next: SettingsState,
+) => {
+  const rateKeys: Record<SpeechLang, string> = {
+    [SpeechLang.English]: StorageKeys.speechRate,
+    [SpeechLang.Hebrew]: StorageKeys.speechRateHe,
+  }
+  for (const lang of Object.values(SpeechLang)) {
+    if (previous.speechRateByLang[lang] !== next.speechRateByLang[lang]) {
+      writeString(rateKeys[lang], String(next.speechRateByLang[lang]))
+    }
+  }
+
+  const voiceKeys: Record<SpeechLang, string> = {
+    [SpeechLang.English]: StorageKeys.systemVoice,
+    [SpeechLang.Hebrew]: StorageKeys.systemVoiceHe,
+  }
+  for (const lang of Object.values(SpeechLang)) {
+    if (
+      previous.systemVoiceUriByLang[lang] !== next.systemVoiceUriByLang[lang]
+    ) {
+      // An empty string means "best available", so the key round-trips.
+      writeString(voiceKeys[lang], next.systemVoiceUriByLang[lang] ?? "")
+    }
+  }
+}
+
 startListening({
   matcher: isAnyOf(
     toggleDyslexiaFont,
@@ -63,18 +101,8 @@ startListening({
     const previous = api.getOriginalState().settings
     const next = api.getState().settings
 
-    if (previous.dyslexiaFont !== next.dyslexiaFont) {
-      writeFlag(StorageKeys.dyslexiaFont, next.dyslexiaFont)
-    }
-
-    if (previous.speechRate !== next.speechRate) {
-      writeString(StorageKeys.speechRate, String(next.speechRate))
-    }
-
-    if (previous.systemVoiceUri !== next.systemVoiceUri) {
-      // An empty string means "best available", so the key round-trips.
-      writeString(StorageKeys.systemVoice, next.systemVoiceUri ?? "")
-    }
+    persistDyslexiaFont(previous, next)
+    persistSpeechPreferences(previous, next)
   },
 })
 
