@@ -31,11 +31,12 @@ export type TopBarMobileProps = {
 }
 
 /**
- * The collapsed TopBar surface below the mobile breakpoint: Home + a
- * hamburger button that opens a Drawer with full-text rows -- icon-only
- * buttons can't show connected-state text (e.g. the Google email) without
- * wrapping to a second row or a tiny indicator dot that gets clipped by the
- * button's rounded corner.
+ * The collapsed TopBar surface below the mobile breakpoint: Home + the
+ * Google connect button + a hamburger button that opens a Drawer with the
+ * remaining full-text rows. Google stays in this row rather than the drawer
+ * so a lost connection (`needsReconnect`) is visible without opening the
+ * menu -- `flex-shrink`/truncation keeps its label from pushing Home or the
+ * hamburger off-screen at narrow widths (see TopBar.module.css).
  */
 export const TopBarMobile = ({
   withHomeLink,
@@ -72,7 +73,7 @@ export const TopBarMobile = ({
 
   return (
     <>
-      <Group justify="space-between" gap="xs">
+      <Group justify="space-between" gap="xs" wrap="nowrap">
         {withHomeLink ? (
           <Button
             size="xs"
@@ -88,6 +89,22 @@ export const TopBarMobile = ({
         )}
 
         {children ? <Group gap="xs">{children}</Group> : null}
+
+        {googleAvailable ? (
+          <Button
+            size="xs"
+            variant="default"
+            className={classes.googleButtonMobile}
+            color={needsReconnect ? "red" : undefined}
+            leftSection={
+              <GoogleIcon style={{ width: ICON_SIZE, height: ICON_SIZE }} />
+            }
+            aria-label={googleLabel}
+            onClick={onGoogleClick}
+          >
+            <span className={classes.truncate}>{googleLabel}</span>
+          </Button>
+        ) : null}
 
         <Button
           size="xs"
@@ -105,20 +122,6 @@ export const TopBarMobile = ({
         position="top"
         title={t("common.settingsMenu")}
       >
-        {googleAvailable ? (
-          <NavLink
-            component="button"
-            label={googleLabel}
-            leftSection={
-              <GoogleIcon style={{ width: ICON_SIZE, height: ICON_SIZE }} />
-            }
-            onClick={() => {
-              drawerHandlers.close()
-              onGoogleClick()
-            }}
-          />
-        ) : null}
-
         {showSyncButton ? (
           <NavLink
             component="button"

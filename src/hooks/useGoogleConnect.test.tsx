@@ -158,6 +158,11 @@ test("a 401 at boot falls back to signed-out when the silent re-issue fails", as
   })
   expect(screen.getByText("signed-out")).toBeInTheDocument()
   expect(getAccessToken()).toBeNull()
+  // Surfaced even though the user didn't trigger this reconnect attempt --
+  // otherwise sync silently stops until they notice the Google button looks disconnected.
+  expect(
+    screen.getByText(i18next.t("common.googleReconnectNeeded")),
+  ).toBeInTheDocument()
 })
 
 test("a 401 from the Drive pull (after the email fetch already succeeded) also falls back to signed-out when the re-issue fails", async () => {
@@ -201,6 +206,9 @@ test("a 401 at boot falls back to signed-out when the silent re-issue's popup is
   })
   expect(screen.getByText("signed-out")).toBeInTheDocument()
   expect(getAccessToken()).toBeNull()
+  expect(
+    screen.getByText(i18next.t("common.googleReconnectNeeded")),
+  ).toBeInTheDocument()
 })
 
 test("a re-issue succeeding at boot still skips the Drive pull when a sync link just won", async () => {

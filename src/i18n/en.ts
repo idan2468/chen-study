@@ -44,6 +44,7 @@ export const en: Messages = {
     connectGoogle: "Connect Google",
     googleConnected: "{{email}} · Disconnect",
     googleConnectError: "Could not connect Google account. Try again.",
+    googleReconnectNeeded: "Google connection lost. Reconnect to keep syncing.",
     restoringSync: "Restoring your synced progress...",
     googleSyncError: "Could not sync your progress to Google Drive.",
     googleSyncSuccess: "Synced with Google Drive",

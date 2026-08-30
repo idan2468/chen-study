@@ -13,3 +13,22 @@
     transform: rotate(360deg);
   }
 }
+
+/* Lets the mobile TopBar's Google button shrink below its content width
+ * instead of pushing Home/the hamburger off-screen -- Mantine Buttons don't
+ * shrink by default since their content (Group) reports its full size as
+ * the minimum. */
+.googleButtonMobile {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.googleButtonMobile > span {
+  min-width: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

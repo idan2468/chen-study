@@ -316,12 +316,16 @@ test("switches to tap-to-reconnect after a failed silent reissue, and tapping it
   expect(latestLoginFn).toHaveBeenLastCalledWith()
 })
 
-test("on mobile, collapses to Home + a hamburger button that opens a drawer with full-text rows", async () => {
+test("on mobile, shows the Google button in the top row without opening the drawer, and collapses the rest behind a hamburger", async () => {
   mockMobileViewport()
   renderTopBar()
 
   expect(
     screen.getByRole("link", { name: i18next.t("common.home") }),
+  ).toBeInTheDocument()
+  // Google is visible immediately -- no drawer open needed, unlike the rare-use settings.
+  expect(
+    screen.getByRole("button", { name: i18next.t("common.connectGoogle") }),
   ).toBeInTheDocument()
   expect(
     screen.queryByRole("menuitem", { name: i18next.t("common.dayMode") }),
@@ -334,9 +338,48 @@ test("on mobile, collapses to Home + a hamburger button that opens a drawer with
   expect(
     await screen.findByRole("button", { name: i18next.t("common.dayMode") }),
   ).toBeInTheDocument()
-  expect(
-    screen.getByRole("button", { name: i18next.t("common.connectGoogle") }),
-  ).toBeInTheDocument()
+})
+
+test("on mobile, shows a lost connection in the top row without opening the drawer", async () => {
+  // `shouldAdvanceTime` lets fake time still tick forward on its own (so the
+  // boot restore's `waitFor` polling and awaits below keep working), while
+  // still letting us jump forward explicitly for the 30-second timer.
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  mockMobileViewport()
+  setAccessToken("ya29.token")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
+
+  renderTopBar()
+  await waitFor(() => {
+    expect(
+      screen.getByRole("button", {
+        name: i18next.t("common.googleConnected", {
+          email: "chen@example.com",
+        }),
+      }),
+    ).toBeInTheDocument()
+  })
+
+  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(new Response(null, { status: 401 }))
+  await vi.advanceTimersByTimeAsync(30_000)
+  act(() => {
+    latestLoginOptions?.onError?.({})
+  })
+
+  // No drawer interaction -- the reconnect state is visible in the top row.
+  const reconnectButton = screen.getByRole("button", {
+    name: i18next.t("common.reconnectLabel"),
+  })
+  expect(reconnectButton).toBeInTheDocument()
+  fireEvent.click(reconnectButton)
+  expect(latestLoginFn).toHaveBeenLastCalledWith()
 })
 
 test("on mobile, toggling a setting in the drawer keeps it open", async () => {
@@ -375,7 +418,7 @@ test("on mobile, opening the voice settings modal from the drawer closes the dra
   ).not.toBeInTheDocument()
 })
 
-test("on mobile, connects Google and pushes a snapshot from the drawer", async () => {
+test("on mobile, connects Google from the top row and pushes a snapshot, with Sync now still in the drawer", async () => {
   mockMobileViewport()
   setAccessToken("ya29.token")
   vi.mocked(fetch)
@@ -389,14 +432,17 @@ test("on mobile, connects Google and pushes a snapshot from the drawer", async (
     expect(fetch).toHaveBeenCalledTimes(4)
   })
 
-  fireEvent.click(
-    screen.getByRole("button", { name: i18next.t("common.settingsMenu") }),
-  )
-  const googleButton = await screen.findByRole("button", {
+  const googleButton = screen.getByRole("button", {
     name: i18next.t("common.googleConnected", { email: "chen@example.com" }),
   })
   expect(googleButton).toBeInTheDocument()
+
+  fireEvent.click(
+    screen.getByRole("button", { name: i18next.t("common.settingsMenu") }),
+  )
   expect(
-    screen.getByRole("button", { name: i18next.t("common.syncNowLabel") }),
+    await screen.findByRole("button", {
+      name: i18next.t("common.syncNowLabel"),
+    }),
   ).toBeInTheDocument()
 })

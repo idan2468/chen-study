@@ -72,18 +72,18 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
     googleAvailable && Boolean(googleConnect.connectedEmail)
   const syncing = !googleConnect.needsReconnect && googleConnect.syncing
 
-  const googleLabel = googleConnect.connectedEmail
-    ? t("common.googleConnected", { email: googleConnect.connectedEmail })
-    : t("common.connectGoogle")
+  const googleLabel = googleConnect.needsReconnect
+    ? t("common.reconnectLabel")
+    : googleConnect.connectedEmail
+      ? t("common.googleConnected", { email: googleConnect.connectedEmail })
+      : t("common.connectGoogle")
 
-  const syncLabel = t(
-    googleConnect.needsReconnect
-      ? "common.reconnectLabel"
-      : "common.syncNowLabel",
-  )
+  const syncLabel = t("common.syncNowLabel")
 
   const onGoogleClick = () => {
-    if (googleConnect.connectedEmail) {
+    if (googleConnect.needsReconnect) {
+      googleConnect.connect()
+    } else if (googleConnect.connectedEmail) {
       googleConnect.disconnect()
     } else {
       googleConnect.connect()
@@ -91,11 +91,7 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
   }
 
   const onSyncClick = () => {
-    if (googleConnect.needsReconnect) {
-      googleConnect.connect()
-    } else {
-      googleConnect.syncNow()
-    }
+    googleConnect.syncNow()
   }
 
   const settingsItems: SettingsItem[] = [

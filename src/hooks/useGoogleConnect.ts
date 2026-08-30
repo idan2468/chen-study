@@ -119,11 +119,17 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     if (tokenResponse) {
       void connectWithToken(tokenResponse, skipBootSync)
     } else {
-      // Quietly falls back to signed-out, no toast for something the user
-      // didn't trigger. Also clears connectedEmail in case the email fetch
-      // had already succeeded before the Drive call 401'd.
+      // Falls back to signed-out. Also clears connectedEmail in case the
+      // email fetch had already succeeded before the Drive call 401'd. A
+      // toast surfaces this even though the user didn't trigger it directly
+      // -- otherwise sync silently stops until they notice the Google
+      // button looks disconnected.
       setAccessToken(null)
       setConnectedEmail(null)
+      notifications.show({
+        color: "red",
+        message: t("common.googleReconnectNeeded"),
+      })
       settle()
     }
   }
