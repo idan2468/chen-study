@@ -19,7 +19,14 @@ export type ModuleExercise = {
   cards: ModuleCard[]
 }
 
-export type CardStatus = "known" | "unknown"
+export enum CardStatus {
+  Known = "known",
+  Unknown = "unknown",
+  /** Not yet assessed. Never stored in `ModulesProgress` -- an unassessed
+   *  card simply has no entry -- but shared with `FlipCard`'s visual state,
+   *  which does need a "no ring" case. */
+  None = "none",
+}
 
 /**
  * Progress is keyed by `card.en` **globally, not per module** -- deliberately

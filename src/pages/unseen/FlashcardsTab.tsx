@@ -6,6 +6,7 @@ import { CardNavigation } from "@/components/CardNavigation/CardNavigation"
 import { CardWord } from "@/components/CardWord/CardWord"
 import { confirmDanger } from "@/utils/confirmModal"
 import { FlipCard } from "@/components/FlipCard/FlipCard"
+import { CardStatus } from "@/types/moduleExercise"
 import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 import { StatCounts } from "@/components/StatCounts/StatCounts"
 import { FLASHCARD_AUTO_ADVANCE_MS } from "@/constants/flashcards"
@@ -140,7 +141,13 @@ export const FlashcardsTab = () => {
         onToggle={() => {
           setFlipped(current => !current)
         }}
-        status={status === undefined ? "none" : status ? "known" : "unknown"}
+        status={
+          status === undefined
+            ? CardStatus.None
+            : status
+              ? CardStatus.Known
+              : CardStatus.Unknown
+        }
         minHeight={isMobile ? 200 : 260}
         label={t(isMobile ? "common.cardAriaLabelTap" : "common.cardAriaLabel")}
         front={

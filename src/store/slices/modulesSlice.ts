@@ -13,6 +13,7 @@ import type {
   ModuleExercise,
   ModulesProgress,
 } from "@/types/moduleExercise"
+import { CardStatus } from "@/types/moduleExercise"
 
 export type ModulesState = {
   modules: ModuleExercise[]
@@ -160,7 +161,7 @@ export const modulesSlice = createAppSlice({
     markCard: create.reducer(
       (state, action: PayloadAction<{ word: string; isKnown: boolean }>) => {
         const { word, isKnown } = action.payload
-        state.progress[word] = isKnown ? "known" : "unknown"
+        state.progress[word] = isKnown ? CardStatus.Known : CardStatus.Unknown
       },
     ),
 
@@ -284,7 +285,7 @@ export const selectMissedWordsAcrossModules = createSelector(
     const missed: ModuleCard[] = []
     for (const module of modules) {
       for (const card of module.cards) {
-        if (progress[card.en] === "unknown" && !seen.has(card.en)) {
+        if (progress[card.en] === CardStatus.Unknown && !seen.has(card.en)) {
           seen.add(card.en)
           missed.push(card)
         }
@@ -316,7 +317,7 @@ export const selectActiveCards = createSelector(
     if (!filterMissed) {
       return cards
     }
-    return cards.filter(card => progress[card.en] !== "known")
+    return cards.filter(card => progress[card.en] !== CardStatus.Known)
   },
 )
 
@@ -333,9 +334,9 @@ export const selectModuleStats = createSelector(
     let unknown = 0
     for (const card of cards) {
       const status = progress[card.en]
-      if (status === "known") {
+      if (status === CardStatus.Known) {
         known += 1
-      } else if (status === "unknown") {
+      } else if (status === CardStatus.Unknown) {
         unknown += 1
       }
     }

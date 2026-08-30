@@ -10,7 +10,8 @@ import { FLASHCARD_AUTO_ADVANCE_MS } from "@/constants/flashcards"
 import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
 import { useIsMobile } from "@/hooks/useIsMobile"
 import { useSpeech } from "@/hooks/useSpeech"
-import type { CardStatus, ModuleCard } from "@/types/moduleExercise"
+import { CardStatus } from "@/types/moduleExercise"
+import type { ModuleCard } from "@/types/moduleExercise"
 import classes from "./ModuleFlashcard.module.css"
 
 export type ModuleFlashcardProps = {
@@ -86,7 +87,7 @@ export const ModuleFlashcard = ({
         onToggle={() => {
           setFlipped(current => !current)
         }}
-        status={status ?? "none"}
+        status={status}
         minHeight={isMobile ? 200 : 260}
         label={t(isMobile ? "common.cardAriaLabelTap" : "common.cardAriaLabel")}
         front={<CardWord text={card.en} className={classes.word} />}
@@ -110,7 +111,7 @@ export const ModuleFlashcard = ({
       />
 
       <AssessmentButtons
-        isKnown={status === undefined ? undefined : status === "known"}
+        isKnown={status === undefined ? undefined : status === CardStatus.Known}
         onMark={handleMark}
         knownLabel={t("modules.markKnown")}
         unknownLabel={t("modules.markUnknown")}

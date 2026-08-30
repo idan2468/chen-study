@@ -3,6 +3,7 @@ import {
   defaultModuleExercises,
 } from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
+import { CardStatus } from "@/types/moduleExercise"
 import type { ModuleExercise } from "@/types/moduleExercise"
 import { StorageKeys } from "@/utils/sync/storageKeys"
 import { makeStore } from "@/store/store"
@@ -105,7 +106,7 @@ describe("progress", () => {
     store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
 
     expect(selectModulesProgress(store.getState())).toStrictEqual({
-      [firstCard.en]: "known",
+      [firstCard.en]: CardStatus.Known,
     })
   })
 
@@ -115,7 +116,9 @@ describe("progress", () => {
     store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
     store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
 
-    expect(selectModulesProgress(store.getState())[firstCard.en]).toBe("known")
+    expect(selectModulesProgress(store.getState())[firstCard.en]).toBe(
+      CardStatus.Known,
+    )
   })
 
   test("a word shared across modules shares one status", () => {
@@ -136,7 +139,7 @@ describe("progress", () => {
     )
 
     expect(sharing.length).toBeGreaterThan(1)
-    expect(selectModulesProgress(state).QUIZ).toBe("known")
+    expect(selectModulesProgress(state).QUIZ).toBe(CardStatus.Known)
   })
 
   test("resetting clears only the current module's words", () => {
@@ -145,14 +148,17 @@ describe("progress", () => {
       modules: baseState({
         currentModuleId: "custom_1",
         modules: [...defaultModuleExercises, customModule],
-        progress: { ZAP: "known", [secondCard.en]: "unknown" },
+        progress: {
+          ZAP: CardStatus.Known,
+          [secondCard.en]: CardStatus.Unknown,
+        },
       }),
     })
     store.dispatch(resetCurrentModuleProgress())
 
     // ZAP is in custom_1; the second built-in's word must survive.
     expect(selectModulesProgress(store.getState())).toStrictEqual({
-      [secondCard.en]: "unknown",
+      [secondCard.en]: CardStatus.Unknown,
     })
   })
 
@@ -161,7 +167,7 @@ describe("progress", () => {
       modules: baseState({
         currentModuleId: "custom_1",
         modules: [customModule],
-        progress: { ZAP: "known" },
+        progress: { ZAP: CardStatus.Known },
       }),
     })
 
@@ -179,7 +185,7 @@ describe("filterMissed", () => {
       modules: baseState({
         currentModuleId: "custom_1",
         modules: [customModule],
-        progress: { ZAP: "known" },
+        progress: { ZAP: CardStatus.Known },
         cardIndex: 1,
       }),
     })
@@ -198,7 +204,7 @@ describe("selectMissedWordsAcrossModules", () => {
     const store = makeStore({
       modules: baseState({
         modules: [customModule, otherCustomModule],
-        progress: { QUIZ: "unknown", ZAP: "known" },
+        progress: { QUIZ: CardStatus.Unknown, ZAP: CardStatus.Known },
       }),
     })
 
@@ -223,7 +229,7 @@ describe("toggleMissedReview", () => {
       modules: baseState({
         currentModuleId: "custom_1",
         modules: [customModule],
-        progress: { ZAP: "unknown" },
+        progress: { ZAP: CardStatus.Unknown },
         cardIndex: 1,
       }),
     })

@@ -1,11 +1,11 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { useState } from "react"
-import type { FlipCardStatus } from "./FlipCard"
+import { CardStatus } from "@/types/moduleExercise"
 import { FlipCard } from "./FlipCard"
 
 /** A stateful host, since `FlipCard` itself is fully controlled by `flipped`/`onToggle`. */
-const StatefulFlipCard = ({ status }: { status?: FlipCardStatus }) => {
+const StatefulFlipCard = ({ status }: { status?: CardStatus }) => {
   const [flipped, setFlipped] = useState(false)
   return (
     <FlipCard
@@ -56,7 +56,7 @@ describe("FlipCard", () => {
   // testing plan deliberately leaves to manual/in-browser checks rather than
   // asserting on generated CSS-Module class names here. This just locks in
   // that every status value still renders and flips correctly.
-  test.each([["known" as const], ["unknown" as const], ["none" as const]])(
+  test.each([[CardStatus.Known], [CardStatus.Unknown], [CardStatus.None]])(
     "status=%s still renders and flips normally",
     async status => {
       const user = userEvent.setup()

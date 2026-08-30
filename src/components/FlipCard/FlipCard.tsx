@@ -1,8 +1,7 @@
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react"
+import { CardStatus } from "@/types/moduleExercise"
 import { cx } from "@/utils/cx"
 import classes from "./FlipCard.module.css"
-
-export type FlipCardStatus = "known" | "unknown" | "none"
 
 export type FlipCardProps = {
   front: ReactNode
@@ -10,15 +9,15 @@ export type FlipCardProps = {
   flipped: boolean
   onToggle: () => void
   /** Draws a coloured ring around the card. */
-  status?: FlipCardStatus
+  status?: CardStatus
   minHeight?: number
   label: string
 }
 
-const statusClass: Record<FlipCardStatus, string | undefined> = {
-  known: classes.statusKnown,
-  unknown: classes.statusUnknown,
-  none: undefined,
+const statusClass: Record<CardStatus, string | undefined> = {
+  [CardStatus.Known]: classes.statusKnown,
+  [CardStatus.Unknown]: classes.statusUnknown,
+  [CardStatus.None]: undefined,
 }
 
 /**
@@ -34,7 +33,7 @@ export const FlipCard = ({
   back,
   flipped,
   onToggle,
-  status = "none",
+  status = CardStatus.None,
   minHeight = 260,
   label,
 }: FlipCardProps) => {

@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
+import { CardStatus } from "@/types/moduleExercise"
 import type { ModuleCard } from "@/types/moduleExercise"
 import { ModuleFlashcard } from "./ModuleFlashcard"
 
@@ -58,8 +59,8 @@ describe("ModuleFlashcard", () => {
   })
 
   test.each([
-    ["known" as const, "filled", "light"],
-    ["unknown" as const, "light", "filled"],
+    [CardStatus.Known, "filled", "light"],
+    [CardStatus.Unknown, "light", "filled"],
   ])(
     "status=%s renders the matching assessment button as filled",
     (status, knownVariant, unknownVariant) => {
