@@ -11,12 +11,8 @@ import { StorageKeys } from "@/utils/sync/storageKeys"
  * the UI language, which `react-i18next` owns; see `i18n/useLocale.ts`.
  */
 
-/**
- * The two languages speech settings are tracked for. Distinct from
- * `i18n`'s `Locale` -- the UI chrome language and the language an utterance
- * is spoken in happen to share the same two values today, but are
- * conceptually independent, so they are not the same type.
- */
+/** The two languages speech settings are tracked for -- distinct from
+ *  `i18n`'s `Locale`, which is the UI chrome language. */
 export enum SpeechLang {
   English = "en",
   Hebrew = "he",
@@ -24,19 +20,10 @@ export enum SpeechLang {
 
 export type SettingsState = {
   dyslexiaFont: boolean
-  /**
-   * `speechSynthesis` utterance rate per language, 0.1 - 1.0. Separate from
-   * each other since English and Hebrew content are read at independent
-   * speeds (e.g. slower for a Hebrew explanation than a memorized English
-   * passage).
-   */
+  /** `speechSynthesis` rate per language, 0.1 - 1.0. Independent per
+   *  language so e.g. a Hebrew explanation can read slower than English. */
   speechRateByLang: Record<SpeechLang, number>
-  /**
-   * Preferred system voice per language, or `null` for "best available".
-   * Separate from each other since a language switch (`detectLang()`) picks
-   * a different entry -- an English-voice preference must never apply to
-   * Hebrew content, and vice versa.
-   */
+  /** Preferred system voice per language, or `null` for "best available". */
   systemVoiceUriByLang: Record<SpeechLang, string | null>
 }
 

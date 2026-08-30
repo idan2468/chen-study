@@ -135,9 +135,8 @@ export const useSpeech = () => {
       const current = settingsRef.current
       dispatch(speechStarted(id))
 
-      /** `detectLang()`/an explicit `SpeechItem.lang` reports a BCP-47 tag
-       *  (`"he-IL"`, `"en-US"`), not a `SpeechLang` -- narrow to the base
-       *  language before looking up the per-language preference. */
+      /** `detectLang()`/`SpeechItem.lang` reports a BCP-47 tag ("he-IL"),
+       *  not a `SpeechLang` -- narrow before looking up the preference. */
       const preferenceFor = (lang: string) =>
         lang.toLowerCase().startsWith(SpeechLang.Hebrew)
           ? { rate: current.speechRateHe, voiceUri: current.systemVoiceUriHe }
