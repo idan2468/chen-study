@@ -196,6 +196,8 @@ export const ModulesPage = () => {
             {currentModule && currentModule.rule !== "" ? (
               <RuleBox
                 title={t("modules.ruleTitle")}
+                speakLabel={t("modules.speakRule")}
+                ownerId={`rule:${currentModule.id}`}
                 html={currentModule.rule}
               />
             ) : null}

@@ -57,6 +57,25 @@ Object.defineProperty(window, "speechSynthesis", {
   },
 })
 
+// jsdom has no `SpeechSynthesisUtterance` constructor either -- `speech.ts`
+// constructs one directly (not via `window.`) before handing it to the fake
+// `speechSynthesis.speak` above, so it needs its own stub.
+class SpeechSynthesisUtteranceStub {
+  text: string
+  rate = 1
+  lang = ""
+  voice: SpeechSynthesisVoice | null = null
+  onend: (() => void) | null = null
+  onerror: (() => void) | null = null
+  constructor(text: string) {
+    this.text = text
+  }
+}
+Object.defineProperty(window, "SpeechSynthesisUtterance", {
+  writable: true,
+  value: SpeechSynthesisUtteranceStub,
+})
+
 // `SyncModal`'s copy-link button goes through `@mantine/hooks`' `useClipboard`,
 // which needs `navigator.clipboard.writeText` in jsdom.
 Object.defineProperty(navigator, "clipboard", {

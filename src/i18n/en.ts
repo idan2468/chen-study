@@ -93,6 +93,7 @@ export const en: Messages = {
     noModules: "No modules available",
     moduleMeta: "{{tabName}} • {{count}} words",
     ruleTitle: "The rule",
+    speakRule: "Read the rule aloud",
     statKnown: "Got it",
     statUnknown: "Needs practice",
     statPending: "Unmarked",

@@ -88,6 +88,7 @@ export const he = {
     noModules: "אין מודולים זמינים",
     moduleMeta: "{{tabName}} • {{count}} מילים",
     ruleTitle: "הכלל",
+    speakRule: "הקראת הכלל",
     statKnown: "הצלחתי",
     statUnknown: "צריכה תרגול",
     statPending: "לא סומנו",

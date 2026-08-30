@@ -1,7 +1,12 @@
-import { Paper, Title } from "@mantine/core"
+import { Group, Paper, Title } from "@mantine/core"
+import { convert } from "html-to-text"
+import { SpeakButton } from "@/components/SpeakButton/SpeakButton"
 
 export type RuleBoxProps = {
   title: string
+  speakLabel: string
+  /** Unique per module, so switching modules doesn't show a stale "playing" state. */
+  ownerId: string
   /** Author-supplied HTML from the module's `rule` field. */
   html: string
 }
@@ -12,11 +17,19 @@ export type RuleBoxProps = {
  * rather than as CSS-Module classes. `dir="auto"` so this author-supplied
  * teaching material keeps its own text direction regardless of UI language.
  */
-export const RuleBox = ({ title, html }: RuleBoxProps) => (
+export const RuleBox = ({ title, speakLabel, ownerId, html }: RuleBoxProps) => (
   <Paper withBorder radius="md" p="md" w="100%">
-    <Title order={4} c="brand" mb="xs">
-      {title}
-    </Title>
+    <Group gap="xs" mb="xs" wrap="nowrap">
+      <SpeakButton
+        ownerId={ownerId}
+        text={convert(html, { wordwrap: false })}
+        label={speakLabel}
+        size="sm"
+      />
+      <Title order={4} c="brand">
+        {title}
+      </Title>
+    </Group>
     <div dir="auto" dangerouslySetInnerHTML={{ __html: html }} />
   </Paper>
 )
