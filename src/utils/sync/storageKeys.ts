@@ -21,6 +21,8 @@ export const StorageKeys = {
    *  Separate from `speechRate` so the two languages can run at different
    *  speeds. */
   speechRateHe: "hebrew_speech_rate",
+  /** Whether Unseen answer choices are shuffled when an exercise opens. */
+  shuffleUnseenAnswers: "english_shuffle_unseen_answers",
   /** UI language, `'he'` or `'en'`. New in the React app. */
   locale: "english_locale",
   /** `voiceURI` of the chosen system speech voice for English content. New in the React app. */

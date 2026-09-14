@@ -9,6 +9,7 @@ import {
   setSystemVoiceUri,
   SpeechLang,
   toggleDyslexiaFont,
+  toggleShuffleUnseenAnswers,
 } from "./slices/settingsSlice"
 import type { UnseenState } from "./slices/unseenSlice"
 import {
@@ -61,6 +62,15 @@ const persistDyslexiaFont = (previous: SettingsState, next: SettingsState) => {
   }
 }
 
+const persistShuffleUnseenAnswers = (
+  previous: SettingsState,
+  next: SettingsState,
+) => {
+  if (previous.shuffleUnseenAnswers !== next.shuffleUnseenAnswers) {
+    writeFlag(StorageKeys.shuffleUnseenAnswers, next.shuffleUnseenAnswers)
+  }
+}
+
 /** Rate and voice each have an English and a Hebrew key -- looping the pair
  *  keeps this from being four copies of the same three lines. */
 const persistSpeechPreferences = (
@@ -97,12 +107,14 @@ startListening({
     setDyslexiaFont,
     setSpeechRate,
     setSystemVoiceUri,
+    toggleShuffleUnseenAnswers,
   ),
   effect: (_action, api) => {
     const previous = api.getOriginalState().settings
     const next = api.getState().settings
 
     persistDyslexiaFont(previous, next)
+    persistShuffleUnseenAnswers(previous, next)
     persistSpeechPreferences(previous, next)
   },
 })

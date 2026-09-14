@@ -4,6 +4,7 @@ import {
   DEFAULT_SPEECH_RATE,
   reloadFromStorage,
   selectDyslexiaFont,
+  selectShuffleUnseenAnswers,
   selectSpeechRate,
   selectSystemVoiceUri,
   setSpeechRate,
@@ -28,6 +29,16 @@ describe("hydration", () => {
       const store = makeStore()
 
       expect(selectDyslexiaFont(store.getState())).toBe(true)
+    })
+  })
+
+  describe("shuffleUnseenAnswers", () => {
+    test("defaults off and reopens on the stored preference", () => {
+      expect(selectShuffleUnseenAnswers(makeStore().getState())).toBe(false)
+
+      localStorage.setItem(StorageKeys.shuffleUnseenAnswers, "1")
+
+      expect(selectShuffleUnseenAnswers(makeStore().getState())).toBe(true)
     })
   })
 

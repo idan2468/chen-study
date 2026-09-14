@@ -20,6 +20,7 @@ export enum SpeechLang {
 
 export type SettingsState = {
   dyslexiaFont: boolean
+  shuffleUnseenAnswers: boolean
   /** `speechSynthesis` rate per language, 0.1 - 1.0. Independent per
    *  language so e.g. a Hebrew explanation can read slower than English. */
   speechRateByLang: Record<SpeechLang, number>
@@ -44,6 +45,7 @@ const loadFromStorage = (): SettingsState => {
 
   return {
     dyslexiaFont: readFlag(StorageKeys.dyslexiaFont, false),
+    shuffleUnseenAnswers: readFlag(StorageKeys.shuffleUnseenAnswers, false),
     speechRateByLang: {
       [SpeechLang.English]: clampRate(
         Number.parseFloat(readString(StorageKeys.speechRate, "")),
@@ -72,6 +74,9 @@ export const settingsSlice = createAppSlice({
     setDyslexiaFont: create.reducer((state, action: PayloadAction<boolean>) => {
       state.dyslexiaFont = action.payload
     }),
+    toggleShuffleUnseenAnswers: create.reducer(state => {
+      state.shuffleUnseenAnswers = !state.shuffleUnseenAnswers
+    }),
     setSpeechRate: create.reducer(
       (state, action: PayloadAction<{ lang: SpeechLang; rate: number }>) => {
         state.speechRateByLang[action.payload.lang] = clampRate(
@@ -91,6 +96,7 @@ export const settingsSlice = createAppSlice({
   }),
   selectors: {
     selectDyslexiaFont: settings => settings.dyslexiaFont,
+    selectShuffleUnseenAnswers: settings => settings.shuffleUnseenAnswers,
     selectSpeechRate: (settings, lang: SpeechLang) =>
       settings.speechRateByLang[lang],
     selectSystemVoiceUri: (settings, lang: SpeechLang) =>
@@ -101,10 +107,15 @@ export const settingsSlice = createAppSlice({
 export const {
   toggleDyslexiaFont,
   setDyslexiaFont,
+  toggleShuffleUnseenAnswers,
   setSpeechRate,
   setSystemVoiceUri,
   reloadFromStorage,
 } = settingsSlice.actions
 
-export const { selectDyslexiaFont, selectSpeechRate, selectSystemVoiceUri } =
-  settingsSlice.selectors
+export const {
+  selectDyslexiaFont,
+  selectShuffleUnseenAnswers,
+  selectSpeechRate,
+  selectSystemVoiceUri,
+} = settingsSlice.selectors

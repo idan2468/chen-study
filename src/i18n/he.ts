@@ -146,6 +146,8 @@ export const he = {
     paragraphPlay: "הקראה מהפסקה {{number}} והלאה",
     speakQuestion: "הקראת השאלה והתשובות",
     speakOption: "הקראת אפשרות {{number}}",
+    shuffleAnswers: "ערבוב סדר התשובות",
+    shuffleAnswersHint: "סדר חדש בכל פתיחה של התרגיל",
     answerCorrect: "כל הכבוד! תשובה נכונה ✓",
     answerIncorrect: "לא מדויק. נסו שוב או האזינו לקטע פעם נוספת.",
     statVocab: "מילים בכרטיסיות",

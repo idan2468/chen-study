@@ -14,6 +14,7 @@ import {
   setSpeechRate,
   SpeechLang,
   toggleDyslexiaFont,
+  toggleShuffleUnseenAnswers,
 } from "./slices/settingsSlice"
 
 const otherId = "other_1"
@@ -93,6 +94,16 @@ test("the dyslexia preference is written to its key", () => {
   store.dispatch(toggleDyslexiaFont())
 
   expect(localStorage.getItem(StorageKeys.dyslexiaFont)).toBe("1")
+})
+
+test("the answer-shuffle preference is written to its syncable key", () => {
+  const store = makeStore(preloaded())
+  store.dispatch(toggleShuffleUnseenAnswers())
+
+  expect(Object.keys(localStorage)).toStrictEqual([
+    StorageKeys.shuffleUnseenAnswers,
+  ])
+  expect(localStorage.getItem(StorageKeys.shuffleUnseenAnswers)).toBe("1")
 })
 
 test("speech rate is clamped before being persisted", () => {

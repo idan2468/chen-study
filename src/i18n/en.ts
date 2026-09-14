@@ -152,6 +152,8 @@ export const en: Messages = {
     paragraphPlay: "Read from paragraph {{number}} onwards",
     speakQuestion: "Read the question and answers aloud",
     speakOption: "Read option {{number}} aloud",
+    shuffleAnswers: "Shuffle answer order",
+    shuffleAnswersHint: "New order each time the exercise opens",
     answerCorrect: "Well done! Correct answer ✓",
     answerIncorrect:
       "Not quite. Try again, or listen to the passage once more.",
