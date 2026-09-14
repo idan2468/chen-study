@@ -16,6 +16,7 @@ import {
   selectAnswers,
   selectCurrentExerciseId,
   selectCurrentProgress,
+  selectExerciseOptions,
   selectFlashcardIndex,
   selectFlashcardStats,
   selectLibrary,
@@ -149,11 +150,13 @@ describe("markedWords", () => {
 })
 
 describe("library", () => {
-  test("adding an exercise makes it current and resets card + answers", () => {
+  test("adding an exercise selects it without discarding other answers", () => {
+    const defaultId = defaultUnseenExercise.exerciseId
+    const previousAnswers = { q1: { selected: 0, correct: true } }
     const store = makeStore({
       unseen: baseState({
         cardIndex: 3,
-        answers: { q1: { selected: 0, correct: true } },
+        answers: { [defaultId]: previousAnswers },
       }),
     })
     store.dispatch(addExercise(otherExercise))
@@ -161,14 +164,19 @@ describe("library", () => {
     const state = store.getState()
     expect(state.unseen.currentId).toBe("other_1")
     expect(state.unseen.cardIndex).toBe(0)
-    expect(state.unseen.answers).toStrictEqual({})
+    expect(selectAnswers(state)).toStrictEqual({})
+    expect(state.unseen.answers[defaultId]).toStrictEqual(previousAnswers)
   })
 
   test("adding multiple exercises upserts all of them and selects the first", () => {
     const store = makeStore({
       unseen: baseState({
         cardIndex: 3,
-        answers: { q1: { selected: 0, correct: true } },
+        answers: {
+          [defaultUnseenExercise.exerciseId]: {
+            q1: { selected: 0, correct: true },
+          },
+        },
       }),
     })
     store.dispatch(addExercises([otherExercise, thirdExercise]))
@@ -181,7 +189,10 @@ describe("library", () => {
     ])
     expect(state.unseen.currentId).toBe("other_1")
     expect(state.unseen.cardIndex).toBe(0)
-    expect(state.unseen.answers).toStrictEqual({})
+    expect(selectAnswers(state)).toStrictEqual({})
+    expect(
+      state.unseen.answers[defaultUnseenExercise.exerciseId],
+    ).toStrictEqual({ q1: { selected: 0, correct: true } })
   })
 
   test("refuses to delete the last exercise", () => {
@@ -201,6 +212,7 @@ describe("library", () => {
         currentId: "other_1",
         progress: { other_1: { Cat: true } },
         markedWords: { other_1: ["cat"] },
+        answers: { other_1: { q1: { selected: 0, correct: true } } },
       }),
     })
     store.dispatch(deleteExercise("other_1"))
@@ -209,6 +221,7 @@ describe("library", () => {
     expect(state.unseen.currentId).toBe(defaultUnseenExercise.exerciseId)
     expect(state.unseen.progress.other_1).toBeUndefined()
     expect(state.unseen.markedWords.other_1).toBeUndefined()
+    expect(state.unseen.answers.other_1).toBeUndefined()
   })
 })
 
@@ -221,6 +234,28 @@ describe("answerQuestion", () => {
 
     expect(selectAnswers(store.getState())).toStrictEqual({
       q1: { selected: 2, correct: false },
+    })
+  })
+
+  test("restores selected answers after switching away and back", () => {
+    const store = makeStore({
+      unseen: baseState({
+        library: {
+          [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
+          other_1: otherExercise,
+        },
+      }),
+    })
+    store.dispatch(
+      answerQuestion({ questionId: "q1", selected: 2, correct: true }),
+    )
+
+    store.dispatch(switchExercise("other_1"))
+    expect(selectAnswers(store.getState())).toStrictEqual({})
+
+    store.dispatch(switchExercise(defaultUnseenExercise.exerciseId))
+    expect(selectAnswers(store.getState())).toStrictEqual({
+      q1: { selected: 2, correct: true },
     })
   })
 
@@ -237,6 +272,42 @@ describe("answerQuestion", () => {
       q1: { selected: 1, correct: true },
     })
   })
+
+  test("marks an exercise complete only after every question is correct", () => {
+    const exercise: UnseenExercise = {
+      ...otherExercise,
+      questions: [
+        { id: "q1", title: "One", options: [] },
+        { id: "q2", title: "Two", options: [] },
+      ],
+    }
+    const store = makeStore({
+      unseen: baseState({
+        library: { [exercise.exerciseId]: exercise },
+        currentId: exercise.exerciseId,
+      }),
+    })
+
+    store.dispatch(
+      answerQuestion({ questionId: "q1", selected: 0, correct: true }),
+    )
+    store.dispatch(
+      answerQuestion({ questionId: "q2", selected: 0, correct: false }),
+    )
+    expect(selectExerciseOptions(store.getState())[0]?.completed).toBe(false)
+
+    store.dispatch(
+      answerQuestion({ questionId: "q2", selected: 1, correct: true }),
+    )
+
+    expect(selectExerciseOptions(store.getState())).toStrictEqual([
+      {
+        value: exercise.exerciseId,
+        label: exercise.subtitle,
+        completed: true,
+      },
+    ])
+  })
 })
 
 describe("hydration", () => {
@@ -252,7 +323,7 @@ describe("hydration", () => {
     expect(selectFlashcardIndex(store.getState())).toBe(2)
   })
 
-  test("reopens with the stored answers and marked words", () => {
+  test("migrates legacy active-exercise answers and reopens marked words", () => {
     localStorage.setItem(
       StorageKeys.quizAnswers,
       JSON.stringify({ q1: { selected: 1, correct: true } }),
@@ -270,6 +341,54 @@ describe("hydration", () => {
     })
     expect(selectAllMarkedWords(state)).toStrictEqual({
       [defaultUnseenExercise.exerciseId]: ["Maya"],
+    })
+    expect(state.unseen.answers).toStrictEqual({
+      [defaultUnseenExercise.exerciseId]: {
+        q1: { selected: 1, correct: true },
+      },
+    })
+  })
+
+  test("marks a completed legacy active exercise as complete", () => {
+    const answers = Object.fromEntries(
+      defaultUnseenExercise.questions.map(question => [
+        question.id,
+        {
+          selected: question.options.findIndex(option => option.isCorrect),
+          correct: true,
+        },
+      ]),
+    )
+    localStorage.setItem(StorageKeys.quizAnswers, JSON.stringify(answers))
+
+    const store = makeStore()
+
+    expect(selectAnswers(store.getState())).toStrictEqual(answers)
+    expect(
+      selectExerciseOptions(store.getState()).find(
+        option => option.value === defaultUnseenExercise.exerciseId,
+      )?.completed,
+    ).toBe(true)
+  })
+
+  test("reopens per-exercise answers in the new storage shape", () => {
+    localStorage.setItem(
+      StorageKeys.quizAnswers,
+      JSON.stringify({
+        [defaultUnseenExercise.exerciseId]: {
+          q1: { selected: 1, correct: true },
+        },
+        other_1: { q2: { selected: 0, correct: false } },
+      }),
+    )
+
+    const store = makeStore()
+
+    expect(store.getState().unseen.answers).toStrictEqual({
+      [defaultUnseenExercise.exerciseId]: {
+        q1: { selected: 1, correct: true },
+      },
+      other_1: { q2: { selected: 0, correct: false } },
     })
   })
 

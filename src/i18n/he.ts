@@ -23,6 +23,7 @@ export const he = {
     delete: "מחיקה",
     reset: "איפוס",
     close: "סגירה",
+    completed: "הושלם",
     stop: "עצירה",
     previous: "← הקודם",
     next: "הבא →",

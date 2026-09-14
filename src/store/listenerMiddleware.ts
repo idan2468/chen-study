@@ -13,6 +13,7 @@ import {
 import type { UnseenState } from "./slices/unseenSlice"
 import {
   addExercise,
+  addExercises,
   answerQuestion,
   deleteExercise,
   markFlashcard,
@@ -135,8 +136,7 @@ const persistMarkedWords = (previous: UnseenState, next: UnseenState) => {
   }
 }
 
-/** Written unconditionally (not diffed per-exercise like `progress`) since
- *  the reducers already reset both on every exercise switch. */
+/** The card index follows the active exercise; answers persist per exercise. */
 const persistReadingProgress = (previous: UnseenState, next: UnseenState) => {
   if (previous.cardIndex !== next.cardIndex) {
     writeJson(StorageKeys.flashcardIndex, next.cardIndex)
@@ -171,6 +171,7 @@ startListening({
   matcher: isAnyOf(
     switchExercise,
     addExercise,
+    addExercises,
     deleteExercise,
     markFlashcard,
     resetFlashcardProgress,

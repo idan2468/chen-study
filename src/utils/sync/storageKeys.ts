@@ -42,7 +42,7 @@ export const StorageKeys = {
   /** `Record<exerciseId, string[]>`. New: the originals highlighted words in
    *  the DOM only, so the marks were lost on every re-render. */
   markedWords: "english_marked_words",
-  /** `Record<questionId, {selected, correct}>` for the active exercise. */
+  /** `Record<exerciseId, Record<questionId, {selected, correct}>>`. */
   quizAnswers: "english_quiz_answers",
   /** Flashcard deck position for the active exercise. */
   flashcardIndex: "english_flashcard_index",

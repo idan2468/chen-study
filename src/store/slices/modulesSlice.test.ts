@@ -18,6 +18,7 @@ import {
   selectActiveCards,
   selectCurrentModuleId,
   selectModuleCardIndex,
+  selectModuleOptions,
   selectMissedWordsAcrossModules,
   selectModuleStats,
   selectModules,
@@ -177,6 +178,23 @@ describe("progress", () => {
       pending: 1,
     })
   })
+
+  test("marks a module option complete after every card was assessed", () => {
+    const store = makeStore({
+      modules: baseState({
+        modules: [customModule],
+        currentModuleId: "custom_1",
+      }),
+    })
+
+    store.dispatch(markCard({ word: "ZAP", isKnown: true }))
+    expect(selectModuleOptions(store.getState())[0]?.completed).toBe(false)
+
+    store.dispatch(markCard({ word: "QUIZ", isKnown: false }))
+    expect(selectModuleOptions(store.getState())).toStrictEqual([
+      { value: "custom_1", label: "Mine", completed: true },
+    ])
+  })
 })
 
 describe("filterMissed", () => {
@@ -314,6 +332,25 @@ describe("hydration", () => {
     expect(selectModulesProgress(store.getState())).toStrictEqual({
       [firstCard.en]: "known",
     })
+  })
+
+  test("marks a module complete from existing stored progress", () => {
+    const firstModule = at(defaultModuleExercises, 0)
+    const progress = Object.fromEntries(
+      firstModule.cards.map((card, index) => [
+        card.en,
+        index % 2 === 0 ? CardStatus.Known : CardStatus.Unknown,
+      ]),
+    )
+    localStorage.setItem(StorageKeys.modulesProgress, JSON.stringify(progress))
+
+    const store = makeStore()
+
+    expect(
+      selectModuleOptions(store.getState()).find(
+        option => option.value === firstModule.id,
+      )?.completed,
+    ).toBe(true)
   })
 
   test("reopens without a deleted built-in, and does not re-seed it", () => {

@@ -272,6 +272,21 @@ export const selectCurrentModule = createSelector(
     modules.find(module => module.id === currentId) ?? modules[0],
 )
 
+export const selectModuleOptions = createSelector(
+  [selectModules, selectModulesProgress],
+  (modules, progress) =>
+    modules.map(module => ({
+      value: module.id,
+      label: module.tabName,
+      completed:
+        module.cards.length > 0 &&
+        module.cards.every(card => {
+          const status = progress[card.en]
+          return status === CardStatus.Known || status === CardStatus.Unknown
+        }),
+    })),
+)
+
 /**
  * Every word marked "unknown" in any module, deduplicated by word (the same
  * word can appear in several modules and shares one status across all of

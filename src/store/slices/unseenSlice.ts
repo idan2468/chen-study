@@ -7,6 +7,8 @@ import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type {
   AnswerRecord,
+  AnswersByExercise,
+  ExerciseAnswers,
   FlashcardProgress,
   UnseenExercise,
 } from "@/types/unseenExercise"
@@ -15,8 +17,8 @@ export type UnseenState = {
   library: Record<string, UnseenExercise>
   currentId: string
   cardIndex: number
-  /** Quiz answers for the active exercise, keyed by question id. */
-  answers: Record<string, AnswerRecord>
+  /** Quiz answers keyed first by exercise id, then by question id. */
+  answers: AnswersByExercise
   /** Highlighter marks, per exercise. */
   markedWords: Record<string, string[]>
   /** Flashcard known/unknown, per exercise. */
@@ -52,6 +54,41 @@ const readAllFlashcardProgress = (
   return progress
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
+const isAnswerRecord = (value: unknown): value is AnswerRecord =>
+  isRecord(value) &&
+  Number.isInteger(value.selected) &&
+  typeof value.correct === "boolean"
+
+const isExerciseAnswers = (value: unknown): value is ExerciseAnswers =>
+  isRecord(value) && Object.values(value).every(isAnswerRecord)
+
+/** Migrates the original active-exercise answer map into the per-exercise shape. */
+const readAnswersByExercise = (currentId: string): AnswersByExercise => {
+  const stored = readJson<unknown>(StorageKeys.quizAnswers, {})
+  if (!isRecord(stored)) {
+    return {}
+  }
+
+  const entries = Object.entries(stored)
+  if (entries.length === 0) {
+    return {}
+  }
+  if (entries.every(([, answer]) => isAnswerRecord(answer))) {
+    return { [currentId]: stored as ExerciseAnswers }
+  }
+
+  const answersByExercise: AnswersByExercise = {}
+  for (const [exerciseId, answers] of entries) {
+    if (isExerciseAnswers(answers)) {
+      answersByExercise[exerciseId] = answers
+    }
+  }
+  return answersByExercise
+}
+
 const loadFromStorage = (): UnseenState => {
   const library = readJson<Record<string, UnseenExercise>>(
     StorageKeys.exerciseLibrary,
@@ -70,13 +107,10 @@ const loadFromStorage = (): UnseenState => {
   return {
     library,
     currentId,
-    // Reducers already reset both on exercise switch/add/delete, so a
-    // stale value here only ever belongs to whatever is still current.
+    // Exercise switches reset the active deck position, so this stored index
+    // belongs to the resolved current exercise.
     cardIndex: readJson<number>(StorageKeys.flashcardIndex, 0),
-    answers: readJson<Record<string, AnswerRecord>>(
-      StorageKeys.quizAnswers,
-      {},
-    ),
+    answers: readAnswersByExercise(currentId),
     markedWords: readJson<Record<string, string[]>>(
       StorageKeys.markedWords,
       {},
@@ -97,7 +131,6 @@ export const unseenSlice = createAppSlice({
       }
       state.currentId = action.payload
       state.cardIndex = 0
-      state.answers = {}
     }),
 
     /** Upserts an imported exercise and makes it current. */
@@ -105,10 +138,10 @@ export const unseenSlice = createAppSlice({
       (state, action: PayloadAction<UnseenExercise>) => {
         const exercise = action.payload
         state.library[exercise.exerciseId] = exercise
+        deleteEntry(state.answers, exercise.exerciseId)
         state.progress[exercise.exerciseId] ??= {}
         state.currentId = exercise.exerciseId
         state.cardIndex = 0
-        state.answers = {}
       },
     ),
 
@@ -120,6 +153,7 @@ export const unseenSlice = createAppSlice({
         }
         for (const exercise of action.payload) {
           state.library[exercise.exerciseId] = exercise
+          deleteEntry(state.answers, exercise.exerciseId)
           state.progress[exercise.exerciseId] ??= {}
         }
         const [first] = action.payload
@@ -127,7 +161,6 @@ export const unseenSlice = createAppSlice({
           state.currentId = first.exerciseId
         }
         state.cardIndex = 0
-        state.answers = {}
       },
     ),
 
@@ -142,13 +175,13 @@ export const unseenSlice = createAppSlice({
       deleteEntry(state.library, action.payload)
       deleteEntry(state.progress, action.payload)
       deleteEntry(state.markedWords, action.payload)
+      deleteEntry(state.answers, action.payload)
 
       if (state.currentId === action.payload) {
         const remaining = Object.keys(state.library)
         state.currentId =
           remaining[Math.min(index, remaining.length - 1)] ?? remaining[0] ?? ""
         state.cardIndex = 0
-        state.answers = {}
       }
     }),
 
@@ -162,7 +195,8 @@ export const unseenSlice = createAppSlice({
         }>,
       ) => {
         const { questionId, selected, correct } = action.payload
-        state.answers[questionId] = { selected, correct }
+        const answers = (state.answers[state.currentId] ??= {})
+        answers[questionId] = { selected, correct }
       },
     ),
 
@@ -218,7 +252,7 @@ export const unseenSlice = createAppSlice({
     selectLibrary: state => state.library,
     selectCurrentExerciseId: state => state.currentId,
     selectFlashcardIndex: state => state.cardIndex,
-    selectAnswers: state => state.answers,
+    selectAnswersByExercise: state => state.answers,
     selectAllMarkedWords: state => state.markedWords,
     selectAllProgress: state => state.progress,
   },
@@ -243,7 +277,7 @@ export const {
   selectLibrary,
   selectCurrentExerciseId,
   selectFlashcardIndex,
-  selectAnswers,
+  selectAnswersByExercise,
   selectAllMarkedWords,
   selectAllProgress,
 } = unseenSlice.selectors
@@ -257,15 +291,29 @@ export const selectCurrentExercise = createSelector(
   (library, currentId) => library[currentId],
 )
 
-export const selectExerciseOptions = createSelector([selectLibrary], library =>
-  Object.entries(library).map(([id, exercise]) => ({
-    value: id,
-    // `exerciseLabel` from the original: subtitle first, emoji stripped.
-    label: (exercise.subtitle || exercise.title || id)
-      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
-      .trim()
-      .slice(0, 60),
-  })),
+export const selectAnswers = createSelector(
+  [selectAnswersByExercise, selectCurrentExerciseId],
+  (answers, currentId): ExerciseAnswers => answers[currentId] ?? {},
+)
+
+export const selectExerciseOptions = createSelector(
+  [selectLibrary, selectAnswersByExercise],
+  (library, answersByExercise) =>
+    Object.entries(library).map(([id, exercise]) => {
+      const answers = answersByExercise[id] ?? {}
+      return {
+        value: id,
+        // `exerciseLabel` from the original: subtitle first, emoji stripped.
+        label: (exercise.subtitle || exercise.title || id)
+          .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+          .trim(),
+        completed:
+          exercise.questions.length > 0 &&
+          exercise.questions.every(
+            question => answers[question.id]?.correct === true,
+          ),
+      }
+    }),
 )
 
 export const selectCurrentProgress = createSelector(

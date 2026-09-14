@@ -37,3 +37,6 @@ export type AnswerRecord = {
   selected: number
   correct: boolean
 }
+
+export type ExerciseAnswers = Record<string, AnswerRecord>
+export type AnswersByExercise = Record<string, ExerciseAnswers>

@@ -21,6 +21,10 @@ class ResizeObserverStub {
   unobserve = vi.fn()
   disconnect = vi.fn()
 }
+
+// Mantine's Combobox scrolls its selected option after opening. jsdom does not
+// implement this browser API; Mantine's Vitest guide recommends this stub.
+HTMLElement.prototype.scrollIntoView = vi.fn()
 Object.defineProperty(window, "ResizeObserver", {
   writable: true,
   value: ResizeObserverStub,

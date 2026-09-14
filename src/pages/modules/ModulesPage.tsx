@@ -38,6 +38,7 @@ import {
   selectFilterMissed,
   selectMissedWordsAcrossModules,
   selectModuleCardIndex,
+  selectModuleOptions,
   selectModules,
   selectModuleStats,
   selectModulesProgress,
@@ -66,6 +67,7 @@ export const ModulesPage = () => {
   const missedWords = useAppSelector(selectMissedWordsAcrossModules)
   const progress = useAppSelector(selectModulesProgress)
   const stats = useAppSelector(selectModuleStats)
+  const moduleOptions = useAppSelector(selectModuleOptions)
 
   const handleDeleteModule = () => {
     if (currentModule === undefined) {
@@ -181,15 +183,13 @@ export const ModulesPage = () => {
             ) : null}
 
             <DeletableSelect
-              data={modules.map(module => ({
-                value: module.id,
-                label: module.tabName,
-              }))}
+              data={moduleOptions}
               value={currentModuleId}
               onChange={id => dispatch(selectModuleAction(id))}
               onDelete={handleDeleteModule}
               selectLabel={t("modules.selectModule")}
               deleteLabel={t("modules.deleteModule")}
+              completedLabel={t("common.completed")}
               leftSection={<IconCards size={ICON_SIZE} />}
             />
 

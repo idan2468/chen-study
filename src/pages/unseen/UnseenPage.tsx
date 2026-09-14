@@ -112,6 +112,7 @@ export const UnseenPage = () => {
           onDelete={handleDelete}
           selectLabel={t("unseen.selectExercise")}
           deleteLabel={t("unseen.deleteExercise")}
+          completedLabel={t("common.completed")}
           leftSection={<IconBooks size={ICON_SIZE} />}
         />
 

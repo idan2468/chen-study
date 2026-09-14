@@ -1,3 +1,30 @@
+.input {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionContent {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--mantine-spacing-xs);
+  width: 100%;
+}
+
+.optionLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.completionMark {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--mantine-color-success-6);
+}
+
 .deleteButton:hover {
   background-color: var(--mantine-color-danger-5);
   color: var(--mantine-color-white);

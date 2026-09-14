@@ -29,6 +29,7 @@ export const en: Messages = {
     delete: "Delete",
     reset: "Reset",
     close: "Close",
+    completed: "Completed",
     stop: "Stop",
     previous: "← Previous",
     next: "Next →",

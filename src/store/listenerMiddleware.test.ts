@@ -110,7 +110,31 @@ test("answering a question writes only the quiz-answers key", () => {
 
   expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.quizAnswers])
   expect(localStorage.getItem(StorageKeys.quizAnswers)).toBe(
-    JSON.stringify({ q1: { selected: 0, correct: true } }),
+    JSON.stringify({
+      [defaultUnseenExercise.exerciseId]: {
+        q1: { selected: 0, correct: true },
+      },
+    }),
+  )
+})
+
+test("completing every unseen question persists all selected answers", () => {
+  const store = makeStore(preloaded())
+  for (const question of defaultUnseenExercise.questions) {
+    store.dispatch(
+      answerQuestion({ questionId: question.id, selected: 0, correct: true }),
+    )
+  }
+
+  expect(localStorage.getItem(StorageKeys.quizAnswers)).toBe(
+    JSON.stringify({
+      [defaultUnseenExercise.exerciseId]: Object.fromEntries(
+        defaultUnseenExercise.questions.map(question => [
+          question.id,
+          { selected: 0, correct: true },
+        ]),
+      ),
+    }),
   )
 })
 
