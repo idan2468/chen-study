@@ -2,21 +2,13 @@ export const keepFinalOccurrencesBy = <T>(
   values: readonly T[],
   getKey: (value: T) => string,
 ): T[] => {
-  const seen = new Set<string>()
-  const reversedResult: T[] = []
+  const finalValuesByKey = new Map<string, T>()
 
-  for (let index = values.length - 1; index >= 0; index -= 1) {
-    const value = values[index]
-    if (value === undefined) {
-      continue
-    }
-
+  for (const value of values) {
     const key = getKey(value)
-    if (!seen.has(key)) {
-      seen.add(key)
-      reversedResult.push(value)
-    }
+    finalValuesByKey.delete(key)
+    finalValuesByKey.set(key, value)
   }
 
-  return reversedResult.reverse()
+  return [...finalValuesByKey.values()]
 }
