@@ -6,7 +6,7 @@
  *
  * Speaks through `window.speechSynthesis`, always available and covering every
  * language. A local neural engine (kokoro-js) was tried and removed -- see
- * `docs/remove-neural-tts.md` -- because its audio quality was rejected in real
+ * `docs/speech/remove-neural-tts.md` -- because its audio quality was rejected in real
  * use even after fixing its precision bug and meeting the latency budget.
  *
  * The pending queue lives here rather than in Redux: it changes far too often,

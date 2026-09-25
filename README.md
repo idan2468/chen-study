@@ -15,7 +15,7 @@ stays Hebrew — only the chrome translates).
 
 This app started as three standalone static HTML files (still kept in `old/` for
 reference) and was converted to React + Redux Toolkit + Mantine + CSS Modules. See
-`docs/react-conversion-plan.md` for the full conversion history and design
+`docs/migration/react-conversion-plan.md` for the full conversion history and design
 decisions.
 
 ## Stack
@@ -67,7 +67,7 @@ Tests are colocated with the code they test (`X.test.ts`/`X.test.tsx` next to
   router) and drive interaction through `@testing-library/user-event`. These
   assert on rendered output, dispatched state changes, and callback calls — not
   implementation details like internal state or CSS class names. See
-  `docs/component-testing-plan.md` for the full rationale and rollout plan.
+  `docs/testing/component-testing-plan.md` for the full rationale and rollout plan.
 
 `test/setup.ts` stubs the browser APIs jsdom doesn't implement
 (`window.matchMedia`, `window.speechSynthesis`, `navigator.clipboard`) and
@@ -86,7 +86,7 @@ the app's syncable `localStorage` keys in a single `progress.json` file in the
 app's hidden Drive `appDataFolder` — never a user-visible file, and no backend
 or database of our own. A 30-second timer, a push on tab-hide, and a manual
 "Sync now" button keep it up to date, with a dirty check so an unchanged
-snapshot never re-uploads. See `docs/google-account-sync.md` for the full
+snapshot never re-uploads. See `docs/sync/google-account-sync.md` for the full
 design and Google Cloud setup.
 
 ## Deployment
@@ -98,10 +98,13 @@ sub-path, `vite.config.ts` sets `base: "/chen-study/"`, and the app uses
 
 ## Docs
 
-- `docs/react-conversion-plan.md` — the original HTML-to-React conversion plan and
+- `docs/migration/react-conversion-plan.md` — the original HTML-to-React conversion plan and
   decision log
-- `docs/component-testing-plan.md` — the component testing rollout plan
-- `docs/kokoro-tts.md` / `docs/remove-neural-tts.md` — the neural TTS experiment
+- `docs/testing/component-testing-plan.md` — the component testing rollout plan
+- `docs/speech/kokoro-tts.md` / `docs/speech/remove-neural-tts.md` — the neural TTS experiment
   and why it was removed (the app now speaks only through
   `window.speechSynthesis`, with a voice-ranking layer on top)
-- `docs/google-account-sync.md` — the Google Drive sync design and rollout plan
+- `docs/sync/google-account-sync.md` — the Google Drive sync design and rollout plan
+- `docs/sync/google-merge-sync-plan.md` — the approved merge-sync design
+- `docs/sync/google-merge-sync-process.md` — rollout progress and agent handoff SOT
+- `docs/sync/persistence-gaps.md` — audit of persisted and intentionally transient state

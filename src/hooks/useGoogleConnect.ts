@@ -32,7 +32,7 @@ type PendingLogin =
  * Drive snapshot if one exists and rehydrates the running app, or pushes the
  * local snapshot if Drive has none yet. A 401 at boot triggers one silent
  * GIS re-issue before falling back to signed-out. See
- * docs/google-account-sync.md.
+ * docs/sync/google-account-sync.md.
  */
 export const useGoogleConnect = () => {
   const { t } = useTranslation()
@@ -160,7 +160,7 @@ export const useGoogleConnect = () => {
     },
   })
 
-  /** A silent GIS re-issue for `useDriveSync.ts`'s mid-session 401s -- only refreshes the token, never pulls, since only Connect and boot may (see docs/google-account-sync.md). */
+  /** A silent GIS re-issue for `useDriveSync.ts`'s mid-session 401s -- only refreshes the token, never pulls, since only Connect and boot may (see docs/sync/google-account-sync.md). */
   const reissueForSync = (onSettled: (success: boolean) => void) => {
     pendingLoginRef.current = { kind: "syncReissue", onSettled }
     login({ prompt: "none" })

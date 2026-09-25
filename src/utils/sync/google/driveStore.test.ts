@@ -124,7 +124,7 @@ describe("writeSnapshot", () => {
     expect(init?.method).toBe("POST")
 
     // Drive's multipart upload is RFC 2387 `multipart/related`, not the
-    // browser's `multipart/form-data` -- see docs/google-account-sync.md.
+    // browser's `multipart/form-data` -- see docs/sync/google-account-sync.md.
     const contentType = new Headers(init?.headers).get("Content-Type") ?? ""
     expect(contentType).toMatch(/^multipart\/related; boundary=.+/)
     const boundary = contentType.replace("multipart/related; boundary=", "")

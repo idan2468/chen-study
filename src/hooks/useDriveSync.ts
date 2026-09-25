@@ -10,7 +10,7 @@ const SYNC_INTERVAL_MS = 30_000
 /**
  * The push-only triggers on top of `driveSync.ts`'s dirty check -- a
  * 30-second timer, a push on page hide, and manual "Sync now" -- see
- * "Trigger mechanics" in docs/google-account-sync.md. Only Connect and boot
+ * "Trigger mechanics" in docs/sync/google-account-sync.md. Only Connect and boot
  * ever pull, so all three of these only push.
  */
 export const useDriveSync = (

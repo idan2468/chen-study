@@ -108,7 +108,7 @@ const LanguageSpeechTab = ({
 /**
  * A local neural engine (kokoro-js) used to live alongside this picker but was
  * removed after real-world testing rejected its audio quality; see
- * `docs/remove-neural-tts.md` for the full account. This is what remained.
+ * `docs/speech/remove-neural-tts.md` for the full account. This is what remained.
  */
 export const SpeechSettingsModal = ({
   opened,

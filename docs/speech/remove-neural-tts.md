@@ -135,12 +135,12 @@ compile error — the type system enforces that both are done.
 
 ## Step 5 — Docs
 
-- `docs/kokoro-tts.md` → **rewrite as a short post-mortem, do not delete.** The
+- `docs/speech/kokoro-tts.md` → **rewrite as a short post-mortem, do not delete.** The
   measurements are the reason nobody should re-attempt this blindly: `q8` is broken
   on WebGPU's int8 kernels; `fp16` is the only sane GPU precision; warm-up costs
   2.1 s; and even correctly configured the quality was rejected. Deleting that
   throws away the expensive part.
-- `docs/react-conversion-plan.md` → mark Step 8b as removed and why; leave 8a as
+- `docs/migration/react-conversion-plan.md` → mark Step 8b as removed and why; leave 8a as
   delivered. Also drop the Step 10 follow-up about self-hosting the ONNX WASM, since
   it no longer applies.
 

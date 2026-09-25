@@ -1,6 +1,6 @@
 /**
  * Google sign-in for Drive sync, entirely in the browser -- see
- * docs/google-account-sync.md for the full design.
+ * docs/sync/google-account-sync.md for the full design.
  *
  * The access token is kept in localStorage so a reload stays connected.
  * Disconnect only clears it locally, without revoking Google's consent, since

@@ -333,8 +333,8 @@ Also in this step:
 
 > **Outcome: 8a delivered and kept. 8b (kokoro-js) rejected after testing** — the
 > audio quality was unusable even once the precision bug was fixed and the sub-second
-> latency budget was met. Removal plan: `docs/remove-neural-tts.md`. Post-mortem with
-> the measurements: `docs/kokoro-tts.md`. The section below is the original design,
+> latency budget was met. Removal plan: `docs/speech/remove-neural-tts.md`. Post-mortem with
+> the measurements: `docs/speech/kokoro-tts.md`. The section below is the original design,
 > left intact for context.
 
 Added at the user's request. Researched first, and the finding constrains the design:
@@ -605,7 +605,7 @@ Target repo: `idan2468/chen-study`, so the site lands at
   end state, but it means the side-by-side comparison has to happen locally, before
   deploying.
 - ~~Interaction with Step 8b~~ — moot. Step 8b (kokoro-js) was removed after
-  real-world testing rejected its audio quality; see `docs/remove-neural-tts.md`.
+  real-world testing rejected its audio quality; see `docs/speech/remove-neural-tts.md`.
   No WASM/WebGPU/COOP/COEP consideration applies to speech anymore -- the app
   speaks through `window.speechSynthesis` only, which has no such constraints.
 

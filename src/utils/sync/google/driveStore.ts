@@ -1,6 +1,6 @@
 /**
  * Plain wrapper around the Drive REST API for the `progress.json` snapshot --
- * see docs/google-account-sync.md. No dirty check, no triggers: that policy
+ * see docs/sync/google-account-sync.md. No dirty check, no triggers: that policy
  * lives in `driveSync.ts`.
  *
  * `drive.appdata` scope only ever sees this app's own hidden folder, so a
@@ -26,7 +26,7 @@ const driveFilesResponseSchema = z.object({
 
 /**
  * The newest `modifiedTime` wins if a failed create ever left duplicates
- * behind; the older copies are left alone (see docs/google-account-sync.md).
+ * behind; the older copies are left alone (see docs/sync/google-account-sync.md).
  */
 const locateProgressFile = async (
   token: string,
@@ -48,7 +48,7 @@ const locateProgressFile = async (
   )
 }
 
-/** A malformed body is treated the same as no file at all -- see [Decisions taken](../../../../docs/google-account-sync.md#decisions-taken). */
+/** A malformed body is treated the same as no file at all -- see [Decisions taken](../../../../docs/sync/google-account-sync.md#decisions-taken). */
 const downloadSnapshot = async (
   token: string,
   fileId: string,
@@ -143,7 +143,7 @@ const updateSnapshot = async (
 /**
  * Overwrites whichever file `progress.json` currently resolves to, or
  * creates it. `keepalive` is set for the page-hide push, so it survives the
- * tab closing -- see "Trigger mechanics" in docs/google-account-sync.md.
+ * tab closing -- see "Trigger mechanics" in docs/sync/google-account-sync.md.
  */
 export const writeSnapshot = async (
   payload: SyncPayload,

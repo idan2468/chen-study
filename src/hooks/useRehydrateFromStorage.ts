@@ -13,7 +13,7 @@ import { applyDocumentLocale, directionFor, readStoredLocale } from "@/i18n"
  * slice only reads localStorage once, in its lazy initializer at store
  * creation (see `store/store.ts`); a Drive pull that lands after the app is
  * already mounted has no other way to take effect. See
- * docs/google-account-sync.md, "After a pull".
+ * docs/sync/google-account-sync.md, "After a pull".
  */
 export const useRehydrateFromStorage = () => {
   const dispatch = useAppDispatch()

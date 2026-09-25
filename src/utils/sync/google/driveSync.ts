@@ -1,6 +1,6 @@
 /**
  * The dirty-check policy on top of `driveStore.ts` -- see
- * "The dirty check" in docs/google-account-sync.md. An idle device re-hashes
+ * "The dirty check" in docs/sync/google-account-sync.md. An idle device re-hashes
  * localStorage every tick instead of always re-pushing it, so it can't
  * clobber a device that's actively syncing.
  */
@@ -30,7 +30,7 @@ export const recordSynced = (payload: SyncPayload) => {
  * successful sync. A failed push does not record the new hash, so the next
  * call retries instead of silently giving up. `keepalive` is set for the
  * page-hide trigger only -- see "Trigger mechanics" in
- * docs/google-account-sync.md.
+ * docs/sync/google-account-sync.md.
  */
 export const syncIfDirty = async (keepalive = false) => {
   const payload = buildSyncPayload()

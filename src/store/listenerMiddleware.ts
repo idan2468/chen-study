@@ -221,7 +221,7 @@ startListening({
     prevCard,
     // Included only to capture the `cardIndex` reset these also perform,
     // not to persist `filterMissed`/`reviewingMissed` (see
-    // docs/persistence-gaps.md).
+    // docs/sync/persistence-gaps.md).
     toggleFilterMissed,
     toggleMissedReview,
   ),
