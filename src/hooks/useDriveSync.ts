@@ -8,10 +8,10 @@ import { syncIfDirty } from "@/utils/sync/google/driveSync"
 const SYNC_INTERVAL_MS = 30_000
 
 /**
- * The push-only triggers on top of `driveSync.ts`'s dirty check -- a
- * 30-second timer, a push on page hide, and manual "Sync now" -- see
- * "Trigger mechanics" in docs/sync/google-account-sync.md. Only Connect and boot
- * ever pull, so all three of these only push.
+ * The push-only triggers on top of `driveSync.ts`'s dirty check: a visible-tab
+ * 30-second timer, visibility changes, and manual "Sync now". Returning to a
+ * visible tab syncs immediately; hiding keeps the existing final keepalive push.
+ * Only Connect and boot ever pull.
  */
 export const useDriveSync = (
   connected: boolean,
@@ -67,17 +67,24 @@ export const useDriveSync = (
     }
   }
 
-  const latest = useLatest({ attemptSync, needsReconnect })
+  const syncSilently = (keepalive = false) => {
+    void attemptSync({ keepalive, silent: true })
+  }
+
+  const latest = useLatest({ syncSilently, needsReconnect })
 
   useEffect(() => {
     if (!connected) {
       return
     }
     const interval = setInterval(() => {
-      if (latest.current.needsReconnect) {
+      if (
+        document.visibilityState !== "visible" ||
+        latest.current.needsReconnect
+      ) {
         return
       }
-      void latest.current.attemptSync({ keepalive: false, silent: true })
+      latest.current.syncSilently()
     }, SYNC_INTERVAL_MS)
     return () => {
       clearInterval(interval)
@@ -89,13 +96,10 @@ export const useDriveSync = (
       return
     }
     const onVisibilityChange = () => {
-      if (
-        document.visibilityState !== "hidden" ||
-        latest.current.needsReconnect
-      ) {
+      if (latest.current.needsReconnect) {
         return
       }
-      void latest.current.attemptSync({ keepalive: true, silent: true })
+      latest.current.syncSilently(document.visibilityState === "hidden")
     }
     document.addEventListener("visibilitychange", onVisibilityChange)
     return () => {

@@ -99,18 +99,27 @@ test("pushes with keepalive when the tab becomes hidden", async () => {
   expect(writeInit?.keepalive).toBe(true)
 })
 
-test("does not push when the tab becomes visible -- only hiding it is a trigger", async () => {
+test("syncs immediately and silently when the tab becomes visible", async () => {
   localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
 
   renderWithProviders(<Host connected />)
   vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible")
   document.dispatchEvent(new Event("visibilitychange"))
 
-  await new Promise(resolve => setTimeout(resolve, 0))
-  expect(fetch).not.toHaveBeenCalled()
+  await waitFor(() => {
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+  const [, writeInit] = vi.mocked(fetch).mock.calls[1] ?? []
+  expect(writeInit?.keepalive).toBe(false)
+  expect(
+    screen.queryByText(i18next.t("common.googleSyncSuccess")),
+  ).not.toBeInTheDocument()
 })
 
-test("the 30-second timer keeps pushing after the tab goes hidden, independent of the immediate hide-triggered push", async () => {
+test("the 30-second timer does not push while the tab is hidden", async () => {
   vi.useFakeTimers()
   localStorage.setItem(StorageKeys.dyslexiaFont, "1")
   vi.mocked(fetch)
@@ -123,14 +132,11 @@ test("the 30-second timer keeps pushing after the tab goes hidden, independent o
   await vi.advanceTimersByTimeAsync(0)
   expect(fetch).toHaveBeenCalledTimes(2)
 
-  // A later change, still hidden, gives the next tick something dirty to push.
   localStorage.setItem(StorageKeys.speechRate, "1.5")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
+  vi.mocked(fetch).mockClear()
   await vi.advanceTimersByTimeAsync(30_000)
 
-  expect(fetch).toHaveBeenCalledTimes(4)
+  expect(fetch).not.toHaveBeenCalled()
 })
 
 test("a 401 during syncNow triggers a silent reissue and retries the push once it succeeds", async () => {

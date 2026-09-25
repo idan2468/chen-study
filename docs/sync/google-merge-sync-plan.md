@@ -12,7 +12,9 @@
 - Unseen replacement selects the complete parent subtree.
 - Module reset stores `CardStatus.None`; stale later progress may win.
 - Use one shared Drive v2 document and accept the reviewed rare concurrent-write limitation.
-- Sync only on connect/boot, the 30-second timer, and **Sync now**.
+- Sync on connect/boot, the visible-tab 30-second timer, return-to-visible, and **Sync now**.
+- Hidden tabs skip interval sync; returning to visible syncs immediately and silently.
+- The current one-time page-hide push remains only for legacy sync and is removed at v2 activation.
 - Keep current minimal retries and silent passive transient failures.
 - Migrate through legacy pull → local conversion → local v2 → Drive v2 → activation → idempotent legacy deletion.
 - Keep temporary legacy behavior centralized and removable.
@@ -61,6 +63,7 @@ Temporary legacy storage and migration code lives under `src/utils/sync/legacy/`
 - Refactor repeated or multi-step logic into focused, well-named helpers.
 - Keep reducers, hooks, migration, merge, and Drive orchestration easy to scan.
 - Avoid trivial wrappers and speculative abstractions.
+- If implementation exposes an issue or decision not explicitly covered here, stop and ask the user instead of assuming behavior or expanding scope.
 - Run `review-code-quality` after every completed step and before manual review.
 
 ## Branch and validation policy

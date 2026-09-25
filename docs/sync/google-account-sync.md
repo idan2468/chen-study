@@ -20,11 +20,12 @@ The current implementation uses whole-file last-write-wins:
 
 - **Connect** — read Drive and apply its snapshot when present; otherwise upload local state.
 - **Boot with a saved token** — run the same pull-or-push flow before showing the app.
-- **Every 30 seconds** — upload only when the local snapshot differs from the last successful sync.
-- **Page hidden** — attempt the same dirty push with `keepalive`.
+- **Every 30 seconds while visible** — upload only when the local snapshot differs from the last successful sync; hidden tabs skip interval ticks.
+- **Page hidden** — attempt a final dirty push with `keepalive`.
+- **Page visible again** — run an immediate silent dirty push.
 - **Sync now** — run the dirty push immediately and show success or failure.
 
-The timer and page-hide paths are push-only. Pulls happen only on connect and boot.
+In the current legacy strategy, the timer and visibility paths are push-only; pulls happen only on connect and boot. After v2 activation, every approved trigger runs read → merge → write, and this document will be updated to describe only that strategy.
 
 ## Dirty check
 

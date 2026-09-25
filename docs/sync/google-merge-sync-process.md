@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–3 approved; Step 4 is next.**
+**Status: in progress on `google-merge-sync` — Steps 1–3 approved; Step 3.5 awaits review, then Step 4.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -10,7 +10,17 @@
 - [x] Step 2 — import identity/replacement (`9c78308`, `b27d40d`, `d4f7187`), CI/review/manual approved.
 - [x] Step 3 — centralize legacy persistence (`74e221b`), 259 tests/full gate/review/manual approved.
 
-## Next review gate
+## Current review gate
+
+### Step 3.5 — visibility-aware interval sync
+
+- Hidden tabs and minimized Chrome skip 30-second interval sync.
+- Returning to visible triggers an immediate silent sync when Google is connected.
+- The existing one-time legacy page-hide keepalive push remains unchanged.
+- Becoming visible does not show a success notification.
+- Run full validation and `review-code-quality`, then stop for manual approval.
+
+## Next main rollout step
 
 ### Step 4 — plain semantic-ID arrays
 
@@ -18,9 +28,6 @@
 - Add identity fields directly to values.
 - Do not add `VersionedValue`, timestamps, deleted flags, or v2 persistence yet.
 - Preserve legacy storage through `src/utils/sync/legacy/legacyStorage.ts`.
-- Use separate logical commits where they improve reviewability.
-- Apply KISS and helper extraction throughout.
-- Run full validation and `review-code-quality`, then stop for manual approval.
 
 ## Remaining rollout
 
@@ -43,4 +50,8 @@
 6. Present commits, combined diff, validation evidence, review findings, and dispositions.
 7. Wait for manual approval before continuing.
 
-No next step starts without manual approval.
+## Execution rules
+
+- Apply KISS and extract focused helpers for repeated or multi-step logic.
+- Do not invent behavior, expand scope, or resolve an issue not covered by the approved plan. Stop and ask the user first.
+- No next step starts without manual approval.
