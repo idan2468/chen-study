@@ -70,7 +70,7 @@ export const UnseenPage = () => {
   }
 
   const handleParseJson = (text: string): JsonParseResult => {
-    const result = parseUnseenExerciseJson(text, Date.now())
+    const result = parseUnseenExerciseJson(text)
     if (!result.ok) {
       // The parser is locale-agnostic and reports a code; the wording lives in
       // `importErrorMessage`.

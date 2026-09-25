@@ -168,6 +168,33 @@ describe("library", () => {
     expect(state.unseen.answers[defaultId]).toStrictEqual(previousAnswers)
   })
 
+  test("replacing an exercise clears all of its progress", () => {
+    const replacement = { ...otherExercise, title: "Replacement" }
+    const store = makeStore({
+      unseen: baseState({
+        library: {
+          [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
+          [otherExercise.exerciseId]: otherExercise,
+        },
+        answers: {
+          [otherExercise.exerciseId]: {
+            q1: { selected: 0, correct: true },
+          },
+        },
+        markedWords: { [otherExercise.exerciseId]: ["cat"] },
+        progress: { [otherExercise.exerciseId]: { Cat: true } },
+      }),
+    })
+
+    store.dispatch(addExercise(replacement))
+
+    const state = store.getState().unseen
+    expect(state.library[otherExercise.exerciseId]).toStrictEqual(replacement)
+    expect(state.answers[otherExercise.exerciseId]).toBeUndefined()
+    expect(state.markedWords[otherExercise.exerciseId]).toBeUndefined()
+    expect(state.progress[otherExercise.exerciseId]).toStrictEqual({})
+  })
+
   test("adding multiple exercises upserts all of them and selects the first", () => {
     const store = makeStore({
       unseen: baseState({
@@ -193,6 +220,24 @@ describe("library", () => {
     expect(
       state.unseen.answers[defaultUnseenExercise.exerciseId],
     ).toStrictEqual({ q1: { selected: 0, correct: true } })
+  })
+
+  test("only applies the final occurrence of a repeated id", () => {
+    const finalOther = { ...otherExercise, title: "Final" }
+    const store = makeStore({ unseen: baseState() })
+
+    store.dispatch(addExercises([otherExercise, thirdExercise, finalOther]))
+
+    const state = store.getState()
+    expect(state.unseen.library[otherExercise.exerciseId]).toStrictEqual(
+      finalOther,
+    )
+    expect(Object.keys(state.unseen.library)).toStrictEqual([
+      defaultUnseenExercise.exerciseId,
+      thirdExercise.exerciseId,
+      otherExercise.exerciseId,
+    ])
+    expect(state.unseen.currentId).toBe(thirdExercise.exerciseId)
   })
 
   test("refuses to delete the last exercise", () => {

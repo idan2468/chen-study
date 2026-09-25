@@ -3,6 +3,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { deleteEntry } from "@/store/records"
 import { readJson, readString } from "@/store/storage"
+import { keepFinalOccurrencesBy } from "@/utils/collections"
 import { StorageKeys } from "@/utils/sync/storageKeys"
 import {
   builtInModuleIds,
@@ -121,6 +122,31 @@ const loadFromStorage = (): ModulesState => {
   }
 }
 
+const addOrReplaceModule = (state: ModulesState, module: ModuleExercise) => {
+  const existingIndex = state.modules.findIndex(
+    existing => existing.id === module.id,
+  )
+  if (existingIndex < 0) {
+    state.modules.push(module)
+    return
+  }
+
+  const existing = state.modules[existingIndex]
+  const affectedWords = new Set([
+    ...(existing?.cards.map(card => card.en) ?? []),
+    ...module.cards.map(card => card.en),
+  ])
+  for (const word of affectedWords) {
+    deleteEntry(state.progress, word)
+  }
+  state.modules[existingIndex] = module
+
+  if (state.currentModuleId === module.id) {
+    state.cardIndex = 0
+    state.filterMissed = false
+  }
+}
+
 export const modulesSlice = createAppSlice({
   name: "modules",
   initialState: loadFromStorage,
@@ -175,16 +201,22 @@ export const modulesSlice = createAppSlice({
       state.filterMissed = false
     }),
 
-    /** Appends imported modules; selecting one is left to the caller (see
-     *  `ModulesPage.tsx`). */
+    /** Adds or replaces imported modules; selecting one is left to the caller
+     *  (see `ModulesPage.tsx`). */
     addModules: create.reducer(
       (state, action: PayloadAction<ModuleExercise[]>) => {
         if (action.payload.length === 0) {
           return
         }
-        state.modules.push(...action.payload)
+        const finalModules = keepFinalOccurrencesBy(
+          action.payload,
+          module => module.id,
+        )
+        for (const module of finalModules) {
+          addOrReplaceModule(state, module)
+        }
         // Re-adding a previously deleted built-in un-deletes it.
-        const addedIds = new Set(action.payload.map(module => module.id))
+        const addedIds = new Set(finalModules.map(module => module.id))
         state.deletedBuiltInIds = state.deletedBuiltInIds.filter(
           id => !addedIds.has(id),
         )

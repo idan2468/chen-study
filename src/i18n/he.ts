@@ -100,7 +100,7 @@ export const he = {
     resetBody: 'לאפס את ההתקדמות של כל המילים במודול "{{name}}"?',
     jsonSectionTitle: "הוספת מודולים משלכם (JSON)",
     jsonInstructions:
-      "הדביקו כאן אובייקט JSON של מודול, או מערך של כמה מודולים. שדה cards הוא חובה; id ו-tabName יושלמו אוטומטית אם חסרים.",
+      "הדביקו כאן אובייקט JSON של מודול, או מערך של כמה מודולים. כל שדות המודול הם חובה, כולל id, tabName, title, rule ו-cards.",
     jsonAdded: "נוספו {{count}} מודולים בהצלחה.",
     missedReviewButton: "תרגול מילים שטעיתי ({{count}})",
     missedReviewTitle: "תרגול מילים שטעיתי",
@@ -148,7 +148,7 @@ export const he = {
     resetBody: "לאפס את הסימונים של כל כרטיסיות המילים בתרגיל הזה?",
     noFlashcards: "אין כרטיסיות מילים בתרגיל הזה.",
     jsonInstructions:
-      "הדביקו כאן אובייקט JSON של תרגיל. שדות החובה: paragraphs, questions, flashcards. מזהה התרגיל נוצר אוטומטית.",
+      "הדביקו כאן אובייקט JSON של תרגיל. שדות החובה כוללים exerciseId, paragraphs, questions ו-flashcards; גם לכל שאלה נדרש id.",
     jsonLoaded: "נוספו {{count}} תרגילים לספרייה.",
   },
 

@@ -388,6 +388,55 @@ describe("reloadFromStorage", () => {
   })
 })
 
+describe("addModules", () => {
+  test("replaces a live module and clears progress for its old and new words", () => {
+    const replacement: ModuleExercise = {
+      ...customModule,
+      title: "Replacement",
+      cards: [
+        { en: "QUIZ", he: "quiz", meaning: "test" },
+        { en: "NEW", he: "new", meaning: "new" },
+      ],
+    }
+    const store = makeStore({
+      modules: baseState({
+        modules: [customModule, otherCustomModule],
+        currentModuleId: customModule.id,
+        progress: {
+          ZAP: CardStatus.Known,
+          QUIZ: CardStatus.Unknown,
+          NEW: CardStatus.Known,
+          KEEP: CardStatus.Known,
+        },
+      }),
+    })
+
+    store.dispatch(addModules([replacement]))
+
+    expect(selectModules(store.getState())).toStrictEqual([
+      replacement,
+      otherCustomModule,
+    ])
+    expect(selectModulesProgress(store.getState())).toStrictEqual({
+      KEEP: CardStatus.Known,
+    })
+  })
+
+  test("only applies the final occurrence of a repeated id", () => {
+    const finalModule = { ...customModule, title: "Final" }
+    const store = makeStore({
+      modules: baseState({ modules: [otherCustomModule] }),
+    })
+
+    store.dispatch(addModules([customModule, finalModule]))
+
+    expect(selectModules(store.getState())).toStrictEqual([
+      otherCustomModule,
+      finalModule,
+    ])
+  })
+})
+
 describe("deleteModule", () => {
   test("records a deleted built-in so it is not re-seeded", () => {
     const store = makeStore({ modules: baseState() })

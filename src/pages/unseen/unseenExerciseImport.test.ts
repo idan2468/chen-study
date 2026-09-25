@@ -1,8 +1,6 @@
 import { at, expectFailure, expectOk, omitKey } from "@test/helpers"
 import { parseUnseenExerciseJson } from "./unseenExerciseImport"
 
-const NOW = 1_700_000_000_000
-
 const valid = {
   title: "Title",
   subtitle: "Subtitle",
@@ -21,8 +19,7 @@ const valid = {
   flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
 }
 
-const parse = (value: unknown) =>
-  parseUnseenExerciseJson(JSON.stringify(value), NOW)
+const parse = (value: unknown) => parseUnseenExerciseJson(JSON.stringify(value))
 
 test("accepts a single exercise object", () => {
   const { exercises } = expectOk(parse(valid))
@@ -36,49 +33,37 @@ test("accepts an array of exercises", () => {
   expect(expectOk(parse([valid, valid])).exercises).toHaveLength(2)
 })
 
-test("appends a timestamp and position to the id so a re-import never overwrites", () => {
+test("preserves supplied ids so re-importing can replace an exercise", () => {
   expect(
     expectOk(parse([valid, valid])).exercises.map(e => e.exerciseId),
-  ).toStrictEqual([`mine_${String(NOW)}_0`, `mine_${String(NOW)}_1`])
-})
-
-test("generates an id when none is supplied", () => {
-  expect(
-    at(expectOk(parse(omitKey(valid, "exerciseId"))).exercises, 0).exerciseId,
-  ).toBe(`exercise_${String(NOW)}_0`)
-})
-
-test("numbers questions that arrive without an id", () => {
-  const { exercises } = expectOk(
-    parse({
-      ...valid,
-      questions: [{ title: "?", options: [{ text: "a", isCorrect: true }] }],
-    }),
-  )
-
-  expect(at(at(exercises, 0).questions, 0).id).toBe("q1")
+  ).toStrictEqual(["mine", "mine"])
 })
 
 describe("rejections", () => {
   test("malformed JSON", () => {
-    expect(
-      expectFailure(parseUnseenExerciseJson("{ nope", NOW)).error.code,
-    ).toBe("invalidJson")
+    expect(expectFailure(parseUnseenExerciseJson("{ nope")).error.code).toBe(
+      "invalidJson",
+    )
   })
 
-  // Every other failure -- a non-object entry, a missing or mistyped field,
-  // an empty array, a question with no correct option -- collapses to one
-  // code. The `debugInfo` dump (raw zod issues) is what points at the
-  // offending field, not the code itself.
   test.each([
+    ["an empty array", []],
     ["a non-object entry", ["nope"]],
-    ["a missing paragraphs field", omitKey(valid, "paragraphs")],
-    ["a missing questions field", omitKey(valid, "questions")],
-    ["a missing flashcards field", omitKey(valid, "flashcards")],
+    ["a missing exercise id", omitKey(valid, "exerciseId")],
+    ["missing paragraphs", omitKey(valid, "paragraphs")],
+    ["missing questions", omitKey(valid, "questions")],
+    ["missing flashcards", omitKey(valid, "flashcards")],
     ["empty paragraphs", { ...valid, paragraphs: [] }],
     ["empty questions", { ...valid, questions: [] }],
     ["empty flashcards", { ...valid, flashcards: [] }],
     ["a missing exercise title", omitKey(valid, "title")],
+    [
+      "a question with no id",
+      {
+        ...valid,
+        questions: [{ title: "?", options: [{ text: "a", isCorrect: true }] }],
+      },
+    ],
     [
       "a question with no title",
       {
@@ -110,7 +95,6 @@ describe("rejections", () => {
         ],
       },
     ],
-    ["an empty array", []],
   ])("%s", (_, input) => {
     const error = expectFailure(parse(input)).error
 

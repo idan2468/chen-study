@@ -106,7 +106,7 @@ export const en: Messages = {
     resetBody: 'Reset progress for every word in the module "{{name}}"?',
     jsonSectionTitle: "Add your own modules (JSON)",
     jsonInstructions:
-      "Paste a module JSON object here, or an array of several modules. The cards field is required; id and tabName are filled in automatically if missing.",
+      "Paste a module JSON object here, or an array of several modules. Every module field is required, including id, tabName, title, rule and cards.",
     jsonAdded: "Added {{count}} modules successfully.",
     missedReviewButton: "Practice missed words ({{count}})",
     missedReviewTitle: "Practice missed words",
@@ -155,7 +155,7 @@ export const en: Messages = {
     resetBody: "Reset the marks on every vocabulary card in this exercise?",
     noFlashcards: "This exercise has no vocabulary cards.",
     jsonInstructions:
-      "Paste an exercise JSON object here. Required fields: paragraphs, questions, flashcards. The exercise id is generated automatically.",
+      "Paste an exercise JSON object here. Required fields include exerciseId, paragraphs, questions and flashcards; every question also requires an id.",
     jsonLoaded: "Added {{count}} exercises to the library.",
   },
 

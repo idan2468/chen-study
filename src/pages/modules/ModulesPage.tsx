@@ -101,7 +101,7 @@ export const ModulesPage = () => {
   }
 
   const handleParseJson = (text: string): JsonParseResult => {
-    const result = parseModulesJson(text, Date.now())
+    const result = parseModulesJson(text)
     if (!result.ok) {
       // The parser is locale-agnostic and reports a code; the wording lives in
       // `importErrorMessage`.

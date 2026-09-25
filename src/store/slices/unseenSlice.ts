@@ -3,6 +3,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { deleteEntry } from "@/store/records"
 import { readJson, readString } from "@/store/storage"
+import { keepFinalOccurrencesBy } from "@/utils/collections"
 import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type {
@@ -119,6 +120,13 @@ const loadFromStorage = (): UnseenState => {
   }
 }
 
+const replaceExercise = (state: UnseenState, exercise: UnseenExercise) => {
+  state.library[exercise.exerciseId] = exercise
+  deleteEntry(state.answers, exercise.exerciseId)
+  deleteEntry(state.markedWords, exercise.exerciseId)
+  state.progress[exercise.exerciseId] = {}
+}
+
 export const unseenSlice = createAppSlice({
   name: "unseen",
   initialState: loadFromStorage,
@@ -135,9 +143,7 @@ export const unseenSlice = createAppSlice({
     addExercise: create.reducer(
       (state, action: PayloadAction<UnseenExercise>) => {
         const exercise = action.payload
-        state.library[exercise.exerciseId] = exercise
-        deleteEntry(state.answers, exercise.exerciseId)
-        state.progress[exercise.exerciseId] ??= {}
+        replaceExercise(state, exercise)
         state.currentId = exercise.exerciseId
         state.cardIndex = 0
       },
@@ -149,12 +155,17 @@ export const unseenSlice = createAppSlice({
         if (action.payload.length === 0) {
           return
         }
-        for (const exercise of action.payload) {
+        const finalExercises = keepFinalOccurrencesBy(
+          action.payload,
+          exercise => exercise.exerciseId,
+        )
+        for (const exercise of finalExercises) {
           state.library[exercise.exerciseId] = exercise
           deleteEntry(state.answers, exercise.exerciseId)
-          state.progress[exercise.exerciseId] ??= {}
+          deleteEntry(state.markedWords, exercise.exerciseId)
+          state.progress[exercise.exerciseId] = {}
         }
-        const [first] = action.payload
+        const [first] = finalExercises
         if (first) {
           state.currentId = first.exerciseId
         }
