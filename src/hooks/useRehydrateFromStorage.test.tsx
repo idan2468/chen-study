@@ -15,7 +15,7 @@ import { selectCurrentModuleId } from "@/store/slices/modulesSlice"
 import { colorSchemeManager, theme } from "@/theme"
 import { builtInModuleIds } from "@/data/defaultModuleExercises"
 import type { UnseenExercise } from "@/types/unseenExercise"
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { useRehydrateFromStorage } from "./useRehydrateFromStorage"
 
 const otherExercise: UnseenExercise = {

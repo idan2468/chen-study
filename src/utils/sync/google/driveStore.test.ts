@@ -1,6 +1,8 @@
 import { GoogleAuthError } from "./googleAuth"
-import type { SyncPayload } from "@/types/schemas/syncPayload"
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import {
+  type SyncPayload,
+  StorageKeys,
+} from "@/utils/sync/legacy/legacyStorage"
 import { readSnapshot, writeSnapshot } from "./driveStore"
 
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"

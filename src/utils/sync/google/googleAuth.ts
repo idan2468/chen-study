@@ -9,7 +9,7 @@
  */
 
 import { readString, removeKey, writeString } from "@/store/storage"
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 
 const USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 

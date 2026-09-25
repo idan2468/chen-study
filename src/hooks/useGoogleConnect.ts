@@ -5,7 +5,7 @@ import { hasGrantedAllScopesGoogle, useGoogleLogin } from "@react-oauth/google"
 import { useTranslation } from "react-i18next"
 import { useLatest } from "@/hooks/useLatest"
 import { useRehydrateFromStorage } from "@/hooks/useRehydrateFromStorage"
-import { applySyncPayload } from "@/utils/sync/syncPayload"
+import { applySyncPayload } from "@/utils/sync/legacy/legacyStorage"
 import {
   fetchConnectedEmail,
   getAccessToken,

@@ -4,7 +4,7 @@ The app can optionally back up progress to the user's own Google Drive. It remai
 
 ## Storage
 
-The app stores one hidden `progress.json` file in Drive's `appDataFolder`. It contains the syncable `localStorage` key/value snapshot produced by `src/utils/sync/syncPayload.ts`.
+The app stores one hidden `progress.json` file in Drive's `appDataFolder`. It contains the syncable `localStorage` key/value snapshot produced by `src/utils/sync/legacy/legacyStorage.ts`.
 
 The file is not visible in the user's normal Drive UI. The `drive.appdata` scope limits the app to its own hidden data.
 

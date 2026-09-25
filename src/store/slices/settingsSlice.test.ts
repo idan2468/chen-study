@@ -1,4 +1,4 @@
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { makeStore } from "@/store/store"
 import {
   DEFAULT_SPEECH_RATE,

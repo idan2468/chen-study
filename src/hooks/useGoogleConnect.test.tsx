@@ -10,7 +10,7 @@ import { renderWithProviders } from "@test/render"
 import { useAppSelector } from "@/store/hooks"
 import { selectDyslexiaFont } from "@/store/slices/settingsSlice"
 import { getAccessToken, setAccessToken } from "@/utils/sync/google/googleAuth"
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { useGoogleConnect } from "./useGoogleConnect"
 
 /** Captured by the `useGoogleLogin` mock below, so tests can fire `onSuccess`/`onError` directly. */

@@ -1,5 +1,4 @@
-import { StorageKeys } from "./storageKeys"
-import { applySyncPayload, buildSyncPayload } from "./syncPayload"
+import { applySyncPayload, buildSyncPayload, StorageKeys } from "./legacyStorage"
 
 beforeEach(() => {
   localStorage.clear()

@@ -4,7 +4,7 @@ import { createAppSlice } from "@/store/createAppSlice"
 import { deleteEntry } from "@/store/records"
 import { readJson, readString } from "@/store/storage"
 import { keepFinalOccurrencesBy } from "@/utils/collections"
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import {
   builtInModuleIds,
   defaultModuleExercises,

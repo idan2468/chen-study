@@ -4,7 +4,10 @@ import { createAppSlice } from "@/store/createAppSlice"
 import { deleteEntry } from "@/store/records"
 import { readJson, readString } from "@/store/storage"
 import { keepFinalOccurrencesBy } from "@/utils/collections"
-import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
+import {
+  flashcardStatusKey,
+  StorageKeys,
+} from "@/utils/sync/legacy/legacyStorage"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type {
   AnswerRecord,

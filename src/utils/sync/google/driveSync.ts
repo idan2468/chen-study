@@ -6,10 +6,12 @@
  */
 import objectHash from "object-hash"
 import { writeSnapshot } from "./driveStore"
-import type { SyncPayload } from "@/types/schemas/syncPayload"
+import {
+  buildSyncPayload,
+  type SyncPayload,
+  StorageKeys,
+} from "@/utils/sync/legacy/legacyStorage"
 import { readString, writeString } from "@/store/storage"
-import { StorageKeys } from "@/utils/sync/storageKeys"
-import { buildSyncPayload } from "@/utils/sync/syncPayload"
 
 /**
  * object-hash sorts object keys by default, so localStorage's key order can't

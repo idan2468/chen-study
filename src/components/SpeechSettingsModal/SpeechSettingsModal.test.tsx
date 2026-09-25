@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
 import { setSpeechRate, SpeechLang } from "@/store/slices/settingsSlice"
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { SpeechSettingsModal } from "./SpeechSettingsModal"
 
 beforeEach(() => {

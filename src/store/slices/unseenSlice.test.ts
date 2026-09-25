@@ -1,6 +1,9 @@
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type { UnseenExercise } from "@/types/unseenExercise"
-import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
+import {
+  flashcardStatusKey,
+  StorageKeys,
+} from "@/utils/sync/legacy/legacyStorage"
 import { makeStore } from "@/store/store"
 import type { UnseenState } from "./unseenSlice"
 import {

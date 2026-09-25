@@ -1,7 +1,10 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit"
 import type { AppDispatch, RootState } from "./store"
 import { removeKey, writeFlag, writeJson, writeString } from "./storage"
-import { flashcardStatusKey, StorageKeys } from "@/utils/sync/storageKeys"
+import {
+  flashcardStatusKey,
+  StorageKeys,
+} from "@/utils/sync/legacy/legacyStorage"
 import type { SettingsState } from "./slices/settingsSlice"
 import {
   setDyslexiaFont,
@@ -40,7 +43,7 @@ import {
 
 /**
  * Writes state through to localStorage, keeping the exact keys the original
- * HTML apps used (see `src/utils/sync/storageKeys.ts` for why that matters).
+ * HTML apps used (see `src/utils/sync/legacy/legacyStorage.ts`).
  *
  * Because one slice maps to several keys, each effect compares
  * `getOriginalState()` with the new state and writes only what actually

@@ -7,7 +7,7 @@ import type * as GoogleAuthModule from "@/utils/sync/google/googleAuth"
 import * as googleAuth from "@/utils/sync/google/googleAuth"
 import { getAccessToken, setAccessToken } from "@/utils/sync/google/googleAuth"
 import { MOBILE_MAX_WIDTH_QUERY } from "@/constants/breakpoints"
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { TopBar } from "./TopBar"
 
 /** Captured by the `useGoogleLogin` mock below, so tests can fire `onSuccess`/`onError` directly. */

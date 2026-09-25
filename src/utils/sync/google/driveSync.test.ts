@@ -1,7 +1,7 @@
 import objectHash from "object-hash"
 import { GoogleAuthError } from "./googleAuth"
 import { recordSynced, syncIfDirty } from "./driveSync"
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 
 const filesResponse = (files: { id: string; modifiedTime: string }[]) =>
   new Response(JSON.stringify({ files }), { status: 200 })

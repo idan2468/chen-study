@@ -2,7 +2,7 @@ import { renderHook, screen, waitFor } from "@testing-library/react"
 import i18next from "i18next"
 import { renderWithProviders } from "@test/render"
 import { setAccessToken } from "@/utils/sync/google/googleAuth"
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import {
   GoogleConnectProvider,
   useGoogleConnectContext,

@@ -11,7 +11,7 @@ import { authorizedFetch, getAccessToken } from "./googleAuth"
 import {
   type SyncPayload,
   syncPayloadSchema,
-} from "@/types/schemas/syncPayload"
+} from "@/utils/sync/legacy/legacyStorage"
 
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
 const DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"

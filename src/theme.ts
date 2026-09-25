@@ -6,7 +6,7 @@ import type {
 } from "@mantine/core"
 import { createTheme } from "@mantine/core"
 import { readString, writeString } from "./store/storage"
-import { StorageKeys } from "./utils/sync/storageKeys"
+import { StorageKeys } from "./utils/sync/legacy/legacyStorage"
 
 /**
  * The single source of truth for every colour, radius and font in the app.

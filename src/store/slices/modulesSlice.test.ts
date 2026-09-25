@@ -5,7 +5,7 @@ import {
 import { at } from "@test/helpers"
 import { CardStatus } from "@/types/moduleExercise"
 import type { ModuleExercise } from "@/types/moduleExercise"
-import { StorageKeys } from "@/utils/sync/storageKeys"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { makeStore } from "@/store/store"
 import type { ModulesState } from "./modulesSlice"
 import {
