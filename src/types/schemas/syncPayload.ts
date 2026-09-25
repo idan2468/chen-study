@@ -2,7 +2,7 @@ import { z } from "zod"
 
 /**
  * Shape of a synced snapshot -- the localStorage key/value pairs shipped in a
- * `?s=` link (`src/utils/sync/syncUrl.ts`) or the Drive file
+ * Drive file
  * (`driveStore.ts`).
  */
 export const syncPayloadSchema = z.record(z.string(), z.string())

@@ -123,8 +123,6 @@ const loadFromStorage = (): ModulesState => {
 
 export const modulesSlice = createAppSlice({
   name: "modules",
-  // Lazy initializer, so localStorage is read at store-creation time -- after
-  // any `?sync=` payload has been imported. See `src/main.tsx`.
   initialState: loadFromStorage,
   reducers: create => ({
     selectModule: create.reducer((state, action: PayloadAction<string>) => {

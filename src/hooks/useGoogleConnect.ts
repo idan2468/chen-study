@@ -33,19 +33,14 @@ type PendingLogin =
  * local snapshot if Drive has none yet. A 401 at boot triggers one silent
  * GIS re-issue before falling back to signed-out. See
  * docs/google-account-sync.md.
- *
- * @param skipBootSync - True once a `?s=` link has already imported this
- * load, so boot skips the Drive pull and leaves the next sync to push it.
  */
-export const useGoogleConnect = (skipBootSync: boolean) => {
+export const useGoogleConnect = () => {
   const { t } = useTranslation()
   const rehydrate = useRehydrateFromStorage()
   const [connecting, setConnecting] = useState(() => Boolean(getAccessToken()))
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null)
   /** True only until the boot flow (including any re-issue) first settles; never set true again after that. */
-  const [restoring, setRestoring] = useState(
-    () => Boolean(getAccessToken()) && !skipBootSync,
-  )
+  const [restoring, setRestoring] = useState(() => Boolean(getAccessToken()))
   /** `login()` has three callers sharing one `onSuccess`/`onError` pair below; this records which one is awaiting a result so the shared callback can dispatch to it. */
   const pendingLoginRef = useRef<PendingLogin | null>(null)
 
@@ -65,11 +60,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     }
   }
 
-  /** Shared consent/token-storage/email-fetch/sync steps behind both the interactive Connect and boot-reissue scenarios below -- they differ only in `skipSync`. */
-  const connectWithToken = async (
-    tokenResponse: ImplicitTokenResponse,
-    skipSync: boolean,
-  ) => {
+  const connectWithToken = async (tokenResponse: ImplicitTokenResponse) => {
     // Granular consent lets the user grant only some scopes; without this
     // check a partial grant would look "connected" but can't write to Drive.
     if (
@@ -89,9 +80,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     setConnecting(true)
     try {
       setConnectedEmail(await fetchConnectedEmail(tokenResponse.access_token))
-      if (!skipSync) {
-        await syncNow()
-      }
+      await syncNow()
     } catch {
       notifications.show({
         color: "red",
@@ -104,7 +93,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
 
   const handleConnectResult = (tokenResponse: ImplicitTokenResponse | null) => {
     if (tokenResponse) {
-      void connectWithToken(tokenResponse, false)
+      void connectWithToken(tokenResponse)
     } else {
       notifications.show({
         color: "red",
@@ -117,7 +106,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
     tokenResponse: ImplicitTokenResponse | null,
   ) => {
     if (tokenResponse) {
-      void connectWithToken(tokenResponse, skipBootSync)
+      void connectWithToken(tokenResponse)
     } else {
       // Falls back to signed-out. Also clears connectedEmail in case the
       // email fetch had already succeeded before the Drive call 401'd. A
@@ -187,9 +176,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
       }
       try {
         setConnectedEmail(await fetchConnectedEmail(token))
-        if (!skipBootSync) {
-          await latest.current.syncNow()
-        }
+        await latest.current.syncNow()
       } catch (error) {
         if (error instanceof GoogleAuthError) {
           pendingLoginRef.current = { kind: "bootReissue" }
@@ -204,7 +191,7 @@ export const useGoogleConnect = (skipBootSync: boolean) => {
       }
     }
     void restoreSession()
-  }, [skipBootSync, latest])
+  }, [latest])
 
   const disconnect = () => {
     setAccessToken(null)

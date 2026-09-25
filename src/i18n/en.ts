@@ -21,7 +21,6 @@ export const en: Messages = {
     dyslexiaFontTooltip: "Dyslexia-friendly font",
     dayMode: "Light mode",
     nightMode: "Dark mode",
-    syncDevices: "Sync via link",
     switchToEnglish: "English",
     switchToHebrew: "עברית",
     languageTooltip: "Change interface language",
@@ -65,17 +64,6 @@ export const en: Messages = {
     modulesDescription:
       "Vowel-marked practice sets by module (A, O, I vowels), personal progress tracking, word read-aloud, removable tabs and accessibility options.",
     modulesCta: "Open module flashcards ➔",
-  },
-
-  sync: {
-    title: "Sync between devices",
-    description:
-      "Copy the link and open it on the other device. All your progress, modules and exercises will move across.",
-    linkLabel: "Sync link",
-    copyLink: "Copy link",
-    copied: "Link copied",
-    importedTitle: "Data synced",
-    importedMessage: "Imported {{count}} items from the other device.",
   },
 
   json: {

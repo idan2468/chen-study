@@ -37,7 +37,7 @@ describe("applySyncPayload", () => {
     expect(localStorage.getItem(StorageKeys.darkMode)).toBe("1")
   })
 
-  test("ignores a device-local key rather than overwriting it, e.g. a crafted sync link cannot hijack the stored Google token", () => {
+  test("ignores a device-local key rather than overwriting it, e.g. a crafted Drive file cannot hijack the stored Google token", () => {
     localStorage.setItem(StorageKeys.googleAccessToken, "victims-real-token")
 
     const applied = applySyncPayload({

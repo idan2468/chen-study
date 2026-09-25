@@ -80,8 +80,7 @@ Object.defineProperty(window, "SpeechSynthesisUtterance", {
   value: SpeechSynthesisUtteranceStub,
 })
 
-// `SyncModal`'s copy-link button goes through `@mantine/hooks`' `useClipboard`,
-// which needs `navigator.clipboard.writeText` in jsdom.
+// Copy controls use `navigator.clipboard.writeText`, which jsdom does not provide.
 Object.defineProperty(navigator, "clipboard", {
   writable: true,
   configurable: true,

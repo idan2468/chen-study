@@ -14,7 +14,6 @@ type GoogleConnectValue = ReturnType<typeof useGoogleConnect> &
 const GoogleConnectContext = createContext<GoogleConnectValue | null>(null)
 
 export type GoogleConnectProviderProps = {
-  skipBootSync: boolean
   children: ReactNode
 }
 
@@ -25,11 +24,10 @@ export type GoogleConnectProviderProps = {
  * user doesn't see local state flash before the Drive pull replaces it.
  */
 export const GoogleConnectProvider = ({
-  skipBootSync,
   children,
 }: GoogleConnectProviderProps) => {
   const { t } = useTranslation()
-  const googleConnect = useGoogleConnect(skipBootSync)
+  const googleConnect = useGoogleConnect()
   const { needsReconnect, syncing, syncNow } = useDriveSync(
     Boolean(googleConnect.connectedEmail),
     googleConnect.reissueForSync,

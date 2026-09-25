@@ -64,8 +64,6 @@ const loadFromStorage = (): SettingsState => {
 
 export const settingsSlice = createAppSlice({
   name: "settings",
-  // Lazy initializer: localStorage is read when the store is created, not when
-  // this module is imported, so `importSyncFromUrl()` can run first.
   initialState: loadFromStorage,
   reducers: create => ({
     toggleDyslexiaFont: create.reducer(state => {

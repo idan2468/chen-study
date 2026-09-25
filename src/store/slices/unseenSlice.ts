@@ -121,8 +121,6 @@ const loadFromStorage = (): UnseenState => {
 
 export const unseenSlice = createAppSlice({
   name: "unseen",
-  // Lazy initializer, so localStorage is read at store-creation time -- after
-  // any `?sync=` payload has been imported. See `src/main.tsx`.
   initialState: loadFromStorage,
   reducers: create => ({
     switchExercise: create.reducer((state, action: PayloadAction<string>) => {

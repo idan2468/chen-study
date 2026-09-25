@@ -21,7 +21,6 @@ import {
 import { makeStore } from "./store/store"
 import { colorSchemeManager, cssVariablesResolver, theme } from "./theme"
 import { GOOGLE_CLIENT_ID } from "./utils/sync/google/googleAuth"
-import { importSyncFromUrl } from "./utils/sync/syncUrl"
 
 /** No-op when unset, so a build without `VITE_GOOGLE_CLIENT_ID` doesn't load GIS at all. */
 const GoogleAuthGate = ({ children }: { children: ReactNode }) =>
@@ -33,12 +32,7 @@ const GoogleAuthGate = ({ children }: { children: ReactNode }) =>
     children
   )
 
-/** A function rather than top-level `await`, which the build target may not allow. */
-const bootstrap = async () => {
-  // Order matters: a shared-link payload has to land in localStorage *before* the
-  // store is created and before the locale is read, because both hydrate from it.
-  // Expressed as explicit statements rather than relying on module import order.
-  const importedKeyCount = await importSyncFromUrl()
+const bootstrap = () => {
   const store = makeStore()
 
   const locale = readStoredLocale()
@@ -80,7 +74,7 @@ const bootstrap = async () => {
               <Notifications position="top-center" />
               <GoogleAuthGate>
                 <HashRouter>
-                  <App importedKeyCount={importedKeyCount} />
+                  <App />
                 </HashRouter>
               </GoogleAuthGate>
             </ModalsProvider>
@@ -91,4 +85,4 @@ const bootstrap = async () => {
   )
 }
 
-void bootstrap()
+bootstrap()

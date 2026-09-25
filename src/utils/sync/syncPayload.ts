@@ -1,6 +1,6 @@
 /**
- * The localStorage snapshot shared between `?s=` links (`syncUrl.ts`) and
- * Drive sync (`google/driveStore.ts`) -- see docs/google-account-sync.md.
+ * The localStorage snapshot used by Drive sync (`google/driveStore.ts`) -- see
+ * docs/google-account-sync.md.
  */
 import { isSyncableKey } from "./storageKeys"
 import { listKeys, readString } from "@/store/storage"
@@ -19,8 +19,7 @@ export const buildSyncPayload = (): SyncPayload => {
 /**
  * Writes an imported payload straight into localStorage. Returns the count.
  *
- * Only ever writes syncable keys -- a `?s=` link or Drive file is untrusted
- * input, and without this check a crafted payload could overwrite a
+ * Only ever writes syncable keys -- a Drive file is untrusted input, and without this check a crafted payload could overwrite a
  * device-local value like the Google access token, redirecting this
  * device's Drive sync to an attacker's account.
  */

@@ -45,7 +45,7 @@ const DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
 
 const renderTopBar = () =>
   renderWithProviders(
-    <GoogleConnectProvider skipBootSync={false}>
+    <GoogleConnectProvider>
       <TopBar />
     </GoogleConnectProvider>,
   )

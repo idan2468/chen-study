@@ -3,7 +3,6 @@ import { Paper, useMantineColorScheme } from "@mantine/core"
 import { useDisclosure } from "@mantine/hooks"
 import {
   IconLanguage,
-  IconLink,
   IconMicrophone,
   IconMoon,
   IconSun,
@@ -11,7 +10,6 @@ import {
 } from "@tabler/icons-react"
 import { useTranslation } from "react-i18next"
 import { SpeechSettingsModal } from "@/components/SpeechSettingsModal/SpeechSettingsModal"
-import { SyncModal } from "@/components/SyncModal/SyncModal"
 import { ICON_SIZE } from "@/constants/icons"
 import { useGoogleConnectContext } from "@/hooks/GoogleConnectContext"
 import { useIsMobile } from "@/hooks/useIsMobile"
@@ -61,7 +59,6 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
   const dyslexiaFont = useAppSelector(selectDyslexiaFont)
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
   const { locale, toggleLocale } = useLocale()
-  const [syncOpened, syncHandlers] = useDisclosure(false)
   const [speechOpened, speechHandlers] = useDisclosure(false)
   const googleConnect = useGoogleConnectContext()
   const isMobile = useIsMobile()
@@ -130,13 +127,6 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
       closesOnClick: true,
       onClick: speechHandlers.open,
     },
-    {
-      key: "syncDevices",
-      label: t("common.syncDevices"),
-      icon: <IconLink size={ICON_SIZE} />,
-      closesOnClick: true,
-      onClick: syncHandlers.open,
-    },
   ]
 
   const sharedProps = {
@@ -161,7 +151,6 @@ export const TopBar = ({ children, withHomeLink = true }: TopBarProps) => {
         <TopBarDesktop {...sharedProps}>{children}</TopBarDesktop>
       )}
 
-      <SyncModal opened={syncOpened} onClose={syncHandlers.close} />
       <SpeechSettingsModal
         opened={speechOpened}
         onClose={speechHandlers.close}

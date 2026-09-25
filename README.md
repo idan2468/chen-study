@@ -8,8 +8,8 @@ RTL/English learning tools —
 - **Modules (phonics flashcards)** — tabbed practice sets by phonics module, with
   known/unknown progress tracking and keyboard shortcuts.
 
-Both pages support sync links between devices, an optional Google Drive sync
-for automatic cross-device backup, a dyslexia-friendly font toggle, light/dark
+Both pages support optional Google Drive sync for automatic cross-device
+backup, a dyslexia-friendly font toggle, light/dark
 mode, and an English/Hebrew UI language toggle (the learning content itself
 stays Hebrew — only the chrome translates).
 
@@ -81,15 +81,13 @@ npm run test
 
 ## Google Drive sync
 
-An optional, opt-in alternative to copy-pasting `?s=` links between devices.
-Connecting a Google account stores the same syncable `localStorage` keys as a
-`?s=` link (see `storageKeys.ts`) in a single `progress.json` file in the
+An optional, opt-in cross-device backup. Connecting a Google account stores
+the app's syncable `localStorage` keys in a single `progress.json` file in the
 app's hidden Drive `appDataFolder` — never a user-visible file, and no backend
 or database of our own. A 30-second timer, a push on tab-hide, and a manual
 "Sync now" button keep it up to date, with a dirty check so an unchanged
 snapshot never re-uploads. See `docs/google-account-sync.md` for the full
-design (token handling, conflict resolution, and the Google Cloud setup
-required to enable it).
+design and Google Cloud setup.
 
 ## Deployment
 

@@ -72,7 +72,7 @@ burden.
 
 ## Gaps to close before the first component test lands
 
-These are things the *current* test infra doesn't handle yet, discovered by
+These are things the _current_ test infra doesn't handle yet, discovered by
 tracing what each candidate workflow actually touches:
 
 1. **`window.speechSynthesis` isn't mocked.** `utils/speech.ts#isSpeechSupported`
@@ -83,14 +83,10 @@ tracing what each candidate workflow actually touches:
    is enough; we're not testing that real audio plays, just that clicking the
    button dispatches the right actions.
 2. **No `<Notifications />` in `renderWithProviders`.** Components that call
-   `notifications.show(...)` (e.g. `App.tsx`'s sync-import notice) render into a
-   portal that doesn't exist in the test wrapper today. Needs adding to
-   `test/render.tsx` for any test that asserts on a toast appearing.
-3. **`navigator.clipboard` isn't mocked.** `SyncModal`'s copy-link button goes
-   through `@mantine/hooks`' `useClipboard`, which needs `navigator.clipboard` or
-   falls back to `document.execCommand('copy')`; neither is reliable in jsdom
-   without a mock.
-4. **`localStorage` isn't reset between tests.** Slices hydrate from real
+   `notifications.show(...)` render into a portal that doesn't exist in the
+   test wrapper today. Needs adding to `test/render.tsx` for any test that
+   asserts on a toast appearing.
+3. **`localStorage` isn't reset between tests.** Slices hydrate from real
    `window.localStorage` via lazy initializers (`readInitialState`). Existing
    logic tests either pass explicit `preloadedState` (bypassing hydration) or
    clear storage in `beforeEach` (`listenerMiddleware.test.ts` already does this).
@@ -111,7 +107,7 @@ much it costs to break silently.
 - **`ModuleFlashcard`**: renders front (word), flip reveals back (translation +
   meaning + speak button); clicking "known"/"unknown" calls `onMark`; a new `card`
   prop (remount, since the real usage is keyed by word) starts face-down again.
-- **`FlashcardsTab`**: same flip/mark behavor, but exercised through the *real*
+- **`FlashcardsTab`**: same flip/mark behavor, but exercised through the _real_
   card-switching path (Redux `nextFlashcard`/`prevFlashcard`) rather than a remount
   — this is exactly the component whose reset logic was just reworked (the
   "adjust state during render" pattern) to satisfy `react-hooks/set-state-in-effect`,
@@ -138,7 +134,7 @@ much it costs to break silently.
   box/stats hidden, header replaced) and back; the completion banner appears with
   the right variant when `known + unknown === total` for the current module.
 - **`QuestionCard`**: selecting an option shows correct/incorrect feedback styling.
-  Re-answering is deliberately *not* blocked (`answerQuestion` overwrites the
+  Re-answering is deliberately _not_ blocked (`answerQuestion` overwrites the
   previous answer unconditionally, and the option buttons have no `disabled`
   guard) — worth a test precisely because it's the kind of implicit behavior
   someone could "fix" into a regression without realizing it was intentional.
@@ -148,10 +144,7 @@ much it costs to break silently.
 ### Phase 4 — cross-cutting
 
 - **`TopBar`**: dyslexia toggle flips `aria-pressed` and dispatches; language
-  toggle flips direction/locale; sync and speech-settings buttons open their
-  modals.
-- **`SyncModal`**: renders the current sync URL in the read-only textbox; copy
-  button calls the clipboard mock.
+  toggle flips direction/locale; the speech-settings button opens its modal.
 - **RTL/LTR smoke test**: rendering the app shell in each locale and asserting
   `dir` on the relevant root elements — cheap, catches a whole class of "shipped
   with the wrong direction" regressions test.
@@ -163,9 +156,8 @@ much it costs to break silently.
 - Pixel-level visual regression (colours, spacing, animation) — CSS Modules
   changes are checked manually in-browser, as they have been throughout this
   project; component tests assert on behavior and DOM structure, not appearance.
-- Full end-to-end flows spanning a real browser (sync-link import from a pasted
-  URL, GitHub Pages sub-path serving) — those stay manual/`vite preview`-based
-  checks, as already established.
+- Full end-to-end GitHub Pages sub-path serving — it stays a manual/
+  `vite preview`-based check, as already established.
 
 ## Rollout
 

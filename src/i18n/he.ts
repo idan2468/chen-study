@@ -15,7 +15,6 @@ export const he = {
     dyslexiaFontTooltip: "גופן מותאם לדיסלקציה",
     dayMode: "מצב יום",
     nightMode: "מצב לילה",
-    syncDevices: "סנכרון בעזרת קישור",
     switchToEnglish: "English",
     switchToHebrew: "עברית",
     languageTooltip: "החלפת שפת הממשק",
@@ -60,17 +59,6 @@ export const he = {
     modulesDescription:
       "ערכות תרגול מנוקדות לפי מודולים (תנועות A, O, I), מעקב והתקדמות אישית, הקראת מילים, אפשרות למחיקת טאבים ונגישות.",
     modulesCta: "פתיחת כרטיסיות מודולים ➔",
-  },
-
-  sync: {
-    title: "סנכרון בין מכשירים",
-    description:
-      "העתיקו את הקישור ופתחו אותו במכשיר האחר. כל ההתקדמות, המודולים והתרגילים שלכם יעברו לשם.",
-    linkLabel: "קישור סנכרון",
-    copyLink: "העתקת הקישור",
-    copied: "הקישור הועתק",
-    importedTitle: "הנתונים סונכרנו",
-    importedMessage: "יובאו {{count}} פריטי מידע מהמכשיר האחר.",
   },
 
   json: {

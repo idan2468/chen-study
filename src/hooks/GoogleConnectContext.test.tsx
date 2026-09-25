@@ -49,7 +49,7 @@ afterEach(() => {
 
 test("renders children immediately with no saved token", () => {
   renderWithProviders(
-    <GoogleConnectProvider skipBootSync={false}>
+    <GoogleConnectProvider>
       <Consumer />
     </GoogleConnectProvider>,
   )
@@ -66,7 +66,7 @@ test("renders a spinner while a saved token is being restored, then swaps to chi
     .mockResolvedValueOnce(jsonResponse({}))
 
   renderWithProviders(
-    <GoogleConnectProvider skipBootSync={false}>
+    <GoogleConnectProvider>
       <Consumer />
     </GoogleConnectProvider>,
   )
@@ -79,21 +79,6 @@ test("renders a spinner while a saved token is being restored, then swaps to chi
   await waitFor(() => {
     expect(screen.getByText("chen@example.com")).toBeInTheDocument()
   })
-})
-
-test("skips the spinner when a sync link just won this load, even with a saved token", () => {
-  setAccessToken("ya29.token")
-  vi.mocked(fetch).mockResolvedValueOnce(
-    jsonResponse({ email: "chen@example.com" }),
-  )
-
-  renderWithProviders(
-    <GoogleConnectProvider skipBootSync>
-      <Consumer />
-    </GoogleConnectProvider>,
-  )
-
-  expect(screen.getByText("signed-out")).toBeInTheDocument()
 })
 
 test("useGoogleConnectContext throws when used outside the provider", () => {
@@ -113,7 +98,7 @@ test("exposes syncNow, wired to useDriveSync and gated on being connected", asyn
     .mockResolvedValueOnce(okResponse())
 
   const { user } = renderWithProviders(
-    <GoogleConnectProvider skipBootSync={false}>
+    <GoogleConnectProvider>
       <Consumer />
     </GoogleConnectProvider>,
   )
@@ -147,7 +132,7 @@ test("exposes syncing, wired to useDriveSync", async () => {
     .mockResolvedValueOnce(okResponse())
 
   const { user } = renderWithProviders(
-    <GoogleConnectProvider skipBootSync={false}>
+    <GoogleConnectProvider>
       <Consumer />
     </GoogleConnectProvider>,
   )

@@ -61,9 +61,9 @@ const triggerPopupBlocked = () => {
   latestLoginOptions?.onNonOAuthError?.({ type: "popup_failed_to_open" })
 }
 
-const Host = ({ skipBootSync = false }: { skipBootSync?: boolean }) => {
+const Host = () => {
   const { connecting, connectedEmail, disconnect, reissueForSync } =
-    useGoogleConnect(skipBootSync)
+    useGoogleConnect()
   const dyslexiaFont = useAppSelector(selectDyslexiaFont)
   const [reissueResult, setReissueResult] = useState("untried")
   return (
@@ -209,40 +209,6 @@ test("a 401 at boot falls back to signed-out when the silent re-issue's popup is
   expect(
     screen.getByText(i18next.t("common.googleReconnectNeeded")),
   ).toBeInTheDocument()
-})
-
-test("a re-issue succeeding at boot still skips the Drive pull when a sync link just won", async () => {
-  setAccessToken("ya29.expired")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(jsonResponse({}, 401))
-    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-
-  renderWithProviders(<Host skipBootSync />)
-
-  await waitFor(() => {
-    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
-  })
-  triggerLoginSuccess("ya29.refreshed")
-
-  await waitFor(() => {
-    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
-  })
-  // Only the two userinfo calls above -- no Drive calls at all.
-  expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2)
-})
-
-test("a valid token at boot skips the Drive pull when a sync link just won", async () => {
-  setAccessToken("ya29.token")
-  vi.mocked(fetch).mockResolvedValueOnce(
-    jsonResponse({ email: "chen@example.com" }),
-  )
-
-  renderWithProviders(<Host skipBootSync />)
-
-  await waitFor(() => {
-    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
-  })
-  expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1)
 })
 
 test("disconnect clears the stored token", async () => {

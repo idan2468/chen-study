@@ -1,7 +1,5 @@
 import { useEffect } from "react"
 import { Route, Routes, useLocation } from "react-router-dom"
-import { notifications } from "@mantine/notifications"
-import { useTranslation } from "react-i18next"
 import { APP_ROUTES } from "./constants/routes"
 import { GoogleConnectProvider } from "./hooks/GoogleConnectContext"
 import { useAppDispatch, useAppSelector } from "./store/hooks"
@@ -11,11 +9,6 @@ import { cancelSpeech } from "./utils/speech/speech"
 import { HubPage } from "./pages/hub/HubPage"
 import { ModulesPage } from "./pages/modules/ModulesPage"
 import { UnseenPage } from "./pages/unseen/UnseenPage"
-
-export type AppProps = {
-  /** Number of keys pulled in from a `?sync=` link, or `null` if none. */
-  importedKeyCount: number | null
-}
 
 /**
  * The dyslexia rule keys off a body class, since it overrides the global
@@ -46,32 +39,12 @@ const useStopSpeechOnRouteChange = () => {
   }, [pathname, dispatch])
 }
 
-/** Replaces the original's `alert()` after importing a shared link. */
-const useSyncImportNotice = (importedKeyCount: number | null) => {
-  const { t } = useTranslation()
-
-  useEffect(() => {
-    if (importedKeyCount !== null) {
-      notifications.show({
-        // A fixed id makes this idempotent, so StrictMode's double-invoked
-        // effects (and any future remount) update the toast instead of
-        // stacking a second copy.
-        id: "sync-import",
-        color: "success",
-        title: t("sync.importedTitle"),
-        message: t("sync.importedMessage", { count: importedKeyCount }),
-      })
-    }
-  }, [importedKeyCount, t])
-}
-
-export const App = ({ importedKeyCount }: AppProps) => {
+export const App = () => {
   useDyslexiaBodyClass()
   useStopSpeechOnRouteChange()
-  useSyncImportNotice(importedKeyCount)
 
   return (
-    <GoogleConnectProvider skipBootSync={importedKeyCount !== null}>
+    <GoogleConnectProvider>
       <Routes>
         <Route path={APP_ROUTES.home} element={<HubPage />} />
         <Route path={APP_ROUTES.unseen} element={<UnseenPage />} />
