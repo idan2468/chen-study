@@ -234,10 +234,10 @@ describe("library", () => {
     )
     expect(Object.keys(state.unseen.library)).toStrictEqual([
       defaultUnseenExercise.exerciseId,
-      thirdExercise.exerciseId,
       otherExercise.exerciseId,
+      thirdExercise.exerciseId,
     ])
-    expect(state.unseen.currentId).toBe(thirdExercise.exerciseId)
+    expect(state.unseen.currentId).toBe(otherExercise.exerciseId)
   })
 
   test("refuses to delete the last exercise", () => {

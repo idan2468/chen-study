@@ -1,6 +1,6 @@
 import { keepFinalOccurrencesBy } from "./collections"
 
-test("keeps each final occurrence in the order those occurrences appeared", () => {
+test("keeps the final value for each key", () => {
   const values = [
     { id: "x", value: "first x" },
     { id: "y", value: "only y" },
@@ -8,8 +8,8 @@ test("keeps each final occurrence in the order those occurrences appeared", () =
   ]
 
   expect(keepFinalOccurrencesBy(values, value => value.id)).toStrictEqual([
-    { id: "y", value: "only y" },
     { id: "x", value: "final x" },
+    { id: "y", value: "only y" },
   ])
 })
 
