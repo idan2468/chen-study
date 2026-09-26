@@ -13,6 +13,7 @@
 - [x] Step 4 — plain semantic-ID arrays (`0b52449`, `4d519db`, `11b709f`, `4c5c84e`), 263 tests/full gate/review/manual approved.
 - [x] Step 5 — version/timestamp foundations (`a9c8cf3`, `5b65723`, `948b92c`, `413f263`, `01d514b`, `d067b9e`), 268 tests/full gate/review/manual approved; follow-ups `f9ac709`, `36defff`.
 - [x] Step 6 — versioned arrays, preferences, and navigation (`e21d999`, `e8f7d27`, `ba149dd`, `bc9c468`, `2aac946`, `3cc30b1`, `eeee890`, `b52b38d`), 291 tests/full gate/review/manual approved.
+  - Decisions: legacy-loaded values get the epoch `updatedAt`; deleted entities are tombstones (replacing `deletedBuiltInIds`); versioned preferences are `dyslexiaFont`, `shuffleUnseenAnswers`, and both speech rates; system voice stays device-local; dark mode and locale stay with Mantine/i18n.
 
 ## Current review gate
 
