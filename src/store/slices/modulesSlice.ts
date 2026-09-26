@@ -3,7 +3,7 @@ import { createAppSlice } from "@/store/createAppSlice"
 import { readJson, readString } from "@/store/storage"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
-import { keepFinalOccurrencesBy } from "@/utils/collections"
+import { hasWord, keepFinalOccurrencesBy } from "@/utils/collections"
 import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
 import {
   readLegacyModuleProgress,
@@ -98,12 +98,7 @@ const setModuleProgressStatus = (
   status: CardStatus,
   updatedAt: IsraelIsoTimestamp,
 ) => {
-  putValue(
-    progress,
-    record => record.word === word,
-    { word, status },
-    updatedAt,
-  )
+  putValue(progress, hasWord(word), { word, status }, updatedAt)
 }
 
 const loadFromStorage = (): ModulesState => {

@@ -7,3 +7,6 @@ export const keepFinalOccurrencesBy = <T>(
   )
   return Object.values(finalValuesByKey)
 }
+
+export const hasWord = (word: string) => (record: { word: string }) =>
+  record.word === word

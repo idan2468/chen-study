@@ -2,7 +2,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
-import { keepFinalOccurrencesBy } from "@/utils/collections"
+import { hasWord, keepFinalOccurrencesBy } from "@/utils/collections"
 import { readLegacyUnseenState } from "@/utils/sync/legacy/legacyStorage"
 import {
   deleteValue,
@@ -32,9 +32,6 @@ const loadFromStorage = (): UnseenState =>
 
 const hasExerciseId = (exerciseId: string) => (exercise: UnseenExercise) =>
   exercise.exerciseId === exerciseId
-
-const hasWord = (word: string) => (record: { word: string }) =>
-  record.word === word
 
 const findExercise = (state: UnseenState, exerciseId: string) =>
   findLiveValue(state.exercises, hasExerciseId(exerciseId))

@@ -1,4 +1,4 @@
-import { keepFinalOccurrencesBy } from "./collections"
+import { hasWord, keepFinalOccurrencesBy } from "./collections"
 
 test("keeps the final value for each key", () => {
   const values = [
@@ -25,4 +25,9 @@ test("does not mutate the input", () => {
     { id: "x", value: "first" },
     { id: "x", value: "final" },
   ])
+})
+
+test("matches records by word", () => {
+  expect(hasWord("HAT")({ word: "HAT" })).toBe(true)
+  expect(hasWord("HAT")({ word: "hat" })).toBe(false)
 })
