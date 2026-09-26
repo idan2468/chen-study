@@ -33,13 +33,12 @@ const preloaded = () => ({
     cardIndex: 0,
   },
   modules: {
-    modules: [...defaultModuleExercises],
+    modules: defaultModuleExercises.map(module => toVersionedValue(module)),
     currentModuleId: at(defaultModuleExercises, 0).id,
     cardIndex: 0,
     filterMissed: false,
     reviewingMissed: false,
     progress: [],
-    deletedBuiltInIds: [],
   },
 })
 

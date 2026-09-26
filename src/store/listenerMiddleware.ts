@@ -4,6 +4,7 @@ import { removeKey, writeFlag, writeJson, writeString } from "./storage"
 import {
   flashcardStatusKey,
   StorageKeys,
+  toLegacyDeletedBuiltInIds,
   toLegacyFlashcardProgress,
   toLegacyMarkedWords,
   toLegacyModuleProgress,
@@ -248,7 +249,16 @@ startListening({
     const next = api.getState().modules
 
     if (previous.modules !== next.modules) {
-      writeJson(StorageKeys.allModules, next.modules)
+      writeJson(StorageKeys.allModules, liveValues(next.modules))
+      const nextDeletedIds = toLegacyDeletedBuiltInIds(next.modules)
+      if (
+        legacyShapeChanged(
+          toLegacyDeletedBuiltInIds(previous.modules),
+          nextDeletedIds,
+        )
+      ) {
+        writeJson(StorageKeys.deletedBuiltInModules, nextDeletedIds)
+      }
     }
 
     if (previous.progress !== next.progress) {
@@ -256,10 +266,6 @@ startListening({
         StorageKeys.modulesProgress,
         toLegacyModuleProgress(next.progress),
       )
-    }
-
-    if (previous.deletedBuiltInIds !== next.deletedBuiltInIds) {
-      writeJson(StorageKeys.deletedBuiltInModules, next.deletedBuiltInIds)
     }
 
     if (previous.cardIndex !== next.cardIndex) {

@@ -1,12 +1,16 @@
+import { defaultModuleExercises } from "@/data/defaultModuleExercises"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
+import { at } from "@test/helpers"
 import { CardStatus } from "@/types/moduleExercise"
 import {
   applySyncPayload,
   buildSyncPayload,
   flashcardStatusKey,
   readLegacyModuleProgress,
+  readLegacyModules,
   readLegacyUnseenState,
   StorageKeys,
+  toLegacyDeletedBuiltInIds,
   toLegacyFlashcardProgress,
   toLegacyMarkedWords,
   toLegacyModuleProgress,
@@ -79,18 +83,51 @@ describe("legacy Module progress", () => {
     )
 
     expect(readLegacyModuleProgress()).toStrictEqual([
-      { word: "HAT", status: CardStatus.Known },
-      { word: "FOX", status: CardStatus.Unknown },
+      toVersionedValue({ word: "HAT", status: CardStatus.Known }),
+      toVersionedValue({ word: "FOX", status: CardStatus.Unknown }),
     ])
   })
 
   test("omits unassessed words when writing the legacy shape", () => {
     expect(
       toLegacyModuleProgress([
-        { word: "HAT", status: CardStatus.None },
-        { word: "FOX", status: CardStatus.Unknown },
+        toVersionedValue({ word: "HAT", status: CardStatus.None }),
+        toVersionedValue({ word: "FOX", status: CardStatus.Unknown }),
       ]),
     ).toStrictEqual({ FOX: CardStatus.Unknown })
+  })
+})
+
+describe("legacy Modules", () => {
+  const firstBuiltIn = at(defaultModuleExercises, 0)
+  const secondBuiltIn = at(defaultModuleExercises, 1)
+
+  test("reads deleted built-ins as tombstones that win over a stored copy", () => {
+    localStorage.setItem(
+      StorageKeys.allModules,
+      JSON.stringify([firstBuiltIn, secondBuiltIn]),
+    )
+    localStorage.setItem(
+      StorageKeys.deletedBuiltInModules,
+      JSON.stringify([secondBuiltIn.id]),
+    )
+
+    expect(readLegacyModules()).toStrictEqual([
+      toVersionedValue(firstBuiltIn),
+      markDeleted(toVersionedValue(secondBuiltIn), INITIAL_UPDATED_AT),
+    ])
+  })
+
+  test("writes only deleted built-in ids to the legacy deletion list", () => {
+    const customModule = { ...firstBuiltIn, id: "custom_1" }
+
+    expect(
+      toLegacyDeletedBuiltInIds([
+        toVersionedValue(firstBuiltIn),
+        markDeleted(toVersionedValue(secondBuiltIn), INITIAL_UPDATED_AT),
+        markDeleted(toVersionedValue(customModule), INITIAL_UPDATED_AT),
+      ]),
+    ).toStrictEqual([secondBuiltIn.id])
   })
 })
 

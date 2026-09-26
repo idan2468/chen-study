@@ -1,5 +1,7 @@
 /** Content model for the Modules Practice page. */
 
+import type { VersionedValue } from "@/types/versionedValue"
+
 export type ModuleCard = {
   /** The English word, uppercase in the built-in data (`HAT`, `FOX`, ...). */
   en: string
@@ -30,4 +32,4 @@ export type ModuleProgressRecord = {
   status: CardStatus
 }
 
-export type ModulesProgress = ModuleProgressRecord[]
+export type ModulesProgress = VersionedValue<ModuleProgressRecord>[]

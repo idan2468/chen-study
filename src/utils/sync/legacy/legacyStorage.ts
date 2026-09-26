@@ -1,10 +1,22 @@
 import { z } from "zod"
 import { listKeys, readJson, readString } from "@/store/storage"
 import { CardStatus } from "@/types/moduleExercise"
-import type { ModuleProgressRecord } from "@/types/moduleExercise"
+import type {
+  ModuleExercise,
+  ModuleProgressRecord,
+} from "@/types/moduleExercise"
+import {
+  builtInModuleIds,
+  defaultModuleExercises,
+} from "@/data/defaultModuleExercises"
 import type { AnswerRecord, UnseenExercise } from "@/types/unseenExercise"
 import type { VersionedValue } from "@/types/versionedValue"
-import { liveValues, toVersionedValue } from "@/utils/sync/versionedValue"
+import {
+  INITIAL_UPDATED_AT,
+  liveValues,
+  markDeleted,
+  toVersionedValue,
+} from "@/utils/sync/versionedValue"
 
 export const syncPayloadSchema = z.record(z.string(), z.string())
 export type SyncPayload = z.infer<typeof syncPayloadSchema>
@@ -78,16 +90,38 @@ export const applySyncPayload = (payload: SyncPayload) => {
   return applied
 }
 
-export const readLegacyModuleProgress = (): ModuleProgressRecord[] =>
-  Object.entries(
-    readJson<Record<string, CardStatus>>(StorageKeys.modulesProgress, {}),
-  ).map(([word, status]) => ({ word, status }))
+/** Deleted built-ins become tombstones; a deletion wins over a stored copy, as before. */
+export const readLegacyModules = (): VersionedValue<ModuleExercise>[] => {
+  const deletedIds = new Set(
+    readJson<string[]>(StorageKeys.deletedBuiltInModules, []),
+  )
+  const stored = readJson<ModuleExercise[]>(StorageKeys.allModules, [])
+    .filter(module => !deletedIds.has(module.id))
+    .map(module => toVersionedValue(module))
+  const tombstones = defaultModuleExercises
+    .filter(module => deletedIds.has(module.id))
+    .map(module => markDeleted(toVersionedValue(module), INITIAL_UPDATED_AT))
+  return [...stored, ...tombstones]
+}
+
+export const toLegacyDeletedBuiltInIds = (
+  modules: readonly VersionedValue<ModuleExercise>[],
+): string[] =>
+  modules
+    .filter(entry => entry.deleted && builtInModuleIds.includes(entry.value.id))
+    .map(entry => entry.value.id)
+
+export const readLegacyModuleProgress =
+  (): VersionedValue<ModuleProgressRecord>[] =>
+    Object.entries(
+      readJson<Record<string, CardStatus>>(StorageKeys.modulesProgress, {}),
+    ).map(([word, status]) => toVersionedValue({ word, status }))
 
 export const toLegacyModuleProgress = (
-  progress: readonly ModuleProgressRecord[],
+  progress: readonly VersionedValue<ModuleProgressRecord>[],
 ): Record<string, CardStatus> =>
   Object.fromEntries(
-    progress
+    liveValues(progress)
       .filter(record => record.status !== CardStatus.None)
       .map(record => [record.word, record.status]),
   )

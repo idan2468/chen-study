@@ -2,11 +2,22 @@ import type { PayloadAction } from "@reduxjs/toolkit"
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { readJson, readString } from "@/store/storage"
+import type { TimestampedAction } from "@/store/updatedAt"
+import { withUpdatedAt } from "@/store/updatedAt"
 import { keepFinalOccurrencesBy } from "@/utils/collections"
+import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
 import {
   readLegacyModuleProgress,
+  readLegacyModules,
   StorageKeys,
 } from "@/utils/sync/legacy/legacyStorage"
+import {
+  deleteValue,
+  findLiveValue,
+  liveValues,
+  putValue,
+  toVersionedValue,
+} from "@/utils/sync/versionedValue"
 import {
   builtInModuleIds,
   defaultModuleExercises,
@@ -14,13 +25,14 @@ import {
 import type {
   ModuleCard,
   ModuleExercise,
-  ModuleProgressRecord,
   ModulesProgress,
 } from "@/types/moduleExercise"
 import { CardStatus } from "@/types/moduleExercise"
+import type { VersionedValue } from "@/types/versionedValue"
 
 export type ModulesState = {
-  modules: ModuleExercise[]
+  /** Includes tombstones, so a deleted built-in is not re-seeded. */
+  modules: VersionedValue<ModuleExercise>[]
   currentModuleId: string
   cardIndex: number
   /** "Show only the words I got wrong". */
@@ -28,8 +40,6 @@ export type ModulesState = {
   /** Reviewing missed words pooled from every module, instead of one module. */
   reviewingMissed: boolean
   progress: ModulesProgress
-  /** Built-ins the user deleted, so hydration does not re-seed them. */
-  deletedBuiltInIds: string[]
 }
 
 /**
@@ -46,35 +56,22 @@ const PREFERRED_DEFAULT_MODULE_ID = "mod3_short_i"
  * Fixes a real bug in the original: once `english_reading_all_modules_v4` was
  * written it *replaced* the built-in list wholesale
  * (`Modules Practice.html:1091-1097`), so a returning user never saw modules
- * added in a later release. Here built-ins are re-seeded by id unless the user
- * deleted them, and a stored copy of a built-in wins so edits are kept.
+ * added in a later release. Here built-ins are re-seeded by id unless stored
+ * (as an edited copy or a deletion tombstone), in their canonical order.
  */
 export const mergeModules = (
-  stored: readonly ModuleExercise[],
-  deletedIds: readonly string[],
-): ModuleExercise[] => {
-  const deleted = new Set(deletedIds)
-  const storedById = new Map(stored.map(module => [module.id, module]))
+  stored: readonly VersionedValue<ModuleExercise>[],
+): VersionedValue<ModuleExercise>[] => {
+  const storedById = new Map(stored.map(entry => [entry.value.id, entry]))
   const builtIns = new Set(builtInModuleIds)
 
-  const merged: ModuleExercise[] = []
-
-  // Built-ins keep their canonical order.
-  for (const builtIn of defaultModuleExercises) {
-    if (deleted.has(builtIn.id)) {
-      continue
-    }
-    merged.push(storedById.get(builtIn.id) ?? builtIn)
-  }
-
-  // User-added modules follow, in the order they were added.
-  for (const module of stored) {
-    if (!builtIns.has(module.id)) {
-      merged.push(module)
-    }
-  }
-
-  return merged
+  return [
+    ...defaultModuleExercises.map(
+      builtIn => storedById.get(builtIn.id) ?? toVersionedValue(builtIn),
+    ),
+    // User-added modules follow, in the order they were added.
+    ...stored.filter(entry => !builtIns.has(entry.value.id)),
+  ]
 }
 
 /** Prefers the stored module id; falls back to the preferred default, then
@@ -92,26 +89,26 @@ const resolveCurrentId = (
   return preferred?.id ?? modules[0]?.id ?? ""
 }
 
+const hasModuleId = (moduleId: string) => (module: ModuleExercise) =>
+  module.id === moduleId
+
 const setModuleProgressStatus = (
-  progress: ModuleProgressRecord[],
+  progress: ModulesProgress,
   word: string,
   status: CardStatus,
+  updatedAt: IsraelIsoTimestamp,
 ) => {
-  const existing = progress.find(record => record.word === word)
-  if (existing) {
-    existing.status = status
-  } else {
-    progress.push({ word, status })
-  }
+  putValue(
+    progress,
+    record => record.word === word,
+    { word, status },
+    updatedAt,
+  )
 }
 
 const loadFromStorage = (): ModulesState => {
-  const stored = readJson<ModuleExercise[]>(StorageKeys.allModules, [])
-  const deletedBuiltInIds = readJson<string[]>(
-    StorageKeys.deletedBuiltInModules,
-    [],
-  )
-  const modules = mergeModules(stored, deletedBuiltInIds)
+  const moduleEntries = mergeModules(readLegacyModules())
+  const modules = liveValues(moduleEntries)
   const currentModuleId = resolveCurrentId(
     modules,
     readString(StorageKeys.currentModuleId, ""),
@@ -128,34 +125,33 @@ const loadFromStorage = (): ModulesState => {
     : 0
 
   return {
-    modules,
+    modules: moduleEntries,
     currentModuleId,
     cardIndex,
     filterMissed: false,
     reviewingMissed: false,
     progress: readLegacyModuleProgress(),
-    deletedBuiltInIds,
   }
 }
 
-const addOrReplaceModule = (state: ModulesState, module: ModuleExercise) => {
-  const existingIndex = state.modules.findIndex(
-    existing => existing.id === module.id,
-  )
-  if (existingIndex < 0) {
-    state.modules.push(module)
+const addOrReplaceModule = (
+  state: ModulesState,
+  module: ModuleExercise,
+  updatedAt: IsraelIsoTimestamp,
+) => {
+  const existing = findLiveValue(state.modules, hasModuleId(module.id))
+  putValue(state.modules, hasModuleId(module.id), module, updatedAt)
+  if (!existing) {
     return
   }
 
-  const existing = state.modules[existingIndex]
   const affectedWords = new Set([
-    ...(existing?.cards.map(card => card.en) ?? []),
+    ...existing.cards.map(card => card.en),
     ...module.cards.map(card => card.en),
   ])
   for (const word of affectedWords) {
-    setModuleProgressStatus(state.progress, word, CardStatus.None)
+    setModuleProgressStatus(state.progress, word, CardStatus.None, updatedAt)
   }
-  state.modules[existingIndex] = module
 
   if (state.currentModuleId === module.id) {
     state.cardIndex = 0
@@ -198,92 +194,98 @@ export const modulesSlice = createAppSlice({
     }),
 
     /** Unlike the Unseen flashcards, re-marking the same status is not a toggle. */
-    markCard: create.reducer(
-      (state, action: PayloadAction<{ word: string; isKnown: boolean }>) => {
+    markCard: create.preparedReducer(
+      withUpdatedAt<{ word: string; isKnown: boolean }>,
+      (
+        state,
+        action: TimestampedAction<{ word: string; isKnown: boolean }>,
+      ) => {
         const { word, isKnown } = action.payload
         setModuleProgressStatus(
           state.progress,
           word,
           isKnown ? CardStatus.Known : CardStatus.Unknown,
+          action.meta.updatedAt,
         )
       },
     ),
 
     /** Clears progress for the current module's words only. */
-    resetCurrentModuleProgress: create.reducer(state => {
-      const current = state.modules.find(
-        module => module.id === state.currentModuleId,
-      )
-      for (const card of current?.cards ?? []) {
-        setModuleProgressStatus(state.progress, card.en, CardStatus.None)
-      }
-      state.cardIndex = 0
-      state.filterMissed = false
-    }),
+    resetCurrentModuleProgress: create.preparedReducer(
+      () => withUpdatedAt(undefined),
+      (state, action: TimestampedAction) => {
+        const current = findLiveValue(
+          state.modules,
+          hasModuleId(state.currentModuleId),
+        )
+        for (const card of current?.cards ?? []) {
+          setModuleProgressStatus(
+            state.progress,
+            card.en,
+            CardStatus.None,
+            action.meta.updatedAt,
+          )
+        }
+        state.cardIndex = 0
+        state.filterMissed = false
+      },
+    ),
 
     /** Adds or replaces imported modules; selecting one is left to the caller
      *  (see `ModulesPage.tsx`). */
-    addModules: create.reducer(
-      (state, action: PayloadAction<ModuleExercise[]>) => {
-        if (action.payload.length === 0) {
-          return
-        }
+    addModules: create.preparedReducer(
+      withUpdatedAt<ModuleExercise[]>,
+      (state, action: TimestampedAction<ModuleExercise[]>) => {
         const finalModules = keepFinalOccurrencesBy(
           action.payload,
           module => module.id,
         )
         for (const module of finalModules) {
-          addOrReplaceModule(state, module)
+          addOrReplaceModule(state, module, action.meta.updatedAt)
         }
-        // Re-adding a previously deleted built-in un-deletes it.
-        const addedIds = new Set(finalModules.map(module => module.id))
-        state.deletedBuiltInIds = state.deletedBuiltInIds.filter(
-          id => !addedIds.has(id),
-        )
       },
     ),
 
-    deleteModule: create.reducer((state, action: PayloadAction<string>) => {
-      // Refuse to leave the user with nothing, as the original did.
-      if (state.modules.length <= 1) {
-        return
-      }
+    deleteModule: create.preparedReducer(
+      withUpdatedAt<string>,
+      (state, action: TimestampedAction<string>) => {
+        const modules = liveValues(state.modules)
+        // Refuse to leave the user with nothing, as the original did.
+        if (modules.length <= 1) {
+          return
+        }
 
-      const index = state.modules.findIndex(
-        module => module.id === action.payload,
-      )
-      if (index < 0) {
-        return
-      }
+        const index = modules.findIndex(hasModuleId(action.payload))
+        if (index < 0) {
+          return
+        }
 
-      state.modules.splice(index, 1)
+        deleteValue(
+          state.modules,
+          hasModuleId(action.payload),
+          action.meta.updatedAt,
+        )
 
-      if (
-        builtInModuleIds.includes(action.payload) &&
-        !state.deletedBuiltInIds.includes(action.payload)
-      ) {
-        state.deletedBuiltInIds.push(action.payload)
-      }
-
-      if (state.currentModuleId === action.payload) {
-        // Keep the neighbouring tab selected rather than jumping to the start.
-        state.currentModuleId =
-          state.modules[Math.min(index, state.modules.length - 1)]?.id ?? ""
-        state.cardIndex = 0
-        state.filterMissed = false
-      }
-    }),
+        if (state.currentModuleId === action.payload) {
+          // Keep the neighbouring tab selected rather than jumping to the start.
+          const remaining = liveValues(state.modules)
+          state.currentModuleId =
+            remaining[Math.min(index, remaining.length - 1)]?.id ?? ""
+          state.cardIndex = 0
+          state.filterMissed = false
+        }
+      },
+    ),
 
     reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
-    selectModules: state => state.modules,
+    selectModuleEntries: state => state.modules,
     selectCurrentModuleId: state => state.currentModuleId,
     selectModuleCardIndex: state => state.cardIndex,
     selectFilterMissed: state => state.filterMissed,
     selectReviewingMissed: state => state.reviewingMissed,
-    selectModuleProgressRecords: state => state.progress,
-    selectDeletedBuiltInIds: state => state.deletedBuiltInIds,
+    selectModuleProgressEntries: state => state.progress,
   },
 })
 
@@ -302,13 +304,12 @@ export const {
 } = modulesSlice.actions
 
 export const {
-  selectModules,
+  selectModuleEntries,
   selectCurrentModuleId,
   selectModuleCardIndex,
   selectFilterMissed,
   selectReviewingMissed,
-  selectModuleProgressRecords,
-  selectDeletedBuiltInIds,
+  selectModuleProgressEntries,
 } = modulesSlice.selectors
 
 /* ---------------------------------------------------------------- *
@@ -316,10 +317,14 @@ export const {
  * (`currentDataset`, `activeCardsList`) kept in sync by hand.
  * ---------------------------------------------------------------- */
 
+export const selectModules = createSelector([selectModuleEntries], liveValues)
+
 export const selectModulesProgress = createSelector(
-  [selectModuleProgressRecords],
+  [selectModuleProgressEntries],
   progress =>
-    Object.fromEntries(progress.map(({ word, status }) => [word, status])),
+    Object.fromEntries(
+      liveValues(progress).map(({ word, status }) => [word, status]),
+    ),
 )
 
 export const selectCurrentModule = createSelector(

@@ -4,9 +4,18 @@ import {
 } from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
 import { CardStatus } from "@/types/moduleExercise"
-import type { ModuleExercise } from "@/types/moduleExercise"
+import type {
+  ModuleExercise,
+  ModuleProgressRecord,
+} from "@/types/moduleExercise"
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { makeStore } from "@/store/store"
+import {
+  INITIAL_UPDATED_AT,
+  liveValues,
+  markDeleted,
+  toVersionedValue,
+} from "@/utils/sync/versionedValue"
 import type { ModulesState } from "./modulesSlice"
 import {
   addModules,
@@ -57,20 +66,38 @@ const secondBuiltInId = at(builtInModuleIds, 1)
 const thirdBuiltInId = at(builtInModuleIds, 2)
 const firstCard = at(at(defaultModuleExercises, 0).cards, 0)
 
-const baseState = (overrides: Partial<ModulesState> = {}): ModulesState => ({
-  modules: [...defaultModuleExercises],
+type TestStateOverrides = Partial<
+  Omit<ModulesState, "modules" | "progress">
+> & {
+  modules?: ModuleExercise[]
+  progress?: ModuleProgressRecord[]
+}
+
+const baseState = ({
+  modules = defaultModuleExercises,
+  progress = [],
+  ...overrides
+}: TestStateOverrides = {}): ModulesState => ({
+  modules: modules.map(module => toVersionedValue(module)),
   currentModuleId: firstBuiltInId,
   cardIndex: 0,
   filterMissed: false,
   reviewingMissed: false,
-  progress: [],
-  deletedBuiltInIds: [],
+  progress: progress.map(record => toVersionedValue(record)),
   ...overrides,
 })
 
+const moduleEntry = (store: ReturnType<typeof makeStore>, id: string) =>
+  store.getState().modules.modules.find(entry => entry.value.id === id)
+
+const mergedIds = (stored: ModuleExercise[]) =>
+  mergeModules(stored.map(module => toVersionedValue(module))).map(
+    entry => entry.value.id,
+  )
+
 describe("mergeModules", () => {
   test("seeds all built-ins on a first run", () => {
-    expect(mergeModules([], []).map(m => m.id)).toStrictEqual(builtInModuleIds)
+    expect(mergedIds([])).toStrictEqual(builtInModuleIds)
   })
 
   test("re-seeds built-ins missing from stored data, fixing the original's bug", () => {
@@ -78,30 +105,43 @@ describe("mergeModules", () => {
     // stored, so a user who had only the first built-in never saw the rest
     // again.
     const stored = [at(defaultModuleExercises, 0), customModule]
-    const merged = mergeModules(stored, [])
 
-    expect(merged.map(m => m.id)).toStrictEqual([
-      ...builtInModuleIds,
-      "custom_1",
-    ])
+    expect(mergedIds(stored)).toStrictEqual([...builtInModuleIds, "custom_1"])
   })
 
   test("a stored copy of a built-in wins, so user edits survive", () => {
     const edited = { ...at(defaultModuleExercises, 0), tabName: "Edited" }
-    const merged = mergeModules([edited], [])
+    const merged = mergeModules([toVersionedValue(edited)])
 
-    expect(at(merged, 0).tabName).toBe("Edited")
+    expect(at(merged, 0).value.tabName).toBe("Edited")
   })
 
-  test("honours deleted built-ins instead of re-seeding them", () => {
-    const merged = mergeModules([], [secondBuiltInId])
+  test("keeps a deleted built-in's tombstone instead of re-seeding it", () => {
+    const tombstone = markDeleted(
+      toVersionedValue(at(defaultModuleExercises, 1)),
+      INITIAL_UPDATED_AT,
+    )
+    const merged = mergeModules([tombstone])
 
-    expect(merged.map(m => m.id)).not.toContain(secondBuiltInId)
-    expect(merged).toHaveLength(builtInModuleIds.length - 1)
+    expect(liveValues(merged).map(m => m.id)).not.toContain(secondBuiltInId)
+    expect(at(merged, 1)).toStrictEqual(tombstone)
   })
 })
 
 describe("progress", () => {
+  test("stamps a marked card with the time it was marked", () => {
+    const now = "2026-09-26T11:00:00.000+03:00"
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(now) })
+    const store = makeStore({ modules: baseState() })
+
+    store.dispatch(markCard({ word: firstCard.en, isKnown: false }))
+
+    expect(store.getState().modules.progress).toStrictEqual([
+      toVersionedValue({ word: firstCard.en, status: CardStatus.Unknown }, now),
+    ])
+    vi.useRealTimers()
+  })
+
   test("marks a card, keyed globally by word", () => {
     const store = makeStore({ modules: baseState() })
     store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
@@ -368,7 +408,7 @@ describe("hydration", () => {
     const state = store.getState()
 
     expect(selectModules(state).map(m => m.id)).not.toContain(secondBuiltInId)
-    expect(state.modules.deletedBuiltInIds).toStrictEqual([secondBuiltInId])
+    expect(moduleEntry(store, secondBuiltInId)?.deleted).toBe(true)
   })
 })
 
@@ -446,13 +486,17 @@ describe("addModules", () => {
 })
 
 describe("deleteModule", () => {
-  test("records a deleted built-in so it is not re-seeded", () => {
+  test("keeps a deleted built-in as a tombstone so it is not re-seeded", () => {
     const store = makeStore({ modules: baseState() })
     store.dispatch(deleteModule(secondBuiltInId))
 
-    const state = store.getState()
-    expect(selectModules(state).map(m => m.id)).not.toContain(secondBuiltInId)
-    expect(state.modules.deletedBuiltInIds).toStrictEqual([secondBuiltInId])
+    expect(selectModules(store.getState()).map(m => m.id)).not.toContain(
+      secondBuiltInId,
+    )
+    expect(moduleEntry(store, secondBuiltInId)?.deleted).toBe(true)
+    expect(
+      JSON.parse(localStorage.getItem(StorageKeys.deletedBuiltInModules) ?? ""),
+    ).toStrictEqual([secondBuiltInId])
   })
 
   test("refuses to delete the last remaining module", () => {
@@ -478,11 +522,16 @@ describe("deleteModule", () => {
     expect(store.getState().modules.currentModuleId).toBe(thirdBuiltInId)
   })
 
-  test("re-adding a deleted built-in clears its deletion record", () => {
+  test("re-adding a deleted built-in revives it at the end", () => {
     const store = makeStore({ modules: baseState() })
     store.dispatch(deleteModule(secondBuiltInId))
     store.dispatch(addModules([at(defaultModuleExercises, 1)]))
 
-    expect(store.getState().modules.deletedBuiltInIds).toStrictEqual([])
+    expect(moduleEntry(store, secondBuiltInId)?.deleted).toBe(false)
+    const liveIds = selectModules(store.getState()).map(m => m.id)
+    expect(liveIds[liveIds.length - 1]).toBe(secondBuiltInId)
+    expect(
+      JSON.parse(localStorage.getItem(StorageKeys.deletedBuiltInModules) ?? ""),
+    ).toStrictEqual([])
   })
 })
