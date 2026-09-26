@@ -63,6 +63,7 @@ Temporary legacy storage and migration code lives under `src/utils/sync/legacy/`
 - Refactor repeated or multi-step logic into focused, well-named helpers.
 - Keep reducers, hooks, migration, merge, and Drive orchestration easy to scan.
 - Avoid trivial wrappers and speculative abstractions.
+- Before writing a utility from scratch, look for an established library that already covers it (e.g. luxon for dates and time zones) and prefer it over hand-rolled helpers.
 - If implementation exposes an issue or decision not explicitly covered here, stop and ask the user instead of assuming behavior or expanding scope.
 - Run `review-code-quality` after every completed step and before manual review.
 
