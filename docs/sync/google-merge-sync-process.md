@@ -22,7 +22,11 @@
 - Versioned preferences: `dyslexiaFont`, `shuffleUnseenAnswers`, and both speech rates. System voice stays device-local; dark mode and locale stay with Mantine/i18n.
 - Navigation fields: Unseen current exercise and flashcard index, Module current ID and card index.
 - Values loaded from legacy storage get an epoch `updatedAt` so any real edit wins.
-- Not yet started.
+- Step 5 follow-up commits: `f9ac709`, `36defff`.
+- Step 6 commits: `e21d999`, `e8f7d27`, `ba149dd`, `bc9c468`; review `[QS]` commits: `2aac946`, `3cc30b1`, `eeee890`.
+- Validation: 293 tests, type-check, lint, changed-file format, build, and diff checks pass.
+- Review: all three findings accepted and applied (fake-timer scoping, `withUpdatedAtOnly`, shared `hasWord`).
+- Awaiting manual approval.
 
 ## Step definitions
 
