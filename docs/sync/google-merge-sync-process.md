@@ -30,7 +30,7 @@
 
 ## Per-step gate
 
-1. Complete logical commits on `google-merge-sync`.
+1. Complete logical commits on `google-merge-sync`, each prefixed with its step number (e.g. `[Step 5] Add VersionedValue type`, `[Step 5] [QS] Remove unused timestamp comparison`).
 2. Run targeted checks after each commit.
 3. Run tests, type-check, lint, changed-file formatting, build, and diff checks.
 4. Run `review-code-quality` against the exact step diff.
