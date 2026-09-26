@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–3 approved; Step 3.5 awaits review, then Step 4.**
+**Status: in progress on `google-merge-sync` — Steps 1–3.5 approved; Step 4 awaits manual approval.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -9,25 +9,19 @@
 - [x] Step 1 — remove link sync (`0fb5850`), manually approved.
 - [x] Step 2 — import identity/replacement (`9c78308`, `b27d40d`, `d4f7187`), CI/review/manual approved.
 - [x] Step 3 — centralize legacy persistence (`74e221b`), 259 tests/full gate/review/manual approved.
+- [x] Step 3.5 — visibility-aware interval sync (`cc1eb93`), 259 tests/full gate/review/manual approved.
 
 ## Current review gate
 
-### Step 3.5 — visibility-aware interval sync
-
-- Hidden tabs and minimized Chrome skip 30-second interval sync.
-- Returning to visible triggers an immediate silent sync when Google is connected.
-- The existing one-time legacy page-hide keepalive push remains unchanged.
-- Becoming visible does not show a success notification.
-- Run full validation and `review-code-quality`, then stop for manual approval.
-
-## Next main rollout step
-
 ### Step 4 — plain semantic-ID arrays
 
-- Convert current v1 maps to plain arrays.
-- Add identity fields directly to values.
-- Do not add `VersionedValue`, timestamps, deleted flags, or v2 persistence yet.
-- Preserve legacy storage through `src/utils/sync/legacy/legacyStorage.ts`.
+- Module progress is stored as global semantic-word records (`0b52449`).
+- Unseen exercises and their answer, highlight, and flashcard progress are nested semantic-ID arrays (`4d519db`).
+- Legacy local/Drive key shapes remain unchanged through adapters in `src/utils/sync/legacy/legacyStorage.ts`.
+- No `VersionedValue`, timestamps, deleted flags, or v2 persistence were added.
+- `review-code-quality` completed. The generated-data finding was resolved by removing the obsolete one-off extractor (`11b709f`); duplicate-projection and test-fixture refactors were not selected.
+- Full gate passed with 263 tests, type-check, lint, changed-file Prettier, build, and `git diff --check`.
+- Awaiting manual approval before Step 5.
 
 ## Remaining rollout
 
