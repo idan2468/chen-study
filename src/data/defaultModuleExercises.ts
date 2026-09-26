@@ -1,7 +1,6 @@
 /**
- * `sampleModuleExercise` below is seed content extracted verbatim from
- * `Modules Practice.html` by `scripts/extract-legacy-data.cjs` -- do not edit
- * it by hand. `defaultModuleExercises` itself now comes from
+ * `sampleModuleExercise` below was originally extracted verbatim from
+ * `Modules Practice.html`. `defaultModuleExercises` comes from
  * `resources/chen-english-course-full.json`, the full course content.
  */
 import type { ModuleExercise } from "@/types/moduleExercise"
