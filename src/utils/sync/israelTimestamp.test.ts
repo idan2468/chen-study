@@ -43,3 +43,7 @@ test("compares parsed instants across different offsets", () => {
     ),
   ).toBe(0)
 })
+
+test("rejects an invalid date", () => {
+  expect(() => toIsraelIsoTimestamp(new Date(Number.NaN))).toThrow(RangeError)
+})
