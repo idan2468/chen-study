@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–4 approved; Step 5 is next.**
+**Status: in progress on `google-merge-sync` — Steps 1–5 approved; Step 6 is next.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -11,16 +11,16 @@
 - [x] Step 3 — centralize legacy persistence (`74e221b`), 259 tests/full gate/review/manual approved.
 - [x] Step 3.5 — visibility-aware interval sync (`cc1eb93`), 259 tests/full gate/review/manual approved.
 - [x] Step 4 — plain semantic-ID arrays (`0b52449`, `4d519db`, `11b709f`, `4c5c84e`), 263 tests/full gate/review/manual approved.
+- [x] Step 5 — version/timestamp foundations (`a9c8cf3`, `5b65723`, `948b92c`, `413f263`, `01d514b`, `d067b9e`), 268 tests/full gate/review/manual approved.
 
 ## Current review gate
 
-### Step 5 — version/timestamp foundations
+### Step 6 — versioned arrays
 
 - Not yet started.
 
 ## Remaining rollout
 
-6. Versioned arrays.
 7. Canonical local v2.
 8. Pure merge engine.
 9. Drive v2 transport.
