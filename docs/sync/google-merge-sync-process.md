@@ -23,9 +23,9 @@
 - Navigation fields: Unseen current exercise and flashcard index, Module current ID and card index.
 - Values loaded from legacy storage get an epoch `updatedAt` so any real edit wins.
 - Step 5 follow-up commits: `f9ac709`, `36defff`.
-- Step 6 commits: `e21d999`, `e8f7d27`, `ba149dd`, `bc9c468`; review `[QS]` commits: `2aac946`, `3cc30b1`, `eeee890`.
-- Validation: 293 tests, type-check, lint, changed-file format, build, and diff checks pass.
-- Review: all three findings accepted and applied (fake-timer scoping, `withUpdatedAtOnly`, shared `hasWord`).
+- Step 6 commits: `e21d999`, `e8f7d27`, `ba149dd`, `bc9c468`; review `[QS]` commits: `2aac946`, `3cc30b1`, `eeee890`, `b52b38d`.
+- Validation: 291 tests, type-check, lint, changed-file format, build, and diff checks pass.
+- Review: all three findings accepted and applied (fake-timer scoping, `withUpdatedAtOnly`, shared `hasWord`), plus manual feedback: timestamps validate as any offset-bearing ISO datetime.
 - Awaiting manual approval.
 
 ## Step definitions
