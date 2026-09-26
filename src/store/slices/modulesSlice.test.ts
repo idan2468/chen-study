@@ -132,20 +132,29 @@ describe("mergeModules", () => {
   })
 })
 
-describe("progress", () => {
+describe("version metadata", () => {
+  const NOW = "2026-09-26T11:00:00.000+03:00"
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(NOW) })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   test("stamps a marked card with the time it was marked", () => {
-    const now = "2026-09-26T11:00:00.000+03:00"
-    vi.useFakeTimers({ toFake: ["Date"], now: new Date(now) })
     const store = makeStore({ modules: baseState() })
 
     store.dispatch(markCard({ word: firstCard.en, isKnown: false }))
 
     expect(store.getState().modules.progress).toStrictEqual([
-      toVersionedValue({ word: firstCard.en, status: CardStatus.Unknown }, now),
+      toVersionedValue({ word: firstCard.en, status: CardStatus.Unknown }, NOW),
     ])
-    vi.useRealTimers()
   })
+})
 
+describe("progress", () => {
   test("marks a card, keyed globally by word", () => {
     const store = makeStore({ modules: baseState() })
     store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
