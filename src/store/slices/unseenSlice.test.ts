@@ -5,6 +5,7 @@ import {
   StorageKeys,
 } from "@/utils/sync/legacy/legacyStorage"
 import { makeStore } from "@/store/store"
+import { toVersionedValue } from "@/utils/sync/versionedValue"
 import type { UnseenState } from "./unseenSlice"
 import {
   addExercise,
@@ -68,18 +69,22 @@ const baseState = (overrides: TestStateOverrides = {}): UnseenState => {
   }
 
   return {
-    exercises: Object.values(library).map(exercise => ({
-      ...exercise,
-      answers: Object.entries(
-        overrides.answers?.[exercise.exerciseId] ?? {},
-      ).map(([questionId, answer]) => ({ questionId, ...answer })),
-      highlights: (overrides.markedWords?.[exercise.exerciseId] ?? []).map(
-        word => ({ word }),
-      ),
-      flashcardProgress: Object.entries(
-        overrides.progress?.[exercise.exerciseId] ?? {},
-      ).map(([word, isKnown]) => ({ word, isKnown })),
-    })),
+    exercises: Object.values(library).map(exercise =>
+      toVersionedValue({
+        ...exercise,
+        answers: Object.entries(
+          overrides.answers?.[exercise.exerciseId] ?? {},
+        ).map(([questionId, answer]) =>
+          toVersionedValue({ questionId, ...answer }),
+        ),
+        highlights: (overrides.markedWords?.[exercise.exerciseId] ?? []).map(
+          word => toVersionedValue({ word }),
+        ),
+        flashcardProgress: Object.entries(
+          overrides.progress?.[exercise.exerciseId] ?? {},
+        ).map(([word, isKnown]) => toVersionedValue({ word, isKnown })),
+      }),
+    ),
     currentId: overrides.currentId ?? defaultUnseenExercise.exerciseId,
     cardIndex: overrides.cardIndex ?? 0,
   }
@@ -198,7 +203,7 @@ describe("library", () => {
     expect(state.unseen.cardIndex).toBe(0)
     expect(selectAnswers(state)).toStrictEqual({})
     expect(selectLibrary(state)[defaultId]?.answers).toStrictEqual([
-      { questionId: "q1", ...previousAnswers.q1 },
+      toVersionedValue({ questionId: "q1", ...previousAnswers.q1 }),
     ])
   })
 
@@ -222,11 +227,8 @@ describe("library", () => {
 
     store.dispatch(addExercise(replacement))
 
-    const state = store.getState().unseen
     expect(
-      state.exercises.find(
-        exercise => exercise.exerciseId === otherExercise.exerciseId,
-      ),
+      selectLibrary(store.getState())[otherExercise.exerciseId],
     ).toStrictEqual(replacement)
   })
 
@@ -254,7 +256,9 @@ describe("library", () => {
     expect(selectAnswers(state)).toStrictEqual({})
     expect(
       selectLibrary(state)[defaultUnseenExercise.exerciseId]?.answers,
-    ).toStrictEqual([{ questionId: "q1", selected: 0, correct: true }])
+    ).toStrictEqual([
+      toVersionedValue({ questionId: "q1", selected: 0, correct: true }),
+    ])
   })
 
   test("only applies the final occurrence of a repeated id", () => {
@@ -424,7 +428,9 @@ describe("hydration", () => {
     })
     expect(
       selectLibrary(state)[defaultUnseenExercise.exerciseId]?.answers,
-    ).toStrictEqual([{ questionId: "q1", selected: 1, correct: true }])
+    ).toStrictEqual([
+      toVersionedValue({ questionId: "q1", selected: 1, correct: true }),
+    ])
   })
 
   test("marks a completed legacy active exercise as complete", () => {
@@ -470,10 +476,10 @@ describe("hydration", () => {
     const library = selectLibrary(makeStore().getState())
 
     expect(library[defaultUnseenExercise.exerciseId]?.answers).toStrictEqual([
-      { questionId: "q1", selected: 1, correct: true },
+      toVersionedValue({ questionId: "q1", selected: 1, correct: true }),
     ])
     expect(library.other_1?.answers).toStrictEqual([
-      { questionId: "q2", selected: 0, correct: false },
+      toVersionedValue({ questionId: "q2", selected: 0, correct: false }),
     ])
   })
 
@@ -575,6 +581,92 @@ describe("reloadFromStorage", () => {
       [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
     })
     expect(selectCurrentProgress(state)).toStrictEqual({})
+  })
+})
+
+describe("version metadata", () => {
+  const NOW = "2026-09-26T11:00:00.000+03:00"
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(NOW) })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const currentEntry = (store: ReturnType<typeof makeStore>) =>
+    store
+      .getState()
+      .unseen.exercises.find(
+        entry => entry.value.exerciseId === defaultUnseenExercise.exerciseId,
+      )
+
+  test("stamps progress with the time it was recorded", () => {
+    const store = makeStore({ unseen: baseState() })
+
+    store.dispatch(
+      answerQuestion({ questionId: "q1", selected: 0, correct: true }),
+    )
+
+    expect(currentEntry(store)?.value.answers).toStrictEqual([
+      toVersionedValue({ questionId: "q1", selected: 0, correct: true }, NOW),
+    ])
+  })
+
+  test("keeps cleared flashcards and highlights as tombstones", () => {
+    const store = makeStore({
+      unseen: baseState({
+        markedWords: { [defaultUnseenExercise.exerciseId]: ["Maya"] },
+        progress: {
+          [defaultUnseenExercise.exerciseId]: { Delicate: true, Tiny: false },
+        },
+      }),
+    })
+
+    store.dispatch(toggleMarkedWord("Maya"))
+    store.dispatch(markFlashcard({ word: "Delicate", isKnown: true }))
+    store.dispatch(resetFlashcardProgress())
+
+    const exercise = currentEntry(store)?.value
+    expect(exercise?.highlights).toStrictEqual([
+      { value: { word: "Maya" }, updatedAt: NOW, deleted: true },
+    ])
+    expect(exercise?.flashcardProgress).toStrictEqual([
+      {
+        value: { word: "Delicate", isKnown: true },
+        updatedAt: NOW,
+        deleted: true,
+      },
+      {
+        value: { word: "Tiny", isKnown: false },
+        updatedAt: NOW,
+        deleted: true,
+      },
+    ])
+  })
+
+  test("keeps a deleted exercise as a tombstone and appends it when re-added", () => {
+    const store = makeStore({
+      unseen: baseState({
+        library: {
+          other_1: otherExercise,
+          [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
+        },
+      }),
+    })
+
+    store.dispatch(deleteExercise("other_1"))
+    expect(store.getState().unseen.exercises[0]).toStrictEqual({
+      value: otherExercise,
+      updatedAt: NOW,
+      deleted: true,
+    })
+
+    store.dispatch(addExercise(otherExercise))
+    expect(
+      store.getState().unseen.exercises.map(entry => entry.value.exerciseId),
+    ).toStrictEqual([defaultUnseenExercise.exerciseId, "other_1"])
   })
 })
 

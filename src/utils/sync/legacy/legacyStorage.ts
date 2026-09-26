@@ -3,6 +3,8 @@ import { listKeys, readJson, readString } from "@/store/storage"
 import { CardStatus } from "@/types/moduleExercise"
 import type { ModuleProgressRecord } from "@/types/moduleExercise"
 import type { AnswerRecord, UnseenExercise } from "@/types/unseenExercise"
+import type { VersionedValue } from "@/types/versionedValue"
+import { liveValues, toVersionedValue } from "@/utils/sync/versionedValue"
 
 export const syncPayloadSchema = z.record(z.string(), z.string())
 export type SyncPayload = z.infer<typeof syncPayloadSchema>
@@ -148,7 +150,7 @@ const toLegacyUnseenExercise = (
 export const readLegacyUnseenState = (
   defaultExercise: UnseenExercise,
 ): {
-  exercises: UnseenExercise[]
+  exercises: VersionedValue<UnseenExercise>[]
   currentId: string
   cardIndex: number
 } => {
@@ -177,21 +179,25 @@ export const readLegacyUnseenState = (
   )
 
   return {
-    exercises: Object.values(library).map(exercise => ({
-      ...exercise,
-      answers: Object.entries(answersByExercise[exercise.exerciseId] ?? {}).map(
-        ([questionId, answer]) => ({ questionId, ...answer }),
-      ),
-      highlights: (markedWords[exercise.exerciseId] ?? []).map(word => ({
-        word,
-      })),
-      flashcardProgress: Object.entries(
-        readJson<Record<string, boolean>>(
-          flashcardStatusKey(exercise.exerciseId),
-          {},
+    exercises: Object.values(library).map(exercise =>
+      toVersionedValue({
+        ...exercise,
+        answers: Object.entries(
+          answersByExercise[exercise.exerciseId] ?? {},
+        ).map(([questionId, answer]) =>
+          toVersionedValue({ questionId, ...answer }),
         ),
-      ).map(([word, isKnown]) => ({ word, isKnown })),
-    })),
+        highlights: (markedWords[exercise.exerciseId] ?? []).map(word =>
+          toVersionedValue({ word }),
+        ),
+        flashcardProgress: Object.entries(
+          readJson<Record<string, boolean>>(
+            flashcardStatusKey(exercise.exerciseId),
+            {},
+          ),
+        ).map(([word, isKnown]) => toVersionedValue({ word, isKnown })),
+      }),
+    ),
     currentId,
     cardIndex: readJson<number>(StorageKeys.flashcardIndex, 0),
   }
@@ -212,11 +218,15 @@ export const toLegacyUnseenAnswers = (
 ): LegacyAnswersByExercise =>
   Object.fromEntries(
     exercises
-      .filter(exercise => exercise.answers.length > 0)
-      .map(exercise => [
-        exercise.exerciseId,
+      .map(
+        exercise =>
+          [exercise.exerciseId, liveValues(exercise.answers)] as const,
+      )
+      .filter(([, answers]) => answers.length > 0)
+      .map(([exerciseId, answers]) => [
+        exerciseId,
         Object.fromEntries(
-          exercise.answers.map(({ questionId, selected, correct }) => [
+          answers.map(({ questionId, selected, correct }) => [
             questionId,
             { selected, correct },
           ]),
@@ -229,16 +239,22 @@ export const toLegacyMarkedWords = (
 ): Record<string, string[]> =>
   Object.fromEntries(
     exercises
-      .filter(exercise => exercise.highlights.length > 0)
-      .map(exercise => [
-        exercise.exerciseId,
-        exercise.highlights.map(({ word }) => word),
-      ]),
+      .map(
+        exercise =>
+          [
+            exercise.exerciseId,
+            liveValues(exercise.highlights).map(({ word }) => word),
+          ] as const,
+      )
+      .filter(([, words]) => words.length > 0),
   )
 
 export const toLegacyFlashcardProgress = (
   exercise: UnseenExercise,
 ): Record<string, boolean> =>
   Object.fromEntries(
-    exercise.flashcardProgress.map(({ word, isKnown }) => [word, isKnown]),
+    liveValues(exercise.flashcardProgress).map(({ word, isKnown }) => [
+      word,
+      isKnown,
+    ]),
   )

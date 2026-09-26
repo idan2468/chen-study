@@ -1,5 +1,7 @@
 /** Content model for the Unseen reading-practice page. */
 
+import type { VersionedValue } from "@/types/versionedValue"
+
 export type QuestionOption = {
   /** English, prefixed `a) `, `b) ` ... in the built-in data. */
   text: string
@@ -43,7 +45,7 @@ export type UnseenExercise = {
   paragraphs: string[]
   questions: Question[]
   flashcards: Flashcard[]
-  answers: AnswerRecord[]
-  highlights: HighlightRecord[]
-  flashcardProgress: FlashcardProgressRecord[]
+  answers: VersionedValue<AnswerRecord>[]
+  highlights: VersionedValue<HighlightRecord>[]
+  flashcardProgress: VersionedValue<FlashcardProgressRecord>[]
 }

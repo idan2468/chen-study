@@ -5,6 +5,7 @@ import {
   flashcardStatusKey,
   StorageKeys,
 } from "@/utils/sync/legacy/legacyStorage"
+import { toVersionedValue } from "@/utils/sync/versionedValue"
 import { makeStore } from "./store"
 import { markCard, nextCard, selectModule } from "./slices/modulesSlice"
 import {
@@ -25,8 +26,8 @@ const otherId = "other_1"
 const preloaded = () => ({
   unseen: {
     exercises: [
-      defaultUnseenExercise,
-      { ...defaultUnseenExercise, exerciseId: otherId },
+      toVersionedValue(defaultUnseenExercise),
+      toVersionedValue({ ...defaultUnseenExercise, exerciseId: otherId }),
     ],
     currentId: defaultUnseenExercise.exerciseId,
     cardIndex: 0,

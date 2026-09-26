@@ -10,6 +10,7 @@ import {
   toLegacyUnseenAnswers,
   toLegacyUnseenLibrary,
 } from "@/utils/sync/legacy/legacyStorage"
+import { liveValues } from "@/utils/sync/versionedValue"
 import type { SettingsState } from "./slices/settingsSlice"
 import {
   setDyslexiaFont,
@@ -132,9 +133,11 @@ startListening({
 const legacyShapeChanged = (previous: unknown, next: unknown) =>
   JSON.stringify(previous) !== JSON.stringify(next)
 
+const liveExercises = (state: UnseenState) => liveValues(state.exercises)
+
 const persistLibrary = (previous: UnseenState, next: UnseenState) => {
-  const previousLibrary = toLegacyUnseenLibrary(previous.exercises)
-  const nextLibrary = toLegacyUnseenLibrary(next.exercises)
+  const previousLibrary = toLegacyUnseenLibrary(liveExercises(previous))
+  const nextLibrary = toLegacyUnseenLibrary(liveExercises(next))
   if (legacyShapeChanged(previousLibrary, nextLibrary)) {
     writeJson(StorageKeys.exerciseLibrary, nextLibrary)
   }
@@ -147,18 +150,15 @@ const persistLibrary = (previous: UnseenState, next: UnseenState) => {
   if (
     currentExercise &&
     (previous.currentId !== next.currentId ||
-      legacyShapeChanged(
-        toLegacyUnseenLibrary(previous.exercises)[next.currentId],
-        currentExercise,
-      ))
+      legacyShapeChanged(previousLibrary[next.currentId], currentExercise))
   ) {
     writeJson(StorageKeys.currentExerciseData, currentExercise)
   }
 }
 
 const persistMarkedWords = (previous: UnseenState, next: UnseenState) => {
-  const previousWords = toLegacyMarkedWords(previous.exercises)
-  const nextWords = toLegacyMarkedWords(next.exercises)
+  const previousWords = toLegacyMarkedWords(liveExercises(previous))
+  const nextWords = toLegacyMarkedWords(liveExercises(next))
   if (legacyShapeChanged(previousWords, nextWords)) {
     writeJson(StorageKeys.markedWords, nextWords)
   }
@@ -168,20 +168,22 @@ const persistReadingProgress = (previous: UnseenState, next: UnseenState) => {
   if (previous.cardIndex !== next.cardIndex) {
     writeJson(StorageKeys.flashcardIndex, next.cardIndex)
   }
-  const previousAnswers = toLegacyUnseenAnswers(previous.exercises)
-  const nextAnswers = toLegacyUnseenAnswers(next.exercises)
+  const previousAnswers = toLegacyUnseenAnswers(liveExercises(previous))
+  const nextAnswers = toLegacyUnseenAnswers(liveExercises(next))
   if (legacyShapeChanged(previousAnswers, nextAnswers)) {
     writeJson(StorageKeys.quizAnswers, nextAnswers)
   }
 }
 
 const persistFlashcardProgress = (previous: UnseenState, next: UnseenState) => {
+  const previousExercises = liveExercises(previous)
+  const nextExercises = liveExercises(next)
   const previousById = Object.fromEntries(
-    previous.exercises.map(exercise => [exercise.exerciseId, exercise]),
+    previousExercises.map(exercise => [exercise.exerciseId, exercise]),
   )
-  const nextIds = new Set(next.exercises.map(exercise => exercise.exerciseId))
+  const nextIds = new Set(nextExercises.map(exercise => exercise.exerciseId))
 
-  for (const exercise of next.exercises) {
+  for (const exercise of nextExercises) {
     const previousExercise = previousById[exercise.exerciseId]
     const previousProgress = previousExercise
       ? toLegacyFlashcardProgress(previousExercise)
@@ -191,7 +193,7 @@ const persistFlashcardProgress = (previous: UnseenState, next: UnseenState) => {
       writeJson(flashcardStatusKey(exercise.exerciseId), nextProgress)
     }
   }
-  for (const exercise of previous.exercises) {
+  for (const exercise of previousExercises) {
     if (!nextIds.has(exercise.exerciseId)) {
       removeKey(flashcardStatusKey(exercise.exerciseId))
     }

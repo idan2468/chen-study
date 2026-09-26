@@ -13,6 +13,11 @@ import {
   toLegacyUnseenAnswers,
   toLegacyUnseenLibrary,
 } from "./legacyStorage"
+import {
+  INITIAL_UPDATED_AT,
+  markDeleted,
+  toVersionedValue,
+} from "@/utils/sync/versionedValue"
 
 beforeEach(() => {
   localStorage.clear()
@@ -114,21 +119,36 @@ describe("legacy Unseen state", () => {
 
     const state = readLegacyUnseenState(defaultUnseenExercise)
 
-    expect(state.exercises[0]?.answers).toStrictEqual([
-      { questionId: "q1", selected: 1, correct: true },
+    const exercise = state.exercises[0]
+    expect(exercise?.updatedAt).toBe(INITIAL_UPDATED_AT)
+    expect(exercise?.value.answers).toStrictEqual([
+      toVersionedValue({ questionId: "q1", selected: 1, correct: true }),
     ])
-    expect(state.exercises[0]?.highlights).toStrictEqual([{ word: "Maya" }])
-    expect(state.exercises[0]?.flashcardProgress).toStrictEqual([
-      { word: "Delicate", isKnown: false },
+    expect(exercise?.value.highlights).toStrictEqual([
+      toVersionedValue({ word: "Maya" }),
+    ])
+    expect(exercise?.value.flashcardProgress).toStrictEqual([
+      toVersionedValue({ word: "Delicate", isKnown: false }),
     ])
   })
 
-  test("projects nested progress to the unchanged legacy shapes", () => {
+  test("projects live nested progress to the unchanged legacy shapes", () => {
     const exercise = {
       ...defaultUnseenExercise,
-      answers: [{ questionId: "q1", selected: 1, correct: true }],
-      highlights: [{ word: "Maya" }],
-      flashcardProgress: [{ word: "Delicate", isKnown: true }],
+      answers: [
+        toVersionedValue({ questionId: "q1", selected: 1, correct: true }),
+      ],
+      highlights: [
+        toVersionedValue({ word: "Maya" }),
+        markDeleted(toVersionedValue({ word: "Tom" }), INITIAL_UPDATED_AT),
+      ],
+      flashcardProgress: [
+        toVersionedValue({ word: "Delicate", isKnown: true }),
+        markDeleted(
+          toVersionedValue({ word: "Tiny", isKnown: false }),
+          INITIAL_UPDATED_AT,
+        ),
+      ],
     }
     const exerciseId = exercise.exerciseId
 

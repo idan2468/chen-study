@@ -1,13 +1,28 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
+import type { TimestampedAction } from "@/store/updatedAt"
+import { withUpdatedAt } from "@/store/updatedAt"
 import { keepFinalOccurrencesBy } from "@/utils/collections"
 import { readLegacyUnseenState } from "@/utils/sync/legacy/legacyStorage"
+import {
+  deleteValue,
+  findLiveValue,
+  liveValues,
+  markDeleted,
+  putValue,
+} from "@/utils/sync/versionedValue"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
-import type { UnseenExercise } from "@/types/unseenExercise"
+import type {
+  AnswerRecord,
+  FlashcardProgressRecord,
+  UnseenExercise,
+} from "@/types/unseenExercise"
+import type { VersionedValue } from "@/types/versionedValue"
+import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
 
 export type UnseenState = {
-  exercises: UnseenExercise[]
+  exercises: VersionedValue<UnseenExercise>[]
   currentId: string
   cardIndex: number
 }
@@ -15,24 +30,32 @@ export type UnseenState = {
 const loadFromStorage = (): UnseenState =>
   readLegacyUnseenState(defaultUnseenExercise)
 
-const findExercise = (state: UnseenState, exerciseId: string) =>
-  state.exercises.find(exercise => exercise.exerciseId === exerciseId)
+const hasExerciseId = (exerciseId: string) => (exercise: UnseenExercise) =>
+  exercise.exerciseId === exerciseId
 
-const replaceExercise = (state: UnseenState, exercise: UnseenExercise) => {
+const hasWord = (word: string) => (record: { word: string }) =>
+  record.word === word
+
+const findExercise = (state: UnseenState, exerciseId: string) =>
+  findLiveValue(state.exercises, hasExerciseId(exerciseId))
+
+const replaceExercise = (
+  state: UnseenState,
+  exercise: UnseenExercise,
+  updatedAt: IsraelIsoTimestamp,
+) => {
   const replacement = {
     ...exercise,
     answers: [],
     highlights: [],
     flashcardProgress: [],
   }
-  const index = state.exercises.findIndex(
-    existing => existing.exerciseId === exercise.exerciseId,
+  putValue(
+    state.exercises,
+    hasExerciseId(exercise.exerciseId),
+    replacement,
+    updatedAt,
   )
-  if (index >= 0) {
-    state.exercises[index] = replacement
-  } else {
-    state.exercises.push(replacement)
-  }
 }
 
 export const unseenSlice = createAppSlice({
@@ -47,17 +70,19 @@ export const unseenSlice = createAppSlice({
       state.cardIndex = 0
     }),
 
-    addExercise: create.reducer(
-      (state, action: PayloadAction<UnseenExercise>) => {
+    addExercise: create.preparedReducer(
+      withUpdatedAt<UnseenExercise>,
+      (state, action: TimestampedAction<UnseenExercise>) => {
         const exercise = action.payload
-        replaceExercise(state, exercise)
+        replaceExercise(state, exercise, action.meta.updatedAt)
         state.currentId = exercise.exerciseId
         state.cardIndex = 0
       },
     ),
 
-    addExercises: create.reducer(
-      (state, action: PayloadAction<UnseenExercise[]>) => {
+    addExercises: create.preparedReducer(
+      withUpdatedAt<UnseenExercise[]>,
+      (state, action: TimestampedAction<UnseenExercise[]>) => {
         if (action.payload.length === 0) {
           return
         }
@@ -66,7 +91,7 @@ export const unseenSlice = createAppSlice({
           exercise => exercise.exerciseId,
         )
         for (const exercise of finalExercises) {
-          replaceExercise(state, exercise)
+          replaceExercise(state, exercise, action.meta.updatedAt)
         }
         const [first] = finalExercises
         if (first) {
@@ -76,94 +101,106 @@ export const unseenSlice = createAppSlice({
       },
     ),
 
-    deleteExercise: create.reducer((state, action: PayloadAction<string>) => {
-      if (state.exercises.length <= 1) {
-        return
-      }
-      const index = state.exercises.findIndex(
-        exercise => exercise.exerciseId === action.payload,
-      )
-      if (index < 0) {
-        return
-      }
+    deleteExercise: create.preparedReducer(
+      withUpdatedAt<string>,
+      (state, action: TimestampedAction<string>) => {
+        const exercises = liveValues(state.exercises)
+        if (exercises.length <= 1) {
+          return
+        }
+        const index = exercises.findIndex(hasExerciseId(action.payload))
+        if (index < 0) {
+          return
+        }
 
-      state.exercises.splice(index, 1)
-      if (state.currentId === action.payload) {
-        const nextIndex = Math.min(index, state.exercises.length - 1)
-        state.currentId = state.exercises[nextIndex]?.exerciseId ?? ""
-        state.cardIndex = 0
-      }
-    }),
+        deleteValue(
+          state.exercises,
+          hasExerciseId(action.payload),
+          action.meta.updatedAt,
+        )
+        if (state.currentId === action.payload) {
+          const remaining = liveValues(state.exercises)
+          const nextIndex = Math.min(index, remaining.length - 1)
+          state.currentId = remaining[nextIndex]?.exerciseId ?? ""
+          state.cardIndex = 0
+        }
+      },
+    ),
 
-    answerQuestion: create.reducer(
-      (
-        state,
-        action: PayloadAction<{
-          questionId: string
-          selected: number
-          correct: boolean
-        }>,
-      ) => {
+    answerQuestion: create.preparedReducer(
+      withUpdatedAt<AnswerRecord>,
+      (state, action: TimestampedAction<AnswerRecord>) => {
         const exercise = findExercise(state, state.currentId)
         if (!exercise) {
           return
         }
         const { questionId, selected, correct } = action.payload
-        const existing = exercise.answers.find(
+        putValue(
+          exercise.answers,
           answer => answer.questionId === questionId,
+          { questionId, selected, correct },
+          action.meta.updatedAt,
         )
-        if (existing) {
-          existing.selected = selected
-          existing.correct = correct
-        } else {
-          exercise.answers.push({ questionId, selected, correct })
-        }
       },
     ),
 
     /** Re-clicking a flashcard's current status clears it back to unmarked. */
-    markFlashcard: create.reducer(
-      (state, action: PayloadAction<{ word: string; isKnown: boolean }>) => {
+    markFlashcard: create.preparedReducer(
+      withUpdatedAt<FlashcardProgressRecord>,
+      (state, action: TimestampedAction<FlashcardProgressRecord>) => {
         const exercise = findExercise(state, state.currentId)
         if (!exercise) {
           return
         }
         const { word, isKnown } = action.payload
-        const index = exercise.flashcardProgress.findIndex(
-          record => record.word === word,
+        const { updatedAt } = action.meta
+        const existing = findLiveValue(
+          exercise.flashcardProgress,
+          hasWord(word),
         )
-        const existing = exercise.flashcardProgress[index]
         if (existing?.isKnown === isKnown) {
-          exercise.flashcardProgress.splice(index, 1)
-        } else if (existing) {
-          existing.isKnown = isKnown
+          deleteValue(exercise.flashcardProgress, hasWord(word), updatedAt)
         } else {
-          exercise.flashcardProgress.push({ word, isKnown })
+          putValue(
+            exercise.flashcardProgress,
+            hasWord(word),
+            { word, isKnown },
+            updatedAt,
+          )
         }
       },
     ),
 
-    resetFlashcardProgress: create.reducer(state => {
-      const exercise = findExercise(state, state.currentId)
-      if (exercise) {
-        exercise.flashcardProgress = []
-      }
-    }),
+    resetFlashcardProgress: create.preparedReducer(
+      () => withUpdatedAt(undefined),
+      (state, action: TimestampedAction) => {
+        const exercise = findExercise(state, state.currentId)
+        if (exercise) {
+          exercise.flashcardProgress = exercise.flashcardProgress.map(record =>
+            record.deleted
+              ? record
+              : markDeleted(record, action.meta.updatedAt),
+          )
+        }
+      },
+    ),
 
-    toggleMarkedWord: create.reducer((state, action: PayloadAction<string>) => {
-      const exercise = findExercise(state, state.currentId)
-      if (!exercise) {
-        return
-      }
-      const index = exercise.highlights.findIndex(
-        highlight => highlight.word === action.payload,
-      )
-      if (index >= 0) {
-        exercise.highlights.splice(index, 1)
-      } else {
-        exercise.highlights.push({ word: action.payload })
-      }
-    }),
+    toggleMarkedWord: create.preparedReducer(
+      withUpdatedAt<string>,
+      (state, action: TimestampedAction<string>) => {
+        const exercise = findExercise(state, state.currentId)
+        if (!exercise) {
+          return
+        }
+        const word = action.payload
+        const { updatedAt } = action.meta
+        if (findLiveValue(exercise.highlights, hasWord(word))) {
+          deleteValue(exercise.highlights, hasWord(word), updatedAt)
+        } else {
+          putValue(exercise.highlights, hasWord(word), { word }, updatedAt)
+        }
+      },
+    ),
 
     setFlashcardIndex: create.reducer(
       (state, action: PayloadAction<number>) => {
@@ -182,7 +219,7 @@ export const unseenSlice = createAppSlice({
     reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
-    selectExercises: state => state.exercises,
+    selectExerciseEntries: state => state.exercises,
     selectCurrentExerciseId: state => state.currentId,
     selectFlashcardIndex: state => state.cardIndex,
   },
@@ -204,7 +241,7 @@ export const {
 } = unseenSlice.actions
 
 export const {
-  selectExercises,
+  selectExerciseEntries,
   selectCurrentExerciseId,
   selectFlashcardIndex,
 } = unseenSlice.selectors
@@ -212,6 +249,18 @@ export const {
 /* ---------------------------------------------------------------- *
  * Derived state.
  * ---------------------------------------------------------------- */
+
+const toKnownByWord = (
+  progress: readonly VersionedValue<FlashcardProgressRecord>[],
+): Record<string, boolean> =>
+  Object.fromEntries(
+    liveValues(progress).map(({ word, isKnown }) => [word, isKnown]),
+  )
+
+export const selectExercises = createSelector(
+  [selectExerciseEntries],
+  liveValues,
+)
 
 export const selectCurrentExercise = createSelector(
   [selectExercises, selectCurrentExerciseId],
@@ -231,7 +280,7 @@ export const selectAllMarkedWords = createSelector(
     Object.fromEntries(
       exercises.map(exercise => [
         exercise.exerciseId,
-        exercise.highlights.map(({ word }) => word),
+        liveValues(exercise.highlights).map(({ word }) => word),
       ]),
     ),
 )
@@ -240,19 +289,19 @@ export const selectAllProgress = createSelector([selectExercises], exercises =>
   Object.fromEntries(
     exercises.map(exercise => [
       exercise.exerciseId,
-      Object.fromEntries(
-        exercise.flashcardProgress.map(({ word, isKnown }) => [word, isKnown]),
-      ),
+      toKnownByWord(exercise.flashcardProgress),
     ]),
   ),
 )
 
 export const selectAnswers = createSelector([selectCurrentExercise], exercise =>
   Object.fromEntries(
-    (exercise?.answers ?? []).map(({ questionId, selected, correct }) => [
-      questionId,
-      { selected, correct },
-    ]),
+    liveValues(exercise?.answers ?? []).map(
+      ({ questionId, selected, correct }) => [
+        questionId,
+        { selected, correct },
+      ],
+    ),
   ),
 )
 
@@ -269,26 +318,22 @@ export const selectExerciseOptions = createSelector(
         exercise.questions.length > 0 &&
         exercise.questions.every(
           question =>
-            exercise.answers.find(answer => answer.questionId === question.id)
-              ?.correct === true,
+            findLiveValue(
+              exercise.answers,
+              answer => answer.questionId === question.id,
+            )?.correct === true,
         ),
     })),
 )
 
 export const selectCurrentProgress = createSelector(
   [selectCurrentExercise],
-  exercise =>
-    Object.fromEntries(
-      (exercise?.flashcardProgress ?? []).map(({ word, isKnown }) => [
-        word,
-        isKnown,
-      ]),
-    ),
+  exercise => toKnownByWord(exercise?.flashcardProgress ?? []),
 )
 
 export const selectCurrentMarkedWords = createSelector(
   [selectCurrentExercise],
-  exercise => exercise?.highlights.map(({ word }) => word) ?? [],
+  exercise => liveValues(exercise?.highlights ?? []).map(({ word }) => word),
 )
 
 export const selectCurrentFlashcard = createSelector(
@@ -300,12 +345,11 @@ export const selectFlashcardStats = createSelector(
   [selectCurrentExercise],
   exercise => {
     const flashcards = exercise?.flashcards ?? []
+    const knownByWord = toKnownByWord(exercise?.flashcardProgress ?? [])
     let known = 0
     let unknown = 0
     for (const card of flashcards) {
-      const status = exercise?.flashcardProgress.find(
-        record => record.word === card.en,
-      )?.isKnown
+      const status = knownByWord[card.en]
       if (status === true) {
         known += 1
       } else if (status === false) {

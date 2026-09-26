@@ -2,6 +2,8 @@ import { screen, waitFor } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
 import type { UnseenExercise } from "@/types/unseenExercise"
 import type { RootState } from "@/store/store"
+import { selectCurrentProgress } from "@/store/slices/unseenSlice"
+import { toVersionedValue } from "@/utils/sync/versionedValue"
 import { FlashcardsTab } from "./FlashcardsTab"
 
 const exercise: UnseenExercise = {
@@ -27,7 +29,7 @@ const baseState = (
   overrides: Partial<RootState["unseen"]> = {},
 ): Partial<RootState> => ({
   unseen: {
-    exercises: [exercise],
+    exercises: [toVersionedValue(exercise)],
     currentId: exercise.exerciseId,
     cardIndex: 0,
     ...overrides,
@@ -65,9 +67,9 @@ describe("FlashcardsTab", () => {
 
       await user.click(screen.getByRole("button", { name: label }))
 
-      expect(
-        store.getState().unseen.exercises[0]?.flashcardProgress,
-      ).toStrictEqual([{ word: "Delicate", isKnown }])
+      expect(selectCurrentProgress(store.getState())).toStrictEqual({
+        Delicate: isKnown,
+      })
     },
   )
 
@@ -156,7 +158,7 @@ describe("FlashcardsTab", () => {
   test("shows the empty state when the exercise has no flashcards", () => {
     renderWithProviders(<FlashcardsTab />, {
       preloadedState: baseState({
-        exercises: [{ ...exercise, flashcards: [] }],
+        exercises: [toVersionedValue({ ...exercise, flashcards: [] })],
       }),
     })
 
