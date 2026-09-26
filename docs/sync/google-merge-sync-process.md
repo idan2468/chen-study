@@ -17,6 +17,11 @@
 
 ### Step 6 — versioned arrays
 
+- Step 5 follow-up first: add the deletion helper and Zod primitives as `[Step 5]` commits; parsing/comparison use luxon directly.
+- Wrap the four Step 4 progress arrays plus the Unseen exercise and Module lists; deleted entities become tombstones replacing `deletedBuiltInIds`.
+- Versioned preferences: `dyslexiaFont`, `shuffleUnseenAnswers`, and both speech rates. System voice stays device-local; dark mode and locale stay with Mantine/i18n.
+- Navigation fields: Unseen current exercise and flashcard index, Module current ID and card index.
+- Values loaded from legacy storage get an epoch `updatedAt` so any real edit wins.
 - Not yet started.
 
 ## Step definitions
