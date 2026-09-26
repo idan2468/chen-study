@@ -1,4 +1,3 @@
-import type { PayloadAction } from "@reduxjs/toolkit"
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import type { TimestampedAction } from "@/store/updatedAt"
@@ -11,6 +10,7 @@ import {
   liveValues,
   markDeleted,
   putValue,
+  setVersionedValue,
 } from "@/utils/sync/versionedValue"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type {
@@ -23,8 +23,8 @@ import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
 
 export type UnseenState = {
   exercises: VersionedValue<UnseenExercise>[]
-  currentId: string
-  cardIndex: number
+  currentId: VersionedValue<string>
+  cardIndex: VersionedValue<number>
 }
 
 const loadFromStorage = (): UnseenState =>
@@ -58,25 +58,35 @@ const replaceExercise = (
   )
 }
 
+const openExercise = (
+  state: UnseenState,
+  exerciseId: string,
+  updatedAt: IsraelIsoTimestamp,
+) => {
+  setVersionedValue(state.currentId, exerciseId, updatedAt)
+  setVersionedValue(state.cardIndex, 0, updatedAt)
+}
+
 export const unseenSlice = createAppSlice({
   name: "unseen",
   initialState: loadFromStorage,
   reducers: create => ({
-    switchExercise: create.reducer((state, action: PayloadAction<string>) => {
-      if (!findExercise(state, action.payload)) {
-        return
-      }
-      state.currentId = action.payload
-      state.cardIndex = 0
-    }),
+    switchExercise: create.preparedReducer(
+      withUpdatedAt<string>,
+      (state, action: TimestampedAction<string>) => {
+        if (!findExercise(state, action.payload)) {
+          return
+        }
+        openExercise(state, action.payload, action.meta.updatedAt)
+      },
+    ),
 
     addExercise: create.preparedReducer(
       withUpdatedAt<UnseenExercise>,
       (state, action: TimestampedAction<UnseenExercise>) => {
         const exercise = action.payload
         replaceExercise(state, exercise, action.meta.updatedAt)
-        state.currentId = exercise.exerciseId
-        state.cardIndex = 0
+        openExercise(state, exercise.exerciseId, action.meta.updatedAt)
       },
     ),
 
@@ -95,9 +105,8 @@ export const unseenSlice = createAppSlice({
         }
         const [first] = finalExercises
         if (first) {
-          state.currentId = first.exerciseId
+          openExercise(state, first.exerciseId, action.meta.updatedAt)
         }
-        state.cardIndex = 0
       },
     ),
 
@@ -118,11 +127,14 @@ export const unseenSlice = createAppSlice({
           hasExerciseId(action.payload),
           action.meta.updatedAt,
         )
-        if (state.currentId === action.payload) {
+        if (state.currentId.value === action.payload) {
           const remaining = liveValues(state.exercises)
           const nextIndex = Math.min(index, remaining.length - 1)
-          state.currentId = remaining[nextIndex]?.exerciseId ?? ""
-          state.cardIndex = 0
+          openExercise(
+            state,
+            remaining[nextIndex]?.exerciseId ?? "",
+            action.meta.updatedAt,
+          )
         }
       },
     ),
@@ -130,7 +142,7 @@ export const unseenSlice = createAppSlice({
     answerQuestion: create.preparedReducer(
       withUpdatedAt<AnswerRecord>,
       (state, action: TimestampedAction<AnswerRecord>) => {
-        const exercise = findExercise(state, state.currentId)
+        const exercise = findExercise(state, state.currentId.value)
         if (!exercise) {
           return
         }
@@ -148,7 +160,7 @@ export const unseenSlice = createAppSlice({
     markFlashcard: create.preparedReducer(
       withUpdatedAt<FlashcardProgressRecord>,
       (state, action: TimestampedAction<FlashcardProgressRecord>) => {
-        const exercise = findExercise(state, state.currentId)
+        const exercise = findExercise(state, state.currentId.value)
         if (!exercise) {
           return
         }
@@ -174,7 +186,7 @@ export const unseenSlice = createAppSlice({
     resetFlashcardProgress: create.preparedReducer(
       () => withUpdatedAt(undefined),
       (state, action: TimestampedAction) => {
-        const exercise = findExercise(state, state.currentId)
+        const exercise = findExercise(state, state.currentId.value)
         if (exercise) {
           exercise.flashcardProgress = exercise.flashcardProgress.map(record =>
             record.deleted
@@ -188,7 +200,7 @@ export const unseenSlice = createAppSlice({
     toggleMarkedWord: create.preparedReducer(
       withUpdatedAt<string>,
       (state, action: TimestampedAction<string>) => {
-        const exercise = findExercise(state, state.currentId)
+        const exercise = findExercise(state, state.currentId.value)
         if (!exercise) {
           return
         }
@@ -202,26 +214,45 @@ export const unseenSlice = createAppSlice({
       },
     ),
 
-    setFlashcardIndex: create.reducer(
-      (state, action: PayloadAction<number>) => {
-        state.cardIndex = Math.max(0, action.payload)
+    setFlashcardIndex: create.preparedReducer(
+      withUpdatedAt<number>,
+      (state, action: TimestampedAction<number>) => {
+        setVersionedValue(
+          state.cardIndex,
+          Math.max(0, action.payload),
+          action.meta.updatedAt,
+        )
       },
     ),
 
-    nextFlashcard: create.reducer((state, action: PayloadAction<number>) => {
-      state.cardIndex = Math.min(state.cardIndex + 1, action.payload - 1)
-    }),
+    nextFlashcard: create.preparedReducer(
+      withUpdatedAt<number>,
+      (state, action: TimestampedAction<number>) => {
+        setVersionedValue(
+          state.cardIndex,
+          Math.min(state.cardIndex.value + 1, action.payload - 1),
+          action.meta.updatedAt,
+        )
+      },
+    ),
 
-    prevFlashcard: create.reducer(state => {
-      state.cardIndex = Math.max(state.cardIndex - 1, 0)
-    }),
+    prevFlashcard: create.preparedReducer(
+      () => withUpdatedAt(undefined),
+      (state, action: TimestampedAction) => {
+        setVersionedValue(
+          state.cardIndex,
+          Math.max(state.cardIndex.value - 1, 0),
+          action.meta.updatedAt,
+        )
+      },
+    ),
 
     reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
     selectExerciseEntries: state => state.exercises,
-    selectCurrentExerciseId: state => state.currentId,
-    selectFlashcardIndex: state => state.cardIndex,
+    selectCurrentExerciseId: state => state.currentId.value,
+    selectFlashcardIndex: state => state.cardIndex.value,
   },
 })
 

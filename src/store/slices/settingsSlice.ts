@@ -1,7 +1,14 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { readFlag, readString } from "@/store/storage"
+import type { TimestampedAction } from "@/store/updatedAt"
+import { withUpdatedAt } from "@/store/updatedAt"
+import type { VersionedValue } from "@/types/versionedValue"
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import {
+  setVersionedValue,
+  toVersionedValue,
+} from "@/utils/sync/versionedValue"
 
 /**
  * Cross-page user preferences.
@@ -19,12 +26,13 @@ export enum SpeechLang {
 }
 
 export type SettingsState = {
-  dyslexiaFont: boolean
-  shuffleUnseenAnswers: boolean
+  dyslexiaFont: VersionedValue<boolean>
+  shuffleUnseenAnswers: VersionedValue<boolean>
   /** `speechSynthesis` rate per language, 0.1 - 1.0. Independent per
    *  language so e.g. a Hebrew explanation can read slower than English. */
-  speechRateByLang: Record<SpeechLang, number>
-  /** Preferred system voice per language, or `null` for "best available". */
+  speechRateByLang: Record<SpeechLang, VersionedValue<number>>
+  /** Preferred system voice per language, or `null` for "best available".
+   *  Device-local, so not versioned. */
   systemVoiceUriByLang: Record<SpeechLang, string | null>
 }
 
@@ -44,14 +52,16 @@ const loadFromStorage = (): SettingsState => {
   const storedSystemVoiceHe = readString(StorageKeys.systemVoiceHe, "")
 
   return {
-    dyslexiaFont: readFlag(StorageKeys.dyslexiaFont, false),
-    shuffleUnseenAnswers: readFlag(StorageKeys.shuffleUnseenAnswers, false),
+    dyslexiaFont: toVersionedValue(readFlag(StorageKeys.dyslexiaFont, false)),
+    shuffleUnseenAnswers: toVersionedValue(
+      readFlag(StorageKeys.shuffleUnseenAnswers, false),
+    ),
     speechRateByLang: {
-      [SpeechLang.English]: clampRate(
-        Number.parseFloat(readString(StorageKeys.speechRate, "")),
+      [SpeechLang.English]: toVersionedValue(
+        clampRate(Number.parseFloat(readString(StorageKeys.speechRate, ""))),
       ),
-      [SpeechLang.Hebrew]: clampRate(
-        Number.parseFloat(readString(StorageKeys.speechRateHe, "")),
+      [SpeechLang.Hebrew]: toVersionedValue(
+        clampRate(Number.parseFloat(readString(StorageKeys.speechRateHe, ""))),
       ),
     },
     systemVoiceUriByLang: {
@@ -66,19 +76,46 @@ export const settingsSlice = createAppSlice({
   name: "settings",
   initialState: loadFromStorage,
   reducers: create => ({
-    toggleDyslexiaFont: create.reducer(state => {
-      state.dyslexiaFont = !state.dyslexiaFont
-    }),
-    setDyslexiaFont: create.reducer((state, action: PayloadAction<boolean>) => {
-      state.dyslexiaFont = action.payload
-    }),
-    toggleShuffleUnseenAnswers: create.reducer(state => {
-      state.shuffleUnseenAnswers = !state.shuffleUnseenAnswers
-    }),
-    setSpeechRate: create.reducer(
-      (state, action: PayloadAction<{ lang: SpeechLang; rate: number }>) => {
-        state.speechRateByLang[action.payload.lang] = clampRate(
-          action.payload.rate,
+    toggleDyslexiaFont: create.preparedReducer(
+      () => withUpdatedAt(undefined),
+      (state, action: TimestampedAction) => {
+        setVersionedValue(
+          state.dyslexiaFont,
+          !state.dyslexiaFont.value,
+          action.meta.updatedAt,
+        )
+      },
+    ),
+    setDyslexiaFont: create.preparedReducer(
+      withUpdatedAt<boolean>,
+      (state, action: TimestampedAction<boolean>) => {
+        setVersionedValue(
+          state.dyslexiaFont,
+          action.payload,
+          action.meta.updatedAt,
+        )
+      },
+    ),
+    toggleShuffleUnseenAnswers: create.preparedReducer(
+      () => withUpdatedAt(undefined),
+      (state, action: TimestampedAction) => {
+        setVersionedValue(
+          state.shuffleUnseenAnswers,
+          !state.shuffleUnseenAnswers.value,
+          action.meta.updatedAt,
+        )
+      },
+    ),
+    setSpeechRate: create.preparedReducer(
+      withUpdatedAt<{ lang: SpeechLang; rate: number }>,
+      (
+        state,
+        action: TimestampedAction<{ lang: SpeechLang; rate: number }>,
+      ) => {
+        setVersionedValue(
+          state.speechRateByLang[action.payload.lang],
+          clampRate(action.payload.rate),
+          action.meta.updatedAt,
         )
       },
     ),
@@ -93,10 +130,10 @@ export const settingsSlice = createAppSlice({
     reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
   selectors: {
-    selectDyslexiaFont: settings => settings.dyslexiaFont,
-    selectShuffleUnseenAnswers: settings => settings.shuffleUnseenAnswers,
+    selectDyslexiaFont: settings => settings.dyslexiaFont.value,
+    selectShuffleUnseenAnswers: settings => settings.shuffleUnseenAnswers.value,
     selectSpeechRate: (settings, lang: SpeechLang) =>
-      settings.speechRateByLang[lang],
+      settings.speechRateByLang[lang].value,
     selectSystemVoiceUri: (settings, lang: SpeechLang) =>
       settings.systemVoiceUriByLang[lang],
   },

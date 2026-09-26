@@ -67,20 +67,24 @@ const thirdBuiltInId = at(builtInModuleIds, 2)
 const firstCard = at(at(defaultModuleExercises, 0).cards, 0)
 
 type TestStateOverrides = Partial<
-  Omit<ModulesState, "modules" | "progress">
+  Pick<ModulesState, "filterMissed" | "reviewingMissed">
 > & {
   modules?: ModuleExercise[]
   progress?: ModuleProgressRecord[]
+  currentModuleId?: string
+  cardIndex?: number
 }
 
 const baseState = ({
   modules = defaultModuleExercises,
   progress = [],
+  currentModuleId = firstBuiltInId,
+  cardIndex = 0,
   ...overrides
 }: TestStateOverrides = {}): ModulesState => ({
   modules: modules.map(module => toVersionedValue(module)),
-  currentModuleId: firstBuiltInId,
-  cardIndex: 0,
+  currentModuleId: toVersionedValue(currentModuleId),
+  cardIndex: toVersionedValue(cardIndex),
   filterMissed: false,
   reviewingMissed: false,
   progress: progress.map(record => toVersionedValue(record)),
@@ -255,7 +259,7 @@ describe("filterMissed", () => {
     expect(selectActiveCards(state).map(card => card.en)).toStrictEqual([
       "QUIZ",
     ])
-    expect(state.modules.cardIndex).toBe(0)
+    expect(selectModuleCardIndex(state)).toBe(0)
   })
 })
 
@@ -300,7 +304,7 @@ describe("toggleMissedReview", () => {
 
     const state = store.getState()
     expect(selectActiveCards(state).map(card => card.en)).toStrictEqual(["ZAP"])
-    expect(state.modules.cardIndex).toBe(0)
+    expect(selectModuleCardIndex(state)).toBe(0)
     expect(state.modules.reviewingMissed).toBe(true)
   })
 
@@ -348,7 +352,7 @@ describe("hydration", () => {
     const store = makeStore()
     const state = store.getState()
     const current = selectModules(state).find(
-      module => module.id === state.modules.currentModuleId,
+      module => module.id === selectCurrentModuleId(state),
     )
 
     expect(current).toBeDefined()
@@ -519,7 +523,7 @@ describe("deleteModule", () => {
 
     // The second built-in was at index 1, so the module that shifted into
     // index 1 (the third built-in) is selected.
-    expect(store.getState().modules.currentModuleId).toBe(thirdBuiltInId)
+    expect(selectCurrentModuleId(store.getState())).toBe(thirdBuiltInId)
   })
 
   test("re-adding a deleted built-in revives it at the end", () => {

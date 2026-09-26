@@ -2,7 +2,10 @@ import { screen, waitFor } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
 import type { UnseenExercise } from "@/types/unseenExercise"
 import type { RootState } from "@/store/store"
-import { selectCurrentProgress } from "@/store/slices/unseenSlice"
+import {
+  selectCurrentProgress,
+  selectFlashcardIndex,
+} from "@/store/slices/unseenSlice"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import { FlashcardsTab } from "./FlashcardsTab"
 
@@ -25,14 +28,17 @@ const exercise: UnseenExercise = {
   flashcardProgress: [],
 }
 
-const baseState = (
-  overrides: Partial<RootState["unseen"]> = {},
-): Partial<RootState> => ({
+const baseState = ({
+  exercises = [exercise],
+  cardIndex = 0,
+}: {
+  exercises?: UnseenExercise[]
+  cardIndex?: number
+} = {}): Partial<RootState> => ({
   unseen: {
-    exercises: [toVersionedValue(exercise)],
-    currentId: exercise.exerciseId,
-    cardIndex: 0,
-    ...overrides,
+    exercises: exercises.map(value => toVersionedValue(value)),
+    currentId: toVersionedValue(exercise.exerciseId),
+    cardIndex: toVersionedValue(cardIndex),
   },
 })
 
@@ -121,7 +127,7 @@ describe("FlashcardsTab", () => {
     // no-op: `nextFlashcard` already clamps at the last index, same as
     // clicking "Next" directly would.
     await new Promise(resolve => setTimeout(resolve, 300))
-    expect(store.getState().unseen.cardIndex).toBe(
+    expect(selectFlashcardIndex(store.getState())).toBe(
       exercise.flashcards.length - 1,
     )
   })
@@ -158,7 +164,7 @@ describe("FlashcardsTab", () => {
   test("shows the empty state when the exercise has no flashcards", () => {
     renderWithProviders(<FlashcardsTab />, {
       preloadedState: baseState({
-        exercises: [toVersionedValue({ ...exercise, flashcards: [] })],
+        exercises: [{ ...exercise, flashcards: [] }],
       }),
     })
 

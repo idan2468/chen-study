@@ -1,4 +1,3 @@
-import type { PayloadAction } from "@reduxjs/toolkit"
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { readJson, readString } from "@/store/storage"
@@ -16,6 +15,7 @@ import {
   findLiveValue,
   liveValues,
   putValue,
+  setVersionedValue,
   toVersionedValue,
 } from "@/utils/sync/versionedValue"
 import {
@@ -33,8 +33,8 @@ import type { VersionedValue } from "@/types/versionedValue"
 export type ModulesState = {
   /** Includes tombstones, so a deleted built-in is not re-seeded. */
   modules: VersionedValue<ModuleExercise>[]
-  currentModuleId: string
-  cardIndex: number
+  currentModuleId: VersionedValue<string>
+  cardIndex: VersionedValue<number>
   /** "Show only the words I got wrong". */
   filterMissed: boolean
   /** Reviewing missed words pooled from every module, instead of one module. */
@@ -126,8 +126,8 @@ const loadFromStorage = (): ModulesState => {
 
   return {
     modules: moduleEntries,
-    currentModuleId,
-    cardIndex,
+    currentModuleId: toVersionedValue(currentModuleId),
+    cardIndex: toVersionedValue(cardIndex),
     filterMissed: false,
     reviewingMissed: false,
     progress: readLegacyModuleProgress(),
@@ -153,45 +153,83 @@ const addOrReplaceModule = (
     setModuleProgressStatus(state.progress, word, CardStatus.None, updatedAt)
   }
 
-  if (state.currentModuleId === module.id) {
-    state.cardIndex = 0
+  if (state.currentModuleId.value === module.id) {
+    setVersionedValue(state.cardIndex, 0, updatedAt)
     state.filterMissed = false
   }
+}
+
+const openModule = (
+  state: ModulesState,
+  moduleId: string,
+  updatedAt: IsraelIsoTimestamp,
+) => {
+  setVersionedValue(state.currentModuleId, moduleId, updatedAt)
+  setVersionedValue(state.cardIndex, 0, updatedAt)
+  // The original cleared the filter when switching modules.
+  state.filterMissed = false
 }
 
 export const modulesSlice = createAppSlice({
   name: "modules",
   initialState: loadFromStorage,
   reducers: create => ({
-    selectModule: create.reducer((state, action: PayloadAction<string>) => {
-      state.currentModuleId = action.payload
-      state.cardIndex = 0
-      // The original cleared the filter when switching modules.
-      state.filterMissed = false
-    }),
+    selectModule: create.preparedReducer(
+      withUpdatedAt<string>,
+      (state, action: TimestampedAction<string>) => {
+        openModule(state, action.payload, action.meta.updatedAt)
+      },
+    ),
 
-    setCardIndex: create.reducer((state, action: PayloadAction<number>) => {
-      state.cardIndex = Math.max(0, action.payload)
-    }),
+    setCardIndex: create.preparedReducer(
+      withUpdatedAt<number>,
+      (state, action: TimestampedAction<number>) => {
+        setVersionedValue(
+          state.cardIndex,
+          Math.max(0, action.payload),
+          action.meta.updatedAt,
+        )
+      },
+    ),
 
-    nextCard: create.reducer((state, action: PayloadAction<number>) => {
-      // Payload is the active list length; no wraparound, as in the original.
-      state.cardIndex = Math.min(state.cardIndex + 1, action.payload - 1)
-    }),
+    nextCard: create.preparedReducer(
+      withUpdatedAt<number>,
+      (state, action: TimestampedAction<number>) => {
+        // Payload is the active list length; no wraparound, as in the original.
+        setVersionedValue(
+          state.cardIndex,
+          Math.min(state.cardIndex.value + 1, action.payload - 1),
+          action.meta.updatedAt,
+        )
+      },
+    ),
 
-    prevCard: create.reducer(state => {
-      state.cardIndex = Math.max(state.cardIndex - 1, 0)
-    }),
+    prevCard: create.preparedReducer(
+      () => withUpdatedAt(undefined),
+      (state, action: TimestampedAction) => {
+        setVersionedValue(
+          state.cardIndex,
+          Math.max(state.cardIndex.value - 1, 0),
+          action.meta.updatedAt,
+        )
+      },
+    ),
 
-    toggleFilterMissed: create.reducer(state => {
-      state.filterMissed = !state.filterMissed
-      state.cardIndex = 0
-    }),
+    toggleFilterMissed: create.preparedReducer(
+      () => withUpdatedAt(undefined),
+      (state, action: TimestampedAction) => {
+        state.filterMissed = !state.filterMissed
+        setVersionedValue(state.cardIndex, 0, action.meta.updatedAt)
+      },
+    ),
 
-    toggleMissedReview: create.reducer(state => {
-      state.reviewingMissed = !state.reviewingMissed
-      state.cardIndex = 0
-    }),
+    toggleMissedReview: create.preparedReducer(
+      () => withUpdatedAt(undefined),
+      (state, action: TimestampedAction) => {
+        state.reviewingMissed = !state.reviewingMissed
+        setVersionedValue(state.cardIndex, 0, action.meta.updatedAt)
+      },
+    ),
 
     /** Unlike the Unseen flashcards, re-marking the same status is not a toggle. */
     markCard: create.preparedReducer(
@@ -216,7 +254,7 @@ export const modulesSlice = createAppSlice({
       (state, action: TimestampedAction) => {
         const current = findLiveValue(
           state.modules,
-          hasModuleId(state.currentModuleId),
+          hasModuleId(state.currentModuleId.value),
         )
         for (const card of current?.cards ?? []) {
           setModuleProgressStatus(
@@ -226,7 +264,7 @@ export const modulesSlice = createAppSlice({
             action.meta.updatedAt,
           )
         }
-        state.cardIndex = 0
+        setVersionedValue(state.cardIndex, 0, action.meta.updatedAt)
         state.filterMissed = false
       },
     ),
@@ -266,13 +304,14 @@ export const modulesSlice = createAppSlice({
           action.meta.updatedAt,
         )
 
-        if (state.currentModuleId === action.payload) {
+        if (state.currentModuleId.value === action.payload) {
           // Keep the neighbouring tab selected rather than jumping to the start.
           const remaining = liveValues(state.modules)
-          state.currentModuleId =
-            remaining[Math.min(index, remaining.length - 1)]?.id ?? ""
-          state.cardIndex = 0
-          state.filterMissed = false
+          openModule(
+            state,
+            remaining[Math.min(index, remaining.length - 1)]?.id ?? "",
+            action.meta.updatedAt,
+          )
         }
       },
     ),
@@ -281,8 +320,8 @@ export const modulesSlice = createAppSlice({
   }),
   selectors: {
     selectModuleEntries: state => state.modules,
-    selectCurrentModuleId: state => state.currentModuleId,
-    selectModuleCardIndex: state => state.cardIndex,
+    selectCurrentModuleId: state => state.currentModuleId.value,
+    selectModuleCardIndex: state => state.cardIndex.value,
     selectFilterMissed: state => state.filterMissed,
     selectReviewingMissed: state => state.reviewingMissed,
     selectModuleProgressEntries: state => state.progress,

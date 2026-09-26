@@ -13,6 +13,7 @@ import {
   answerQuestion,
   deleteExercise,
   markFlashcard,
+  nextFlashcard,
   reloadFromStorage,
   resetFlashcardProgress,
   selectAllMarkedWords,
@@ -53,7 +54,9 @@ const thirdExercise: UnseenExercise = {
   flashcardProgress: [],
 }
 
-type TestStateOverrides = Partial<Omit<UnseenState, "exercises">> & {
+type TestStateOverrides = {
+  currentId?: string
+  cardIndex?: number
   library?: Record<string, UnseenExercise>
   answers?: Record<
     string,
@@ -85,8 +88,10 @@ const baseState = (overrides: TestStateOverrides = {}): UnseenState => {
         ).map(([word, isKnown]) => toVersionedValue({ word, isKnown })),
       }),
     ),
-    currentId: overrides.currentId ?? defaultUnseenExercise.exerciseId,
-    cardIndex: overrides.cardIndex ?? 0,
+    currentId: toVersionedValue(
+      overrides.currentId ?? defaultUnseenExercise.exerciseId,
+    ),
+    cardIndex: toVersionedValue(overrides.cardIndex ?? 0),
   }
 }
 
@@ -199,8 +204,8 @@ describe("library", () => {
     store.dispatch(addExercise(otherExercise))
 
     const state = store.getState()
-    expect(state.unseen.currentId).toBe("other_1")
-    expect(state.unseen.cardIndex).toBe(0)
+    expect(selectCurrentExerciseId(state)).toBe("other_1")
+    expect(selectFlashcardIndex(state)).toBe(0)
     expect(selectAnswers(state)).toStrictEqual({})
     expect(selectLibrary(state)[defaultId]?.answers).toStrictEqual([
       toVersionedValue({ questionId: "q1", ...previousAnswers.q1 }),
@@ -251,8 +256,8 @@ describe("library", () => {
       "other_1",
       "third_1",
     ])
-    expect(state.unseen.currentId).toBe("other_1")
-    expect(state.unseen.cardIndex).toBe(0)
+    expect(selectCurrentExerciseId(state)).toBe("other_1")
+    expect(selectFlashcardIndex(state)).toBe(0)
     expect(selectAnswers(state)).toStrictEqual({})
     expect(
       selectLibrary(state)[defaultUnseenExercise.exerciseId]?.answers,
@@ -276,7 +281,7 @@ describe("library", () => {
       otherExercise.exerciseId,
       thirdExercise.exerciseId,
     ])
-    expect(state.unseen.currentId).toBe(otherExercise.exerciseId)
+    expect(selectCurrentExerciseId(state)).toBe(otherExercise.exerciseId)
   })
 
   test("refuses to delete the last exercise", () => {
@@ -302,7 +307,9 @@ describe("library", () => {
     store.dispatch(deleteExercise("other_1"))
 
     const state = store.getState()
-    expect(state.unseen.currentId).toBe(defaultUnseenExercise.exerciseId)
+    expect(selectCurrentExerciseId(state)).toBe(
+      defaultUnseenExercise.exerciseId,
+    )
     expect(selectAllProgress(state).other_1).toBeUndefined()
     expect(selectAllMarkedWords(state).other_1).toBeUndefined()
     expect(selectLibrary(state).other_1).toBeUndefined()
@@ -644,6 +651,21 @@ describe("version metadata", () => {
         deleted: true,
       },
     ])
+  })
+
+  test("stamps navigation only when it actually moves", () => {
+    const store = makeStore({ unseen: baseState({ cardIndex: 1 }) })
+
+    store.dispatch(nextFlashcard(2))
+    expect(store.getState().unseen.cardIndex).toStrictEqual(toVersionedValue(1))
+
+    store.dispatch(switchExercise(defaultUnseenExercise.exerciseId))
+    expect(store.getState().unseen.cardIndex).toStrictEqual(
+      toVersionedValue(0, NOW),
+    )
+    expect(store.getState().unseen.currentId).toStrictEqual(
+      toVersionedValue(defaultUnseenExercise.exerciseId),
+    )
   })
 
   test("keeps a deleted exercise as a tombstone and appends it when re-added", () => {

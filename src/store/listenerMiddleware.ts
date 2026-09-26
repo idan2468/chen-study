@@ -67,8 +67,8 @@ const startListening = listenerMiddleware.startListening.withTypes<
 /* ----------------------------- settings ----------------------------- */
 
 const persistDyslexiaFont = (previous: SettingsState, next: SettingsState) => {
-  if (previous.dyslexiaFont !== next.dyslexiaFont) {
-    writeFlag(StorageKeys.dyslexiaFont, next.dyslexiaFont)
+  if (previous.dyslexiaFont.value !== next.dyslexiaFont.value) {
+    writeFlag(StorageKeys.dyslexiaFont, next.dyslexiaFont.value)
   }
 }
 
@@ -76,8 +76,8 @@ const persistShuffleUnseenAnswers = (
   previous: SettingsState,
   next: SettingsState,
 ) => {
-  if (previous.shuffleUnseenAnswers !== next.shuffleUnseenAnswers) {
-    writeFlag(StorageKeys.shuffleUnseenAnswers, next.shuffleUnseenAnswers)
+  if (previous.shuffleUnseenAnswers.value !== next.shuffleUnseenAnswers.value) {
+    writeFlag(StorageKeys.shuffleUnseenAnswers, next.shuffleUnseenAnswers.value)
   }
 }
 
@@ -92,8 +92,9 @@ const persistSpeechPreferences = (
     [SpeechLang.Hebrew]: StorageKeys.speechRateHe,
   }
   for (const lang of Object.values(SpeechLang)) {
-    if (previous.speechRateByLang[lang] !== next.speechRateByLang[lang]) {
-      writeString(rateKeys[lang], String(next.speechRateByLang[lang]))
+    const nextRate = next.speechRateByLang[lang].value
+    if (previous.speechRateByLang[lang].value !== nextRate) {
+      writeString(rateKeys[lang], String(nextRate))
     }
   }
 
@@ -143,15 +144,17 @@ const persistLibrary = (previous: UnseenState, next: UnseenState) => {
     writeJson(StorageKeys.exerciseLibrary, nextLibrary)
   }
 
-  if (previous.currentId !== next.currentId) {
-    writeString(StorageKeys.currentExerciseId, next.currentId)
+  const currentId = next.currentId.value
+  const currentIdChanged = previous.currentId.value !== currentId
+  if (currentIdChanged) {
+    writeString(StorageKeys.currentExerciseId, currentId)
   }
 
-  const currentExercise = nextLibrary[next.currentId]
+  const currentExercise = nextLibrary[currentId]
   if (
     currentExercise &&
-    (previous.currentId !== next.currentId ||
-      legacyShapeChanged(previousLibrary[next.currentId], currentExercise))
+    (currentIdChanged ||
+      legacyShapeChanged(previousLibrary[currentId], currentExercise))
   ) {
     writeJson(StorageKeys.currentExerciseData, currentExercise)
   }
@@ -166,8 +169,8 @@ const persistMarkedWords = (previous: UnseenState, next: UnseenState) => {
 }
 
 const persistReadingProgress = (previous: UnseenState, next: UnseenState) => {
-  if (previous.cardIndex !== next.cardIndex) {
-    writeJson(StorageKeys.flashcardIndex, next.cardIndex)
+  if (previous.cardIndex.value !== next.cardIndex.value) {
+    writeJson(StorageKeys.flashcardIndex, next.cardIndex.value)
   }
   const previousAnswers = toLegacyUnseenAnswers(liveExercises(previous))
   const nextAnswers = toLegacyUnseenAnswers(liveExercises(next))
@@ -268,12 +271,12 @@ startListening({
       )
     }
 
-    if (previous.cardIndex !== next.cardIndex) {
-      writeJson(StorageKeys.moduleCardIndex, next.cardIndex)
+    if (previous.cardIndex.value !== next.cardIndex.value) {
+      writeJson(StorageKeys.moduleCardIndex, next.cardIndex.value)
     }
 
-    if (previous.currentModuleId !== next.currentModuleId) {
-      writeString(StorageKeys.currentModuleId, next.currentModuleId)
+    if (previous.currentModuleId.value !== next.currentModuleId.value) {
+      writeString(StorageKeys.currentModuleId, next.currentModuleId.value)
     }
   },
 })

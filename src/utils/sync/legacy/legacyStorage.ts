@@ -185,8 +185,8 @@ export const readLegacyUnseenState = (
   defaultExercise: UnseenExercise,
 ): {
   exercises: VersionedValue<UnseenExercise>[]
-  currentId: string
-  cardIndex: number
+  currentId: VersionedValue<string>
+  cardIndex: VersionedValue<number>
 } => {
   const library = readJson<Record<string, LegacyUnseenExercise>>(
     StorageKeys.exerciseLibrary,
@@ -232,8 +232,10 @@ export const readLegacyUnseenState = (
         ).map(([word, isKnown]) => toVersionedValue({ word, isKnown })),
       }),
     ),
-    currentId,
-    cardIndex: readJson<number>(StorageKeys.flashcardIndex, 0),
+    currentId: toVersionedValue(currentId),
+    cardIndex: toVersionedValue(
+      readJson<number>(StorageKeys.flashcardIndex, 0),
+    ),
   }
 }
 

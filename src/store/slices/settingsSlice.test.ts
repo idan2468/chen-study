@@ -1,5 +1,6 @@
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { makeStore } from "@/store/store"
+import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
   DEFAULT_SPEECH_RATE,
   reloadFromStorage,
@@ -9,6 +10,7 @@ import {
   selectSystemVoiceUri,
   setSpeechRate,
   SpeechLang,
+  toggleDyslexiaFont,
 } from "./settingsSlice"
 
 describe("hydration", () => {
@@ -141,5 +143,42 @@ describe("reloadFromStorage", () => {
       "Google US English",
     )
     expect(selectSystemVoiceUri(state, SpeechLang.Hebrew)).toBe("Carmit")
+  })
+})
+
+describe("version metadata", () => {
+  const NOW = "2026-09-26T11:00:00.000+03:00"
+
+  beforeEach(() => {
+    localStorage.clear()
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(NOW) })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  test("loads stored preferences at the initial timestamp", () => {
+    const { settings } = makeStore().getState()
+
+    expect(settings.dyslexiaFont).toStrictEqual(toVersionedValue(false))
+    expect(settings.speechRateByLang[SpeechLang.Hebrew]).toStrictEqual(
+      toVersionedValue(DEFAULT_SPEECH_RATE),
+    )
+  })
+
+  test("stamps a changed preference and leaves an unchanged one alone", () => {
+    const store = makeStore()
+
+    store.dispatch(toggleDyslexiaFont())
+    store.dispatch(
+      setSpeechRate({ lang: SpeechLang.English, rate: DEFAULT_SPEECH_RATE }),
+    )
+
+    const { settings } = store.getState()
+    expect(settings.dyslexiaFont).toStrictEqual(toVersionedValue(true, NOW))
+    expect(settings.speechRateByLang[SpeechLang.English]).toStrictEqual(
+      toVersionedValue(DEFAULT_SPEECH_RATE),
+    )
   })
 })
