@@ -8,6 +8,7 @@
 - Canonical models use semantic-ID arrays and later `VersionedValue<T>` wrappers.
 - All entity and question IDs are mandatory.
 - Store timestamps as offset-bearing `Asia/Jerusalem` ISO strings and compare parsed instants.
+- Validate timestamps only as offset-bearing ISO datetimes; convert to Israel time when working with them logically.
 - Entity deletion is permanent for that ID.
 - Unseen replacement selects the complete parent subtree.
 - Module reset stores `CardStatus.None`; stale later progress may win.

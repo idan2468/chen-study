@@ -1,24 +1,19 @@
 import { z } from "zod"
-import {
-  israelIsoTimestampSchema,
-  versionedValueSchema,
-} from "./versionedValue"
+import { isoTimestampSchema, versionedValueSchema } from "./versionedValue"
 
 test.each(["2026-09-26T11:02:56.123+03:00", "2026-01-16T00:30:00.000+02:00"])(
   "accepts %s",
   timestamp => {
-    expect(israelIsoTimestampSchema.safeParse(timestamp).success).toBe(true)
+    expect(isoTimestampSchema.safeParse(timestamp).success).toBe(true)
   },
 )
 
 test.each([
-  ["a UTC timestamp", "2026-09-26T08:02:56.123Z"],
   ["no offset", "2026-09-26T11:02:56.123"],
-  ["the winter offset in summer", "2026-09-26T10:02:56.123+02:00"],
-  ["a non-Israel offset", "2026-09-26T04:02:56.123-05:00"],
+  ["an impossible date", "2026-13-40T11:02:56.123+03:00"],
   ["not a timestamp", "yesterday"],
 ])("rejects %s", (_, timestamp) => {
-  expect(israelIsoTimestampSchema.safeParse(timestamp).success).toBe(false)
+  expect(isoTimestampSchema.safeParse(timestamp).success).toBe(false)
 })
 
 test("validates the wrapped value and version metadata", () => {

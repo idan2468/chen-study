@@ -2,7 +2,7 @@ import { DateTime } from "luxon"
 
 export type IsraelIsoTimestamp = string
 
-export const ISRAEL_TIME_ZONE = "Asia/Jerusalem"
+const ISRAEL_TIME_ZONE = "Asia/Jerusalem"
 
 export const toIsraelIsoTimestamp = (date: Date): IsraelIsoTimestamp => {
   const timestamp = DateTime.fromJSDate(date, {
