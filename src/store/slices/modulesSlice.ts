@@ -1,10 +1,12 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
-import { deleteEntry } from "@/store/records"
 import { readJson, readString } from "@/store/storage"
 import { keepFinalOccurrencesBy } from "@/utils/collections"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import {
+  readLegacyModuleProgress,
+  StorageKeys,
+} from "@/utils/sync/legacy/legacyStorage"
 import {
   builtInModuleIds,
   defaultModuleExercises,
@@ -12,6 +14,7 @@ import {
 import type {
   ModuleCard,
   ModuleExercise,
+  ModuleProgressRecord,
   ModulesProgress,
 } from "@/types/moduleExercise"
 import { CardStatus } from "@/types/moduleExercise"
@@ -89,6 +92,19 @@ const resolveCurrentId = (
   return preferred?.id ?? modules[0]?.id ?? ""
 }
 
+const setModuleProgressStatus = (
+  progress: ModuleProgressRecord[],
+  word: string,
+  status: CardStatus,
+) => {
+  const existing = progress.find(record => record.word === word)
+  if (existing) {
+    existing.status = status
+  } else {
+    progress.push({ word, status })
+  }
+}
+
 const loadFromStorage = (): ModulesState => {
   const stored = readJson<ModuleExercise[]>(StorageKeys.allModules, [])
   const deletedBuiltInIds = readJson<string[]>(
@@ -117,7 +133,7 @@ const loadFromStorage = (): ModulesState => {
     cardIndex,
     filterMissed: false,
     reviewingMissed: false,
-    progress: readJson<ModulesProgress>(StorageKeys.modulesProgress, {}),
+    progress: readLegacyModuleProgress(),
     deletedBuiltInIds,
   }
 }
@@ -137,7 +153,7 @@ const addOrReplaceModule = (state: ModulesState, module: ModuleExercise) => {
     ...module.cards.map(card => card.en),
   ])
   for (const word of affectedWords) {
-    deleteEntry(state.progress, word)
+    setModuleProgressStatus(state.progress, word, CardStatus.None)
   }
   state.modules[existingIndex] = module
 
@@ -185,7 +201,11 @@ export const modulesSlice = createAppSlice({
     markCard: create.reducer(
       (state, action: PayloadAction<{ word: string; isKnown: boolean }>) => {
         const { word, isKnown } = action.payload
-        state.progress[word] = isKnown ? CardStatus.Known : CardStatus.Unknown
+        setModuleProgressStatus(
+          state.progress,
+          word,
+          isKnown ? CardStatus.Known : CardStatus.Unknown,
+        )
       },
     ),
 
@@ -195,7 +215,7 @@ export const modulesSlice = createAppSlice({
         module => module.id === state.currentModuleId,
       )
       for (const card of current?.cards ?? []) {
-        deleteEntry(state.progress, card.en)
+        setModuleProgressStatus(state.progress, card.en, CardStatus.None)
       }
       state.cardIndex = 0
       state.filterMissed = false
@@ -262,7 +282,7 @@ export const modulesSlice = createAppSlice({
     selectModuleCardIndex: state => state.cardIndex,
     selectFilterMissed: state => state.filterMissed,
     selectReviewingMissed: state => state.reviewingMissed,
-    selectModulesProgress: state => state.progress,
+    selectModuleProgressRecords: state => state.progress,
     selectDeletedBuiltInIds: state => state.deletedBuiltInIds,
   },
 })
@@ -287,7 +307,7 @@ export const {
   selectModuleCardIndex,
   selectFilterMissed,
   selectReviewingMissed,
-  selectModulesProgress,
+  selectModuleProgressRecords,
   selectDeletedBuiltInIds,
 } = modulesSlice.selectors
 
@@ -295,6 +315,12 @@ export const {
  * Derived state. These were mutable globals in the original app
  * (`currentDataset`, `activeCardsList`) kept in sync by hand.
  * ---------------------------------------------------------------- */
+
+export const selectModulesProgress = createSelector(
+  [selectModuleProgressRecords],
+  progress =>
+    Object.fromEntries(progress.map(({ word, status }) => [word, status])),
+)
 
 export const selectCurrentModule = createSelector(
   [selectModules, selectCurrentModuleId],

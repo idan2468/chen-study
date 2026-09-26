@@ -1,4 +1,11 @@
-import { applySyncPayload, buildSyncPayload, StorageKeys } from "./legacyStorage"
+import { CardStatus } from "@/types/moduleExercise"
+import {
+  applySyncPayload,
+  buildSyncPayload,
+  readLegacyModuleProgress,
+  StorageKeys,
+  toLegacyModuleProgress,
+} from "./legacyStorage"
 
 beforeEach(() => {
   localStorage.clear()
@@ -49,5 +56,28 @@ describe("applySyncPayload", () => {
       "victims-real-token",
     )
     expect(localStorage.getItem(StorageKeys.darkMode)).toBe("1")
+  })
+})
+
+describe("legacy Module progress", () => {
+  test("reads the keyed legacy shape as semantic word records", () => {
+    localStorage.setItem(
+      StorageKeys.modulesProgress,
+      JSON.stringify({ HAT: CardStatus.Known, FOX: CardStatus.Unknown }),
+    )
+
+    expect(readLegacyModuleProgress()).toStrictEqual([
+      { word: "HAT", status: CardStatus.Known },
+      { word: "FOX", status: CardStatus.Unknown },
+    ])
+  })
+
+  test("omits unassessed words when writing the legacy shape", () => {
+    expect(
+      toLegacyModuleProgress([
+        { word: "HAT", status: CardStatus.None },
+        { word: "FOX", status: CardStatus.Unknown },
+      ]),
+    ).toStrictEqual({ FOX: CardStatus.Unknown })
   })
 })

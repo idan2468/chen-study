@@ -1,5 +1,7 @@
 import { z } from "zod"
-import { listKeys, readString } from "@/store/storage"
+import { listKeys, readJson, readString } from "@/store/storage"
+import { CardStatus } from "@/types/moduleExercise"
+import type { ModuleProgressRecord } from "@/types/moduleExercise"
 
 export const syncPayloadSchema = z.record(z.string(), z.string())
 export type SyncPayload = z.infer<typeof syncPayloadSchema>
@@ -72,3 +74,17 @@ export const applySyncPayload = (payload: SyncPayload) => {
   }
   return applied
 }
+
+export const readLegacyModuleProgress = (): ModuleProgressRecord[] =>
+  Object.entries(
+    readJson<Record<string, CardStatus>>(StorageKeys.modulesProgress, {}),
+  ).map(([word, status]) => ({ word, status }))
+
+export const toLegacyModuleProgress = (
+  progress: readonly ModuleProgressRecord[],
+): Record<string, CardStatus> =>
+  Object.fromEntries(
+    progress
+      .filter(record => record.status !== CardStatus.None)
+      .map(record => [record.word, record.status]),
+  )

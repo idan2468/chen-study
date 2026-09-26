@@ -4,6 +4,7 @@ import { removeKey, writeFlag, writeJson, writeString } from "./storage"
 import {
   flashcardStatusKey,
   StorageKeys,
+  toLegacyModuleProgress,
 } from "@/utils/sync/legacy/legacyStorage"
 import type { SettingsState } from "./slices/settingsSlice"
 import {
@@ -234,7 +235,10 @@ startListening({
     }
 
     if (previous.progress !== next.progress) {
-      writeJson(StorageKeys.modulesProgress, next.progress)
+      writeJson(
+        StorageKeys.modulesProgress,
+        toLegacyModuleProgress(next.progress),
+      )
     }
 
     if (previous.deletedBuiltInIds !== next.deletedBuiltInIds) {

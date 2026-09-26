@@ -63,7 +63,7 @@ const baseState = (overrides: Partial<ModulesState> = {}): ModulesState => ({
   cardIndex: 0,
   filterMissed: false,
   reviewingMissed: false,
-  progress: {},
+  progress: [],
   deletedBuiltInIds: [],
   ...overrides,
 })
@@ -149,16 +149,18 @@ describe("progress", () => {
       modules: baseState({
         currentModuleId: "custom_1",
         modules: [...defaultModuleExercises, customModule],
-        progress: {
-          ZAP: CardStatus.Known,
-          [secondCard.en]: CardStatus.Unknown,
-        },
+        progress: [
+          { word: "ZAP", status: CardStatus.Known },
+          { word: secondCard.en, status: CardStatus.Unknown },
+        ],
       }),
     })
     store.dispatch(resetCurrentModuleProgress())
 
     // ZAP is in custom_1; the second built-in's word must survive.
     expect(selectModulesProgress(store.getState())).toStrictEqual({
+      ZAP: CardStatus.None,
+      QUIZ: CardStatus.None,
       [secondCard.en]: CardStatus.Unknown,
     })
   })
@@ -168,7 +170,7 @@ describe("progress", () => {
       modules: baseState({
         currentModuleId: "custom_1",
         modules: [customModule],
-        progress: { ZAP: CardStatus.Known },
+        progress: [{ word: "ZAP", status: CardStatus.Known }],
       }),
     })
 
@@ -203,7 +205,7 @@ describe("filterMissed", () => {
       modules: baseState({
         currentModuleId: "custom_1",
         modules: [customModule],
-        progress: { ZAP: CardStatus.Known },
+        progress: [{ word: "ZAP", status: CardStatus.Known }],
         cardIndex: 1,
       }),
     })
@@ -222,7 +224,10 @@ describe("selectMissedWordsAcrossModules", () => {
     const store = makeStore({
       modules: baseState({
         modules: [customModule, otherCustomModule],
-        progress: { QUIZ: CardStatus.Unknown, ZAP: CardStatus.Known },
+        progress: [
+          { word: "QUIZ", status: CardStatus.Unknown },
+          { word: "ZAP", status: CardStatus.Known },
+        ],
       }),
     })
 
@@ -234,7 +239,7 @@ describe("selectMissedWordsAcrossModules", () => {
 
   test("excludes pending (never marked) words, not just known ones", () => {
     const store = makeStore({
-      modules: baseState({ modules: [customModule], progress: {} }),
+      modules: baseState({ modules: [customModule], progress: [] }),
     })
 
     expect(selectMissedWordsAcrossModules(store.getState())).toStrictEqual([])
@@ -247,7 +252,7 @@ describe("toggleMissedReview", () => {
       modules: baseState({
         currentModuleId: "custom_1",
         modules: [customModule],
-        progress: { ZAP: CardStatus.Unknown },
+        progress: [{ word: "ZAP", status: CardStatus.Unknown }],
         cardIndex: 1,
       }),
     })
@@ -402,12 +407,12 @@ describe("addModules", () => {
       modules: baseState({
         modules: [customModule, otherCustomModule],
         currentModuleId: customModule.id,
-        progress: {
-          ZAP: CardStatus.Known,
-          QUIZ: CardStatus.Unknown,
-          NEW: CardStatus.Known,
-          KEEP: CardStatus.Known,
-        },
+        progress: [
+          { word: "ZAP", status: CardStatus.Known },
+          { word: "QUIZ", status: CardStatus.Unknown },
+          { word: "NEW", status: CardStatus.Known },
+          { word: "KEEP", status: CardStatus.Known },
+        ],
       }),
     })
 
@@ -418,6 +423,9 @@ describe("addModules", () => {
       otherCustomModule,
     ])
     expect(selectModulesProgress(store.getState())).toStrictEqual({
+      ZAP: CardStatus.None,
+      QUIZ: CardStatus.None,
+      NEW: CardStatus.None,
       KEEP: CardStatus.Known,
     })
   })

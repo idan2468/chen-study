@@ -40,7 +40,7 @@ const preloaded = () => ({
     cardIndex: 0,
     filterMissed: false,
     reviewingMissed: false,
-    progress: {},
+    progress: [],
     deletedBuiltInIds: [],
   },
 })
