@@ -2,6 +2,7 @@ import { z } from "zod"
 import { listKeys, readJson, readString } from "@/store/storage"
 import { CardStatus } from "@/types/moduleExercise"
 import type { ModuleProgressRecord } from "@/types/moduleExercise"
+import type { AnswerRecord, UnseenExercise } from "@/types/unseenExercise"
 
 export const syncPayloadSchema = z.record(z.string(), z.string())
 export type SyncPayload = z.infer<typeof syncPayloadSchema>
@@ -87,4 +88,157 @@ export const toLegacyModuleProgress = (
     progress
       .filter(record => record.status !== CardStatus.None)
       .map(record => [record.word, record.status]),
+  )
+
+type LegacyUnseenExercise = Omit<
+  UnseenExercise,
+  "answers" | "highlights" | "flashcardProgress"
+>
+type LegacyAnswerRecord = Omit<AnswerRecord, "questionId">
+type LegacyExerciseAnswers = Record<string, LegacyAnswerRecord>
+type LegacyAnswersByExercise = Record<string, LegacyExerciseAnswers>
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
+const isLegacyAnswerRecord = (value: unknown): value is LegacyAnswerRecord =>
+  isRecord(value) &&
+  Number.isInteger(value.selected) &&
+  typeof value.correct === "boolean"
+
+const isLegacyExerciseAnswers = (
+  value: unknown,
+): value is LegacyExerciseAnswers =>
+  isRecord(value) && Object.values(value).every(isLegacyAnswerRecord)
+
+const readLegacyAnswersByExercise = (
+  currentId: string,
+): LegacyAnswersByExercise => {
+  const stored = readJson<unknown>(StorageKeys.quizAnswers, {})
+  if (!isRecord(stored)) {
+    return {}
+  }
+
+  const entries = Object.entries(stored)
+  if (entries.length === 0) {
+    return {}
+  }
+  if (entries.every(([, answer]) => isLegacyAnswerRecord(answer))) {
+    return { [currentId]: stored as LegacyExerciseAnswers }
+  }
+
+  return Object.fromEntries(
+    entries.filter((entry): entry is [string, LegacyExerciseAnswers] =>
+      isLegacyExerciseAnswers(entry[1]),
+    ),
+  )
+}
+
+const toLegacyUnseenExercise = (
+  exercise: UnseenExercise,
+): LegacyUnseenExercise => ({
+  title: exercise.title,
+  subtitle: exercise.subtitle,
+  exerciseId: exercise.exerciseId,
+  paragraphs: exercise.paragraphs,
+  questions: exercise.questions,
+  flashcards: exercise.flashcards,
+})
+
+export const readLegacyUnseenState = (
+  defaultExercise: UnseenExercise,
+): {
+  exercises: UnseenExercise[]
+  currentId: string
+  cardIndex: number
+} => {
+  const library = readJson<Record<string, LegacyUnseenExercise>>(
+    StorageKeys.exerciseLibrary,
+    {},
+  )
+  library[defaultExercise.exerciseId] ??=
+    toLegacyUnseenExercise(defaultExercise)
+
+  const storedId = readString(StorageKeys.currentExerciseId, "")
+  const legacyCurrent = readJson<LegacyUnseenExercise | null>(
+    StorageKeys.currentExerciseData,
+    null,
+  )
+  const preferredId =
+    storedId && storedId in library
+      ? storedId
+      : (legacyCurrent?.exerciseId ?? defaultExercise.exerciseId)
+  const currentId =
+    preferredId in library ? preferredId : defaultExercise.exerciseId
+  const answersByExercise = readLegacyAnswersByExercise(currentId)
+  const markedWords = readJson<Record<string, string[]>>(
+    StorageKeys.markedWords,
+    {},
+  )
+
+  return {
+    exercises: Object.values(library).map(exercise => ({
+      ...exercise,
+      answers: Object.entries(answersByExercise[exercise.exerciseId] ?? {}).map(
+        ([questionId, answer]) => ({ questionId, ...answer }),
+      ),
+      highlights: (markedWords[exercise.exerciseId] ?? []).map(word => ({
+        word,
+      })),
+      flashcardProgress: Object.entries(
+        readJson<Record<string, boolean>>(
+          flashcardStatusKey(exercise.exerciseId),
+          {},
+        ),
+      ).map(([word, isKnown]) => ({ word, isKnown })),
+    })),
+    currentId,
+    cardIndex: readJson<number>(StorageKeys.flashcardIndex, 0),
+  }
+}
+
+export const toLegacyUnseenLibrary = (
+  exercises: readonly UnseenExercise[],
+): Record<string, LegacyUnseenExercise> =>
+  Object.fromEntries(
+    exercises.map(exercise => [
+      exercise.exerciseId,
+      toLegacyUnseenExercise(exercise),
+    ]),
+  )
+
+export const toLegacyUnseenAnswers = (
+  exercises: readonly UnseenExercise[],
+): LegacyAnswersByExercise =>
+  Object.fromEntries(
+    exercises
+      .filter(exercise => exercise.answers.length > 0)
+      .map(exercise => [
+        exercise.exerciseId,
+        Object.fromEntries(
+          exercise.answers.map(({ questionId, selected, correct }) => [
+            questionId,
+            { selected, correct },
+          ]),
+        ),
+      ]),
+  )
+
+export const toLegacyMarkedWords = (
+  exercises: readonly UnseenExercise[],
+): Record<string, string[]> =>
+  Object.fromEntries(
+    exercises
+      .filter(exercise => exercise.highlights.length > 0)
+      .map(exercise => [
+        exercise.exerciseId,
+        exercise.highlights.map(({ word }) => word),
+      ]),
+  )
+
+export const toLegacyFlashcardProgress = (
+  exercise: UnseenExercise,
+): Record<string, boolean> =>
+  Object.fromEntries(
+    exercise.flashcardProgress.map(({ word, isKnown }) => [word, isKnown]),
   )

@@ -18,18 +18,18 @@ const exercise: UnseenExercise = {
       trans: "challenging-meaning",
     },
   ],
+  answers: [],
+  highlights: [],
+  flashcardProgress: [],
 }
 
 const baseState = (
   overrides: Partial<RootState["unseen"]> = {},
 ): Partial<RootState> => ({
   unseen: {
-    library: { [exercise.exerciseId]: exercise },
+    exercises: [exercise],
     currentId: exercise.exerciseId,
     cardIndex: 0,
-    answers: {},
-    markedWords: {},
-    progress: {},
     ...overrides,
   },
 })
@@ -66,8 +66,8 @@ describe("FlashcardsTab", () => {
       await user.click(screen.getByRole("button", { name: label }))
 
       expect(
-        store.getState().unseen.progress[exercise.exerciseId],
-      ).toStrictEqual({ Delicate: isKnown })
+        store.getState().unseen.exercises[0]?.flashcardProgress,
+      ).toStrictEqual([{ word: "Delicate", isKnown }])
     },
   )
 
@@ -156,7 +156,7 @@ describe("FlashcardsTab", () => {
   test("shows the empty state when the exercise has no flashcards", () => {
     renderWithProviders(<FlashcardsTab />, {
       preloadedState: baseState({
-        library: { [exercise.exerciseId]: { ...exercise, flashcards: [] } },
+        exercises: [{ ...exercise, flashcards: [] }],
       }),
     })
 

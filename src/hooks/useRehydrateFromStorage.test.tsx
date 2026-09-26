@@ -25,6 +25,9 @@ const otherExercise: UnseenExercise = {
   paragraphs: ["A cat sat."],
   questions: [],
   flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
+  answers: [],
+  highlights: [],
+  flashcardProgress: [],
 }
 
 const Host = () => {

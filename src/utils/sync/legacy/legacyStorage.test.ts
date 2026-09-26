@@ -1,10 +1,17 @@
+import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import { CardStatus } from "@/types/moduleExercise"
 import {
   applySyncPayload,
   buildSyncPayload,
+  flashcardStatusKey,
   readLegacyModuleProgress,
+  readLegacyUnseenState,
   StorageKeys,
+  toLegacyFlashcardProgress,
+  toLegacyMarkedWords,
   toLegacyModuleProgress,
+  toLegacyUnseenAnswers,
+  toLegacyUnseenLibrary,
 } from "./legacyStorage"
 
 beforeEach(() => {
@@ -79,5 +86,63 @@ describe("legacy Module progress", () => {
         { word: "FOX", status: CardStatus.Unknown },
       ]),
     ).toStrictEqual({ FOX: CardStatus.Unknown })
+  })
+})
+
+describe("legacy Unseen state", () => {
+  test("combines split legacy progress into the matching exercise", () => {
+    const exerciseId = defaultUnseenExercise.exerciseId
+    localStorage.setItem(
+      StorageKeys.exerciseLibrary,
+      JSON.stringify(toLegacyUnseenLibrary([defaultUnseenExercise])),
+    )
+    localStorage.setItem(StorageKeys.currentExerciseId, exerciseId)
+    localStorage.setItem(
+      StorageKeys.quizAnswers,
+      JSON.stringify({
+        [exerciseId]: { q1: { selected: 1, correct: true } },
+      }),
+    )
+    localStorage.setItem(
+      StorageKeys.markedWords,
+      JSON.stringify({ [exerciseId]: ["Maya"] }),
+    )
+    localStorage.setItem(
+      flashcardStatusKey(exerciseId),
+      JSON.stringify({ Delicate: false }),
+    )
+
+    const state = readLegacyUnseenState(defaultUnseenExercise)
+
+    expect(state.exercises[0]?.answers).toStrictEqual([
+      { questionId: "q1", selected: 1, correct: true },
+    ])
+    expect(state.exercises[0]?.highlights).toStrictEqual([{ word: "Maya" }])
+    expect(state.exercises[0]?.flashcardProgress).toStrictEqual([
+      { word: "Delicate", isKnown: false },
+    ])
+  })
+
+  test("projects nested progress to the unchanged legacy shapes", () => {
+    const exercise = {
+      ...defaultUnseenExercise,
+      answers: [{ questionId: "q1", selected: 1, correct: true }],
+      highlights: [{ word: "Maya" }],
+      flashcardProgress: [{ word: "Delicate", isKnown: true }],
+    }
+    const exerciseId = exercise.exerciseId
+
+    expect(toLegacyUnseenAnswers([exercise])).toStrictEqual({
+      [exerciseId]: { q1: { selected: 1, correct: true } },
+    })
+    expect(toLegacyMarkedWords([exercise])).toStrictEqual({
+      [exerciseId]: ["Maya"],
+    })
+    expect(toLegacyFlashcardProgress(exercise)).toStrictEqual({
+      Delicate: true,
+    })
+    expect(toLegacyUnseenLibrary([exercise])[exerciseId]).not.toHaveProperty(
+      "answers",
+    )
   })
 })

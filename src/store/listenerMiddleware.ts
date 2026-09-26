@@ -4,7 +4,11 @@ import { removeKey, writeFlag, writeJson, writeString } from "./storage"
 import {
   flashcardStatusKey,
   StorageKeys,
+  toLegacyFlashcardProgress,
+  toLegacyMarkedWords,
   toLegacyModuleProgress,
+  toLegacyUnseenAnswers,
+  toLegacyUnseenLibrary,
 } from "@/utils/sync/legacy/legacyStorage"
 import type { SettingsState } from "./slices/settingsSlice"
 import {
@@ -125,60 +129,71 @@ startListening({
 
 /* ------------------------------ unseen ------------------------------ */
 
-/** The library itself, the active id, and the legacy single-exercise mirror. */
+const legacyShapeChanged = (previous: unknown, next: unknown) =>
+  JSON.stringify(previous) !== JSON.stringify(next)
+
 const persistLibrary = (previous: UnseenState, next: UnseenState) => {
-  if (previous.library !== next.library) {
-    writeJson(StorageKeys.exerciseLibrary, next.library)
+  const previousLibrary = toLegacyUnseenLibrary(previous.exercises)
+  const nextLibrary = toLegacyUnseenLibrary(next.exercises)
+  if (legacyShapeChanged(previousLibrary, nextLibrary)) {
+    writeJson(StorageKeys.exerciseLibrary, nextLibrary)
   }
 
   if (previous.currentId !== next.currentId) {
     writeString(StorageKeys.currentExerciseId, next.currentId)
   }
 
-  // Legacy mirror of the active exercise, still read by the original HTML.
-  const currentExercise = next.library[next.currentId]
+  const currentExercise = nextLibrary[next.currentId]
   if (
     currentExercise &&
     (previous.currentId !== next.currentId ||
-      previous.library[next.currentId] !== currentExercise)
+      legacyShapeChanged(
+        toLegacyUnseenLibrary(previous.exercises)[next.currentId],
+        currentExercise,
+      ))
   ) {
     writeJson(StorageKeys.currentExerciseData, currentExercise)
   }
 }
 
 const persistMarkedWords = (previous: UnseenState, next: UnseenState) => {
-  if (previous.markedWords !== next.markedWords) {
-    writeJson(StorageKeys.markedWords, next.markedWords)
+  const previousWords = toLegacyMarkedWords(previous.exercises)
+  const nextWords = toLegacyMarkedWords(next.exercises)
+  if (legacyShapeChanged(previousWords, nextWords)) {
+    writeJson(StorageKeys.markedWords, nextWords)
   }
 }
 
-/** The card index follows the active exercise; answers persist per exercise. */
 const persistReadingProgress = (previous: UnseenState, next: UnseenState) => {
   if (previous.cardIndex !== next.cardIndex) {
     writeJson(StorageKeys.flashcardIndex, next.cardIndex)
   }
-  if (previous.answers !== next.answers) {
-    writeJson(StorageKeys.quizAnswers, next.answers)
+  const previousAnswers = toLegacyUnseenAnswers(previous.exercises)
+  const nextAnswers = toLegacyUnseenAnswers(next.exercises)
+  if (legacyShapeChanged(previousAnswers, nextAnswers)) {
+    writeJson(StorageKeys.quizAnswers, nextAnswers)
   }
 }
 
-/**
- * One key per exercise: writes only the ones whose contents changed, and
- * drops keys for exercises that were deleted.
- */
 const persistFlashcardProgress = (previous: UnseenState, next: UnseenState) => {
-  if (previous.progress === next.progress) {
-    return
-  }
+  const previousById = Object.fromEntries(
+    previous.exercises.map(exercise => [exercise.exerciseId, exercise]),
+  )
+  const nextIds = new Set(next.exercises.map(exercise => exercise.exerciseId))
 
-  for (const [id, progress] of Object.entries(next.progress)) {
-    if (previous.progress[id] !== progress) {
-      writeJson(flashcardStatusKey(id), progress)
+  for (const exercise of next.exercises) {
+    const previousExercise = previousById[exercise.exerciseId]
+    const previousProgress = previousExercise
+      ? toLegacyFlashcardProgress(previousExercise)
+      : undefined
+    const nextProgress = toLegacyFlashcardProgress(exercise)
+    if (legacyShapeChanged(previousProgress, nextProgress)) {
+      writeJson(flashcardStatusKey(exercise.exerciseId), nextProgress)
     }
   }
-  for (const id of Object.keys(previous.progress)) {
-    if (!(id in next.progress)) {
-      removeKey(flashcardStatusKey(id))
+  for (const exercise of previous.exercises) {
+    if (!nextIds.has(exercise.exerciseId)) {
+      removeKey(flashcardStatusKey(exercise.exerciseId))
     }
   }
 }

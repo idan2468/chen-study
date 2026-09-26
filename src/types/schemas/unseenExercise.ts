@@ -63,5 +63,8 @@ export const unseenExercisesSchema = z
       paragraphs: exercise.paragraphs,
       questions: exercise.questions.map(normalizeQuestion),
       flashcards: exercise.flashcards,
+      answers: [],
+      highlights: [],
+      flashcardProgress: [],
     })),
   )

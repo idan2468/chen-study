@@ -7,7 +7,7 @@ import classes from "./QuestionCard.module.css"
 export type QuestionCardProps = {
   question: Question
   optionOrder?: readonly number[]
-  answer: AnswerRecord | undefined
+  answer: Omit<AnswerRecord, "questionId"> | undefined
   onAnswer: (selected: number, correct: boolean) => void
 }
 

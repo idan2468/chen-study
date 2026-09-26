@@ -35,6 +35,9 @@ const otherExercise: UnseenExercise = {
   paragraphs: ["A cat sat."],
   questions: [],
   flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
+  answers: [],
+  highlights: [],
+  flashcardProgress: [],
 }
 
 const thirdExercise: UnseenExercise = {
@@ -44,17 +47,43 @@ const thirdExercise: UnseenExercise = {
   paragraphs: ["A dog ran."],
   questions: [],
   flashcards: [{ en: "Dog", he: "dog", trans: "dog" }],
+  answers: [],
+  highlights: [],
+  flashcardProgress: [],
 }
 
-const baseState = (overrides: Partial<UnseenState> = {}): UnseenState => ({
-  library: { [defaultUnseenExercise.exerciseId]: defaultUnseenExercise },
-  currentId: defaultUnseenExercise.exerciseId,
-  cardIndex: 0,
-  answers: {},
-  markedWords: {},
-  progress: {},
-  ...overrides,
-})
+type TestStateOverrides = Partial<Omit<UnseenState, "exercises">> & {
+  library?: Record<string, UnseenExercise>
+  answers?: Record<
+    string,
+    Record<string, { selected: number; correct: boolean }>
+  >
+  markedWords?: Record<string, string[]>
+  progress?: Record<string, Record<string, boolean>>
+}
+
+const baseState = (overrides: TestStateOverrides = {}): UnseenState => {
+  const library = overrides.library ?? {
+    [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
+  }
+
+  return {
+    exercises: Object.values(library).map(exercise => ({
+      ...exercise,
+      answers: Object.entries(
+        overrides.answers?.[exercise.exerciseId] ?? {},
+      ).map(([questionId, answer]) => ({ questionId, ...answer })),
+      highlights: (overrides.markedWords?.[exercise.exerciseId] ?? []).map(
+        word => ({ word }),
+      ),
+      flashcardProgress: Object.entries(
+        overrides.progress?.[exercise.exerciseId] ?? {},
+      ).map(([word, isKnown]) => ({ word, isKnown })),
+    })),
+    currentId: overrides.currentId ?? defaultUnseenExercise.exerciseId,
+    cardIndex: overrides.cardIndex ?? 0,
+  }
+}
 
 describe("markFlashcard", () => {
   test("marks a word known", () => {
@@ -132,7 +161,7 @@ describe("markFlashcard", () => {
 
     const state = store.getState()
     expect(selectCurrentProgress(state)).toStrictEqual({})
-    expect(state.unseen.progress.other_1).toStrictEqual({ Cat: true })
+    expect(selectAllProgress(state).other_1).toStrictEqual({ Cat: true })
   })
 })
 
@@ -142,12 +171,12 @@ describe("markedWords", () => {
 
     store.dispatch(toggleMarkedWord("Maya"))
     expect(
-      store.getState().unseen.markedWords[defaultUnseenExercise.exerciseId],
+      selectAllMarkedWords(store.getState())[defaultUnseenExercise.exerciseId],
     ).toStrictEqual(["Maya"])
 
     store.dispatch(toggleMarkedWord("Maya"))
     expect(
-      store.getState().unseen.markedWords[defaultUnseenExercise.exerciseId],
+      selectAllMarkedWords(store.getState())[defaultUnseenExercise.exerciseId],
     ).toStrictEqual([])
   })
 })
@@ -168,7 +197,9 @@ describe("library", () => {
     expect(state.unseen.currentId).toBe("other_1")
     expect(state.unseen.cardIndex).toBe(0)
     expect(selectAnswers(state)).toStrictEqual({})
-    expect(state.unseen.answers[defaultId]).toStrictEqual(previousAnswers)
+    expect(selectLibrary(state)[defaultId]?.answers).toStrictEqual([
+      { questionId: "q1", ...previousAnswers.q1 },
+    ])
   })
 
   test("replacing an exercise clears all of its progress", () => {
@@ -192,10 +223,11 @@ describe("library", () => {
     store.dispatch(addExercise(replacement))
 
     const state = store.getState().unseen
-    expect(state.library[otherExercise.exerciseId]).toStrictEqual(replacement)
-    expect(state.answers[otherExercise.exerciseId]).toBeUndefined()
-    expect(state.markedWords[otherExercise.exerciseId]).toBeUndefined()
-    expect(state.progress[otherExercise.exerciseId]).toStrictEqual({})
+    expect(
+      state.exercises.find(
+        exercise => exercise.exerciseId === otherExercise.exerciseId,
+      ),
+    ).toStrictEqual(replacement)
   })
 
   test("adding multiple exercises upserts all of them and selects the first", () => {
@@ -221,8 +253,8 @@ describe("library", () => {
     expect(state.unseen.cardIndex).toBe(0)
     expect(selectAnswers(state)).toStrictEqual({})
     expect(
-      state.unseen.answers[defaultUnseenExercise.exerciseId],
-    ).toStrictEqual({ q1: { selected: 0, correct: true } })
+      selectLibrary(state)[defaultUnseenExercise.exerciseId]?.answers,
+    ).toStrictEqual([{ questionId: "q1", selected: 0, correct: true }])
   })
 
   test("only applies the final occurrence of a repeated id", () => {
@@ -232,10 +264,10 @@ describe("library", () => {
     store.dispatch(addExercises([otherExercise, thirdExercise, finalOther]))
 
     const state = store.getState()
-    expect(state.unseen.library[otherExercise.exerciseId]).toStrictEqual(
+    expect(selectLibrary(state)[otherExercise.exerciseId]).toStrictEqual(
       finalOther,
     )
-    expect(Object.keys(state.unseen.library)).toStrictEqual([
+    expect(Object.keys(selectLibrary(state))).toStrictEqual([
       defaultUnseenExercise.exerciseId,
       otherExercise.exerciseId,
       thirdExercise.exerciseId,
@@ -267,9 +299,9 @@ describe("library", () => {
 
     const state = store.getState()
     expect(state.unseen.currentId).toBe(defaultUnseenExercise.exerciseId)
-    expect(state.unseen.progress.other_1).toBeUndefined()
-    expect(state.unseen.markedWords.other_1).toBeUndefined()
-    expect(state.unseen.answers.other_1).toBeUndefined()
+    expect(selectAllProgress(state).other_1).toBeUndefined()
+    expect(selectAllMarkedWords(state).other_1).toBeUndefined()
+    expect(selectLibrary(state).other_1).toBeUndefined()
   })
 })
 
@@ -390,11 +422,9 @@ describe("hydration", () => {
     expect(selectAllMarkedWords(state)).toStrictEqual({
       [defaultUnseenExercise.exerciseId]: ["Maya"],
     })
-    expect(state.unseen.answers).toStrictEqual({
-      [defaultUnseenExercise.exerciseId]: {
-        q1: { selected: 1, correct: true },
-      },
-    })
+    expect(
+      selectLibrary(state)[defaultUnseenExercise.exerciseId]?.answers,
+    ).toStrictEqual([{ questionId: "q1", selected: 1, correct: true }])
   })
 
   test("marks a completed legacy active exercise as complete", () => {
@@ -421,6 +451,13 @@ describe("hydration", () => {
 
   test("reopens per-exercise answers in the new storage shape", () => {
     localStorage.setItem(
+      StorageKeys.exerciseLibrary,
+      JSON.stringify({
+        [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
+        other_1: otherExercise,
+      }),
+    )
+    localStorage.setItem(
       StorageKeys.quizAnswers,
       JSON.stringify({
         [defaultUnseenExercise.exerciseId]: {
@@ -430,14 +467,14 @@ describe("hydration", () => {
       }),
     )
 
-    const store = makeStore()
+    const library = selectLibrary(makeStore().getState())
 
-    expect(store.getState().unseen.answers).toStrictEqual({
-      [defaultUnseenExercise.exerciseId]: {
-        q1: { selected: 1, correct: true },
-      },
-      other_1: { q2: { selected: 0, correct: false } },
-    })
+    expect(library[defaultUnseenExercise.exerciseId]?.answers).toStrictEqual([
+      { questionId: "q1", selected: 1, correct: true },
+    ])
+    expect(library.other_1?.answers).toStrictEqual([
+      { questionId: "q2", selected: 0, correct: false },
+    ])
   })
 
   test("reopens with per-exercise flashcard progress, keyed by exercise", () => {
@@ -523,6 +560,10 @@ describe("reloadFromStorage", () => {
       JSON.stringify({ other_1: otherExercise }),
     )
     localStorage.setItem(StorageKeys.currentExerciseId, "other_1")
+    localStorage.setItem(
+      flashcardStatusKey(defaultUnseenExercise.exerciseId),
+      JSON.stringify({}),
+    )
     store.dispatch(reloadFromStorage())
 
     const state = store.getState()

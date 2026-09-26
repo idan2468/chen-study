@@ -24,15 +24,12 @@ const otherId = "other_1"
 
 const preloaded = () => ({
   unseen: {
-    library: {
-      [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
-      [otherId]: { ...defaultUnseenExercise, exerciseId: otherId },
-    },
+    exercises: [
+      defaultUnseenExercise,
+      { ...defaultUnseenExercise, exerciseId: otherId },
+    ],
     currentId: defaultUnseenExercise.exerciseId,
     cardIndex: 0,
-    answers: {},
-    markedWords: {},
-    progress: { [defaultUnseenExercise.exerciseId]: {}, [otherId]: {} },
   },
   modules: {
     modules: [...defaultModuleExercises],

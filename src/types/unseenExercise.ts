@@ -21,6 +21,21 @@ export type Flashcard = {
   trans: string
 }
 
+export type AnswerRecord = {
+  questionId: string
+  selected: number
+  correct: boolean
+}
+
+export type HighlightRecord = {
+  word: string
+}
+
+export type FlashcardProgressRecord = {
+  word: string
+  isKnown: boolean
+}
+
 export type UnseenExercise = {
   title: string
   subtitle: string
@@ -28,15 +43,7 @@ export type UnseenExercise = {
   paragraphs: string[]
   questions: Question[]
   flashcards: Flashcard[]
+  answers: AnswerRecord[]
+  highlights: HighlightRecord[]
+  flashcardProgress: FlashcardProgressRecord[]
 }
-
-/** `true` = known, `false` = unknown, absent = not yet marked. */
-export type FlashcardProgress = Record<string, boolean>
-
-export type AnswerRecord = {
-  selected: number
-  correct: boolean
-}
-
-export type ExerciseAnswers = Record<string, AnswerRecord>
-export type AnswersByExercise = Record<string, ExerciseAnswers>
