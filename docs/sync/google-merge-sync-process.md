@@ -19,14 +19,91 @@
 
 - Not yet started.
 
-## Remaining rollout
+## Step definitions
 
-7. Canonical local v2.
-8. Pure merge engine.
-9. Drive v2 transport.
-10. Uninvoked migration coordinator.
-11. V2 activation.
-12. Legacy retirement and docs.
+Each step's approved scope and review focus. Progress lives in [Completed](#completed) and [Current review gate](#current-review-gate).
+
+### Step 1 — Remove link sync
+
+- Remove UI, URL codec/import, startup precedence, translations, tests, and docs.
+- Preserve legacy Google sync and local-only behavior.
+- Review: link feature is gone with no Google regression.
+
+### Step 2 — Implement import identity/replacement behavior
+
+- Preserve supplied IDs; same live ID replaces and clears progress; final batch occurrence wins.
+- Apply to Unseen and Modules using current structures.
+- Review: behavior isolated from v2 persistence.
+
+### Step 3 — Centralize legacy persistence without behavior changes
+
+- Move old keys/snapshot logic under `src/utils/sync/legacy/`.
+- Keep Redux and Google behavior equivalent.
+- Review: structural boundary only; one façade.
+
+### Step 4 — Convert current v1 models to plain semantic-ID arrays
+
+- No `VersionedValue` yet.
+- Convert answers to `AnswerRecord[]` with `questionId`.
+- Convert highlights to `HighlightRecord[]` with `word`.
+- Convert Unseen flashcard progress to `FlashcardProgressRecord[]` with `word`.
+- Convert global Module progress to `ModuleProgressRecord[]` with `word`.
+- Nest plain Unseen progress arrays inside `UnseenExercise`.
+- Legacy adapter translates arrays back to old persisted maps.
+- May use separate green commits for Unseen answers, highlights, flashcards, Module progress, and final nesting.
+- Review: identity/collection shape only; no timestamps, deletion metadata, or v2 document.
+
+### Step 5 — Add versioning/timestamp foundations
+
+- Add `VersionedValue<T>`, Israel ISO timestamp generation/parsing, comparison, deletion, and Zod primitives.
+- Keep utilities additive and unused by production state.
+- Review: pure, focused utility tests; no runtime behavior change.
+
+### Step 6 — Wrap canonical arrays with version metadata
+
+- Change plain Unseen/Module arrays to `VersionedValue<T>[]`.
+- Add versioned preferences and four navigation fields.
+- Preserve legacy Google/local wire behavior through the adapter.
+- May split Unseen, Modules, and preferences/navigation into separate green commits.
+- Review: version metadata only; collection identities already settled in Step 4.
+
+### Step 7 — Assemble and persist canonical `SyncDocumentV2`
+
+- Define full approved Zod envelope.
+- Hydrate/persist `english_progress_v2`.
+- Continue projecting to legacy keys/Google `progress.json` temporarily.
+- Review: aggregate local persistence and reload behavior; no Drive v2 yet.
+
+### Step 8 — Add pure merge engine
+
+- Implement array merge, Unseen parent-subtree resolution, timestamps, deletion, and ties.
+- Keep disconnected from Drive/runtime orchestration.
+- Review: exhaustive matrix tests; no production sync change.
+
+### Step 9 — Add Drive v2 transport
+
+- Add `progress-v2.json` locate/read/write/Zod/no-op behavior.
+- Leave legacy Google sync active.
+- Review: mocked transport only; no activation.
+
+### Step 10 — Add migration/activation coordinator, uninvoked
+
+- Implement existing-v2 and legacy conversion, ordering, marker, recovery, and cleanup.
+- Do not call it from startup.
+- Review: state-machine tests and proof no activation path exists.
+
+### Step 11 — Activate v2 synchronization
+
+- Invoke migration at boot/connect.
+- Route approved three triggers through v2 merge.
+- Remove visibility/page-hide sync and apply retry/notification behavior.
+- Review: sole activation step; full CI plus manual two-device acceptance.
+
+### Step 12 — Retire legacy migration and finalize docs
+
+- After known devices migrate and Step 11 is approved, delete legacy code/keys.
+- Update README and [google-account-sync.md](./google-account-sync.md).
+- Review: no legacy imports remain; full CI and final manual smoke.
 
 ## Per-step gate
 
