@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–5 approved; Step 6 is next.**
+**Status: in progress on `google-merge-sync` — Steps 1–6 approved; Step 7 is next.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -11,22 +11,14 @@
 - [x] Step 3 — centralize legacy persistence (`74e221b`), 259 tests/full gate/review/manual approved.
 - [x] Step 3.5 — visibility-aware interval sync (`cc1eb93`), 259 tests/full gate/review/manual approved.
 - [x] Step 4 — plain semantic-ID arrays (`0b52449`, `4d519db`, `11b709f`, `4c5c84e`), 263 tests/full gate/review/manual approved.
-- [x] Step 5 — version/timestamp foundations (`a9c8cf3`, `5b65723`, `948b92c`, `413f263`, `01d514b`, `d067b9e`), 268 tests/full gate/review/manual approved.
+- [x] Step 5 — version/timestamp foundations (`a9c8cf3`, `5b65723`, `948b92c`, `413f263`, `01d514b`, `d067b9e`), 268 tests/full gate/review/manual approved; follow-ups `f9ac709`, `36defff`.
+- [x] Step 6 — versioned arrays, preferences, and navigation (`e21d999`, `e8f7d27`, `ba149dd`, `bc9c468`, `2aac946`, `3cc30b1`, `eeee890`, `b52b38d`), 291 tests/full gate/review/manual approved.
 
 ## Current review gate
 
-### Step 6 — versioned arrays
+### Step 7 — canonical local v2
 
-- Step 5 follow-up first: add the deletion helper and Zod primitives as `[Step 5]` commits; parsing/comparison use luxon directly.
-- Wrap the four Step 4 progress arrays plus the Unseen exercise and Module lists; deleted entities become tombstones replacing `deletedBuiltInIds`.
-- Versioned preferences: `dyslexiaFont`, `shuffleUnseenAnswers`, and both speech rates. System voice stays device-local; dark mode and locale stay with Mantine/i18n.
-- Navigation fields: Unseen current exercise and flashcard index, Module current ID and card index.
-- Values loaded from legacy storage get an epoch `updatedAt` so any real edit wins.
-- Step 5 follow-up commits: `f9ac709`, `36defff`.
-- Step 6 commits: `e21d999`, `e8f7d27`, `ba149dd`, `bc9c468`; review `[QS]` commits: `2aac946`, `3cc30b1`, `eeee890`, `b52b38d`.
-- Validation: 291 tests, type-check, lint, changed-file format, build, and diff checks pass.
-- Review: all three findings accepted and applied (fake-timer scoping, `withUpdatedAtOnly`, shared `hasWord`), plus manual feedback: timestamps validate as any offset-bearing ISO datetime.
-- Awaiting manual approval.
+- Not yet started.
 
 ## Step definitions
 
