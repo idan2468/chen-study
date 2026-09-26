@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import type { TimestampedAction } from "@/store/updatedAt"
-import { withUpdatedAt } from "@/store/updatedAt"
+import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { keepFinalOccurrencesBy } from "@/utils/collections"
 import { readLegacyUnseenState } from "@/utils/sync/legacy/legacyStorage"
 import {
@@ -184,7 +184,7 @@ export const unseenSlice = createAppSlice({
     ),
 
     resetFlashcardProgress: create.preparedReducer(
-      () => withUpdatedAt(undefined),
+      withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
         const exercise = findExercise(state, state.currentId.value)
         if (exercise) {
@@ -237,7 +237,7 @@ export const unseenSlice = createAppSlice({
     ),
 
     prevFlashcard: create.preparedReducer(
-      () => withUpdatedAt(undefined),
+      withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
         setVersionedValue(
           state.cardIndex,

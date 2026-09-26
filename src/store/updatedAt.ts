@@ -13,3 +13,5 @@ export const withUpdatedAt = <P>(payload: P) => ({
   payload,
   meta: { updatedAt: toIsraelIsoTimestamp(new Date()) },
 })
+
+export const withUpdatedAtOnly = () => withUpdatedAt(undefined)

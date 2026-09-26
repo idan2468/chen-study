@@ -2,7 +2,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { readJson, readString } from "@/store/storage"
 import type { TimestampedAction } from "@/store/updatedAt"
-import { withUpdatedAt } from "@/store/updatedAt"
+import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { keepFinalOccurrencesBy } from "@/utils/collections"
 import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
 import {
@@ -205,7 +205,7 @@ export const modulesSlice = createAppSlice({
     ),
 
     prevCard: create.preparedReducer(
-      () => withUpdatedAt(undefined),
+      withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
         setVersionedValue(
           state.cardIndex,
@@ -216,7 +216,7 @@ export const modulesSlice = createAppSlice({
     ),
 
     toggleFilterMissed: create.preparedReducer(
-      () => withUpdatedAt(undefined),
+      withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
         state.filterMissed = !state.filterMissed
         setVersionedValue(state.cardIndex, 0, action.meta.updatedAt)
@@ -224,7 +224,7 @@ export const modulesSlice = createAppSlice({
     ),
 
     toggleMissedReview: create.preparedReducer(
-      () => withUpdatedAt(undefined),
+      withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
         state.reviewingMissed = !state.reviewingMissed
         setVersionedValue(state.cardIndex, 0, action.meta.updatedAt)
@@ -250,7 +250,7 @@ export const modulesSlice = createAppSlice({
 
     /** Clears progress for the current module's words only. */
     resetCurrentModuleProgress: create.preparedReducer(
-      () => withUpdatedAt(undefined),
+      withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
         const current = findLiveValue(
           state.modules,

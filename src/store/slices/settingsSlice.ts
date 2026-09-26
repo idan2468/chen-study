@@ -2,7 +2,7 @@ import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import { readFlag, readString } from "@/store/storage"
 import type { TimestampedAction } from "@/store/updatedAt"
-import { withUpdatedAt } from "@/store/updatedAt"
+import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import type { VersionedValue } from "@/types/versionedValue"
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import {
@@ -77,7 +77,7 @@ export const settingsSlice = createAppSlice({
   initialState: loadFromStorage,
   reducers: create => ({
     toggleDyslexiaFont: create.preparedReducer(
-      () => withUpdatedAt(undefined),
+      withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
         setVersionedValue(
           state.dyslexiaFont,
@@ -97,7 +97,7 @@ export const settingsSlice = createAppSlice({
       },
     ),
     toggleShuffleUnseenAnswers: create.preparedReducer(
-      () => withUpdatedAt(undefined),
+      withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
         setVersionedValue(
           state.shuffleUnseenAnswers,
