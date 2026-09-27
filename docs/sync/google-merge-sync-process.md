@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–7 approved; Step 8 is next.**
+**Status: in progress on `google-merge-sync` — Steps 1–7 approved; Step 7.5 is in review, then Step 8.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -19,9 +19,12 @@
 
 ## Current review gate
 
-### Step 8 — pure merge engine
+### Step 7.5 — rename the sync document to `PersistedState`
 
-- In progress; scope decisions pending.
+- It's the app's main storage, not a sync-only format, so `SyncDocumentV2` becomes `PersistedState` (schema `persistedStateSchema`, selector `selectPersistedState`, `readPersistedState`/`writePersistedState`).
+- The V2 suffix is dropped from names; the storage key `english_progress_v2` and `schemaVersion: 2` are unchanged.
+- The selector, key, and read/write helpers live together in `src/store/persistedState.ts`; the schema lives in `src/types/schemas/persistedState.ts`.
+- Every object schema in the persisted-state schema file is a named variable.
 
 ## Step definitions
 
