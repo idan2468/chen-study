@@ -576,8 +576,8 @@ describe("deleteModule", () => {
     )
     expect(moduleEntry(store, secondBuiltInId)?.deleted).toBe(true)
     expect(
-      JSON.parse(localStorage.getItem(StorageKeys.deletedBuiltInModules) ?? ""),
-    ).toStrictEqual([secondBuiltInId])
+      selectModules(makeStore().getState()).map(module => module.id),
+    ).not.toContain(secondBuiltInId)
   })
 
   test("refuses to delete the last remaining module", () => {
@@ -612,7 +612,7 @@ describe("deleteModule", () => {
     const liveIds = selectModules(store.getState()).map(m => m.id)
     expect(liveIds[liveIds.length - 1]).toBe(secondBuiltInId)
     expect(
-      JSON.parse(localStorage.getItem(StorageKeys.deletedBuiltInModules) ?? ""),
-    ).toStrictEqual([])
+      selectModules(makeStore().getState()).map(module => module.id),
+    ).toContain(secondBuiltInId)
   })
 })

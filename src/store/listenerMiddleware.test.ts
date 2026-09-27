@@ -1,10 +1,7 @@
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import { defaultModuleExercises } from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
-import {
-  flashcardStatusKey,
-  StorageKeys,
-} from "@/utils/sync/legacy/legacyStorage"
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
   PERSISTED_STATE_KEY,
@@ -26,6 +23,7 @@ import {
 } from "./slices/unseenSlice"
 import {
   setSpeechRate,
+  setSystemVoiceUri,
   toggleDyslexiaFont,
   toggleShuffleUnseenAnswers,
 } from "./slices/settingsSlice"
@@ -52,153 +50,65 @@ const preloaded = () => ({
   },
 })
 
-const writtenLegacyKeys = () =>
-  Object.keys(localStorage).filter(key => key !== PERSISTED_STATE_KEY)
-
 beforeEach(() => {
   localStorage.clear()
 })
 
-test("marking a flashcard writes only that exercise's status key", () => {
-  const store = makeStore(preloaded())
-  store.dispatch(markFlashcard({ word: "Delicate", isKnown: true }))
+test.each([
+  ["marking a flashcard", markFlashcard({ word: "Delicate", isKnown: true })],
+  ["highlighting a word", toggleMarkedWord("Maya")],
+  [
+    "answering a question",
+    answerQuestion({ questionId: "q1", selected: 0, correct: true }),
+  ],
+  [
+    "advancing a flashcard",
+    nextFlashcard(defaultUnseenExercise.flashcards.length),
+  ],
+  ["marking a module card", markCard({ word: "HAT", isKnown: true })],
+  [
+    "advancing a module card",
+    nextCard(at(defaultModuleExercises, 0).cards.length),
+  ],
+  ["switching modules", selectModule(at(defaultModuleExercises, 1).id)],
+  ["toggling the dyslexia font", toggleDyslexiaFont()],
+  ["toggling answer shuffling", toggleShuffleUnseenAnswers()],
+])(
+  "%s writes only the persisted state, matching the store",
+  (_label, action) => {
+    const store = makeStore(preloaded())
+    store.dispatch(action)
 
-  const written = writtenLegacyKeys()
-  expect(written).toStrictEqual([
-    flashcardStatusKey(defaultUnseenExercise.exerciseId),
-  ])
-  // The other exercise's key, and the library itself, are left untouched.
-  expect(localStorage.getItem(flashcardStatusKey(otherId))).toBeNull()
-  expect(localStorage.getItem(StorageKeys.exerciseLibrary)).toBeNull()
-})
-
-test("stores flashcard progress in the original's shape", () => {
-  const store = makeStore(preloaded())
-  store.dispatch(markFlashcard({ word: "Delicate", isKnown: true }))
-  store.dispatch(markFlashcard({ word: "Batter", isKnown: false }))
-
-  expect(
-    localStorage.getItem(flashcardStatusKey(defaultUnseenExercise.exerciseId)),
-  ).toBe(JSON.stringify({ Delicate: true, Batter: false }))
-})
-
-test("highlighting a word writes only the marked-words key", () => {
-  const store = makeStore(preloaded())
-  store.dispatch(toggleMarkedWord("Maya"))
-
-  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.markedWords])
-  expect(localStorage.getItem(StorageKeys.markedWords)).toBe(
-    JSON.stringify({ [defaultUnseenExercise.exerciseId]: ["Maya"] }),
-  )
-})
-
-test("marking a module card writes only the module progress key", () => {
-  const store = makeStore(preloaded())
-  store.dispatch(markCard({ word: "HAT", isKnown: true }))
-
-  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.modulesProgress])
-  expect(localStorage.getItem(StorageKeys.modulesProgress)).toBe(
-    JSON.stringify({ HAT: "known" }),
-  )
-})
-
-test("the dyslexia preference is written to its key", () => {
-  const store = makeStore(preloaded())
-  store.dispatch(toggleDyslexiaFont())
-
-  expect(localStorage.getItem(StorageKeys.dyslexiaFont)).toBe("1")
-})
-
-test("the answer-shuffle preference is written to its syncable key", () => {
-  const store = makeStore(preloaded())
-  store.dispatch(toggleShuffleUnseenAnswers())
-
-  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.shuffleUnseenAnswers])
-  expect(localStorage.getItem(StorageKeys.shuffleUnseenAnswers)).toBe("1")
-})
+    expect(Object.keys(localStorage)).toStrictEqual([PERSISTED_STATE_KEY])
+    expect(readLocalPersistedState()).toStrictEqual(
+      selectPersistedState(store.getState()),
+    )
+  },
+)
 
 test("speech rate is clamped before being persisted", () => {
   const store = makeStore(preloaded())
   store.dispatch(setSpeechRate({ lang: SpeechLang.English, rate: 99 }))
 
-  expect(localStorage.getItem(StorageKeys.speechRate)).toBe("1")
+  expect(
+    readLocalPersistedState()?.preferences.speechRateByLang[SpeechLang.English]
+      .value,
+  ).toBe(1)
 })
 
-test("answering a question writes only the quiz-answers key", () => {
+test("a system voice is written to its device-local key only", () => {
   const store = makeStore(preloaded())
-  store.dispatch(
-    answerQuestion({ questionId: "q1", selected: 0, correct: true }),
-  )
+  store.dispatch(setSystemVoiceUri({ lang: SpeechLang.Hebrew, uri: "Carmit" }))
+  store.dispatch(setSystemVoiceUri({ lang: SpeechLang.English, uri: null }))
 
-  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.quizAnswers])
-  expect(localStorage.getItem(StorageKeys.quizAnswers)).toBe(
-    JSON.stringify({
-      [defaultUnseenExercise.exerciseId]: {
-        q1: { selected: 0, correct: true },
-      },
-    }),
-  )
+  expect(localStorage.getItem(StorageKeys.systemVoiceHe)).toBe("Carmit")
+  expect(localStorage.getItem(StorageKeys.systemVoice)).toBe("")
+  expect(localStorage.getItem(PERSISTED_STATE_KEY)).toBeNull()
 })
 
-test("completing every unseen question persists all selected answers", () => {
+test("skips the write when no versioned field changed", () => {
   const store = makeStore(preloaded())
-  for (const question of defaultUnseenExercise.questions) {
-    store.dispatch(
-      answerQuestion({ questionId: question.id, selected: 0, correct: true }),
-    )
-  }
+  store.dispatch(toggleFilterMissed())
 
-  expect(localStorage.getItem(StorageKeys.quizAnswers)).toBe(
-    JSON.stringify({
-      [defaultUnseenExercise.exerciseId]: Object.fromEntries(
-        defaultUnseenExercise.questions.map(question => [
-          question.id,
-          { selected: 0, correct: true },
-        ]),
-      ),
-    }),
-  )
-})
-
-test("advancing a flashcard writes only the flashcard-index key", () => {
-  const store = makeStore(preloaded())
-  store.dispatch(nextFlashcard(defaultUnseenExercise.flashcards.length))
-
-  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.flashcardIndex])
-  expect(localStorage.getItem(StorageKeys.flashcardIndex)).toBe("1")
-})
-
-test("advancing a module card writes only the module-card-index key", () => {
-  const store = makeStore(preloaded())
-  store.dispatch(nextCard(at(defaultModuleExercises, 0).cards.length))
-
-  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.moduleCardIndex])
-  expect(localStorage.getItem(StorageKeys.moduleCardIndex)).toBe("1")
-})
-
-test("switching modules writes only the current-module-id key", () => {
-  const store = makeStore(preloaded())
-  const secondModuleId = at(defaultModuleExercises, 1).id
-  store.dispatch(selectModule(secondModuleId))
-
-  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.currentModuleId])
-  expect(localStorage.getItem(StorageKeys.currentModuleId)).toBe(secondModuleId)
-})
-
-describe("persisted state", () => {
-  test("writes valid persisted state that matches the store after a change", () => {
-    const store = makeStore(preloaded())
-    store.dispatch(markCard({ word: "HAT", isKnown: true }))
-
-    expect(readLocalPersistedState()).toStrictEqual(
-      selectPersistedState(store.getState()),
-    )
-  })
-
-  test("skips the write when no versioned field changed", () => {
-    const store = makeStore(preloaded())
-    store.dispatch(toggleFilterMissed())
-
-    expect(localStorage.getItem(PERSISTED_STATE_KEY)).toBeNull()
-  })
+  expect(localStorage.getItem(PERSISTED_STATE_KEY)).toBeNull()
 })
