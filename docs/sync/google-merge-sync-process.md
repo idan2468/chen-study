@@ -29,6 +29,7 @@
 - Modules, global Module progress words, and each preference merge independently by newest-wins.
 - Navigation merges as a pair: when the current IDs differ, the side that switched more recently wins both the ID and its card index; when they match, each field is newest-wins.
 - Merged arrays keep Drive's order, then append local-only IDs in local order.
+- Timestamp helpers aren't Israel-specific (comparison works on any offset), so `israelTimestamp.ts` becomes `timestamp.ts`, `IsraelIsoTimestamp` becomes `IsoTimestamp`, and `Asia/Jerusalem` is the default time zone for new timestamps.
 - Commits: `f39f66c`, `811b7d0`, `c1d2bcb`; review `[QS]` commits: `32ab173`, `7b80663`, `9a19496`, `20745cf`, `14f4e3b`; follow-up `95a8eee` (user-requested: `mergeVersionedArrays` folds local entries into one Drive-ordered map).
 - `mergePersistedState(local, remote)` is pure and has no callers outside its tests; production sync is unchanged.
 - Validation: 323 tests, type-check, lint, changed-file format, build, and diff checks pass.
