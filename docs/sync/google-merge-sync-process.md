@@ -119,6 +119,13 @@ Each step's approved scope and review focus. Progress lives in [Completed](#comp
 - Remove visibility/page-hide sync and apply retry/notification behavior.
 - Review: sole activation step; full CI plus manual two-device acceptance.
 
+### Step 11.5 — Audit what legacy removal leaves unused
+
+- After Step 11 is approved, list every legacy file, function, key, and test Step 12 must delete.
+- Then list every function, export, file, and dependency that becomes unused once that legacy code is gone, even exported ones, using a dead-code tool (knip) plus manual verification.
+- Writes the results into this doc only; no code changes. Step 12 deletes from this list.
+- Review: the list is complete and each entry is verified unused.
+
 ### Step 12 — Retire legacy migration and finalize docs
 
 - After known devices migrate and Step 11 is approved, delete legacy code/keys.
