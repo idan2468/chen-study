@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–9 approved; Step 10 is next.**
+**Status: in progress on `google-merge-sync` — Steps 1–9 approved; Step 10 is in review.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -34,6 +34,11 @@
 - Missing or invalid Drive v2: pull `progress.json` into local legacy keys as connect does today, convert, write local v2, create Drive v2 (renaming an invalid file aside), activate, clean up.
 - Cleanup deletes only this device's legacy data keys and `google_last_synced_hash`; dark mode, locale, system voices, and the Google token stay, and Drive's `progress.json` stays until Step 12.
 - Recovery: local v2 is written before Drive v2 and acts as a checkpoint; a retry with a valid local v2 and no marker skips the legacy pull and conversion and resumes from it, so edits made while the migration was pending keep their real timestamps.
+- Commits: `453e44f`, `5563643`; review `[QS]` commits: `d312bdf`, `9b8d7dc`, `672d84f`.
+- No activation path: `grep` finds no caller of `migrateToV2`, `isV2Activated`, the Drive v2 transport, or `mergePersistedState` outside their own files and tests.
+- Validation: 345 tests, type-check, lint, changed-file format, build, and diff checks pass.
+- Review: all three findings accepted and applied (shared checkpoint-or-convert helper, exported marker key in tests, fixture-only merge assertion dropped).
+- Awaiting manual approval.
 
 ## Step definitions
 
