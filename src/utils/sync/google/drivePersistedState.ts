@@ -51,17 +51,24 @@ export const writeDrivePersistedState = async (
   read: DrivePersistedState,
   state: PersistedState,
 ) => {
-  if (read.status === "valid" && objectHash(read.state) === objectHash(state)) {
-    return
-  }
-  const token = requireAccessToken()
   const content = JSON.stringify(state)
-  if (read.status === "valid") {
-    await updateFileContent(token, read.fileId, content)
-    return
+  switch (read.status) {
+    case "valid":
+      if (objectHash(read.state) !== objectHash(state)) {
+        await updateFileContent(requireAccessToken(), read.fileId, content)
+      }
+      return
+    case "invalid": {
+      const token = requireAccessToken()
+      await renameFile(token, read.fileId, invalidBackupName())
+      await createAppDataFile(token, PERSISTED_STATE_FILE_NAME, content)
+      return
+    }
+    case "missing":
+      await createAppDataFile(
+        requireAccessToken(),
+        PERSISTED_STATE_FILE_NAME,
+        content,
+      )
   }
-  if (read.status === "invalid") {
-    await renameFile(token, read.fileId, invalidBackupName())
-  }
-  await createAppDataFile(token, PERSISTED_STATE_FILE_NAME, content)
 }
