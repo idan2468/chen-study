@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–10 approved; Step 11 is in review.**
+**Status: in progress on `google-merge-sync` — Steps 1–11 approved; Step 11.5 is next.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -24,33 +24,35 @@
   - Decisions: `progress-v2.json` lives in `appDataFolder`, is validated with `persistedStateSchema`, and duplicates resolve to the newest `modifiedTime`; no `keepalive`; a write reuses the file ID from the preceding read (reviewed concurrent-write limitation stands); an unparsable or Zod-invalid Drive file is never overwritten — it is renamed to `progress-v2.invalid-<IsoTimestamp>.json.bck` and a fresh `progress-v2.json` is created; the write is skipped when the state equals the Drive copy just read (`object-hash`); the localStorage pair is `readLocalPersistedState`/`writeLocalPersistedState` and the Drive pair `readDrivePersistedState`/`writeDrivePersistedState`; shared file operations live in `google/driveFiles.ts`.
 - [x] Step 10 — migration/activation coordinator, uninvoked (`453e44f`, `5563643`, `d312bdf`, `9b8d7dc`, `672d84f`, `27fbe40`, `5937935`, `da907db`, `848ee7f`, `6e4e5de`, `cb272f3`), 345 tests/full gate/review/manual approved.
   - Decisions: the coordinator is temporary legacy code in `src/utils/sync/legacy/migrateToV2.ts`, converting via `selectPersistedState(makeStore().getState())` with epoch timestamps; a device-local `sync_v2_activated` marker is set only after every earlier step succeeds, after which only idempotent cleanup reruns; never-connected devices migrate locally with no Drive calls; with valid Drive v2 the legacy pull is skipped and converted local data merges into Drive v2; with missing or invalid Drive v2, `progress.json` is pulled into the legacy keys before converting; local v2 is written before Drive v2 as a checkpoint, and a retry resumes from it (skipping pull and conversion) so pending edits keep real timestamps; cleanup deletes only legacy data keys plus `google_last_synced_hash`, keeping dark mode, locale, system voices, the Google token, and Drive's `progress.json` until Step 12; non-trivial sync functions carry short `@param` docs; utilities renamed `upsertValue`, `tombstoneValue`, `setValueIfChanged`, `downloadFileContent`, `keepLastBy`.
+- [x] Step 11 — activate v2 synchronization (`3e6ec42`, `ca13121`, `f7783b6`, `b4a3f0b`, `8495e8e`, `4c9ab34`, `0e15d39`, `fa3f965`, `bbda6d5`), 351 tests/full gate/review/manual approved.
+  - Decisions and results:
+    - Slices hydrate from local v2 whenever it is valid, otherwise from legacy keys, applying the legacy loader's repairs (seed new built-in modules and the default exercise unless tombstoned, fall back from a current ID that points at a deleted entity, clamp the module card index). A repaired current ID keeps its `updatedAt` and resets its card index to 0, since a position belongs to its own exercise or module (Step 8's navigation pair); an empty stored module ID still reopens on the stored index, as the legacy loader did.
+    - Boot without a token runs `migrateToV2(false)` in `main.tsx` before the store is created; boot with a token runs `migrateToV2(true)` inside the existing restore, behind the spinner.
+    - Connect, boot, the visible 30-second timer, return-to-visible, and **Sync now** share one entry point: a not-yet-activated device runs `migrateToV2(true)` (resuming from its checkpoint); an activated one reads Drive v2, merges it with the live store's state, applies the result, then writes Drive (skipped when unchanged). Merge and apply run synchronously after the read, so edits made during the upload are kept and pushed next sync.
+    - The page-hide `keepalive` push is removed; the existing 401 → one silent re-issue → retry and silent passive failures stay.
+    - Legacy write-through is removed: only local v2 (plus device-local system voices) is written.
+    - An activated device connecting with only a legacy `progress.json` on Drive ignores it and creates Drive v2 from its own state; the other device's data arrives when it migrates.
+    - The unreachable legacy push path (`syncIfDirty`, `recordSynced`, `writeSnapshot`, the sync-hash key usage) is deleted now; `readSnapshot` stays for the migration.
+    - Applying merged Drive state reuses the slices' reload reducers and is skipped when the merge changed nothing, so view-only Modules toggles reset only when another device's edits arrive.
+    - After Step 11, a full manual test runs in Chrome via MCP (the user can sign in to Google if needed).
+    - The slices share one `reloadFromStorage` action (in `store/persistedState.ts`): separate per-slice reloads let the write-through save a half-reloaded state over local v2 between dispatches.
+    - Functions added in this step are split into small named helpers (`withDefaultExercise`, `resolveCurrentExerciseId`, `clampCardIndex`, `isRepairedId`, `mergeWithDrive`, `applyLocallyIfChanged`, `syncActivatedDevice`, `syncSilentlyIfVisible`, `migrateTokenlessDevice`); the refactor runs before the review.
+    - The sync hooks live in `src/hooks/sync/` (`GoogleConnectContext`, `useDriveSync`, `useGoogleConnect`, `useRehydrateFromStorage`, `useSyncWithDrive`).
+    - Validation: 351 tests, type-check (including forced `tsc -b --force`), lint, changed-file format, build, and diff checks pass.
+    - Review: F2 (shared `storeTestLocale` test helper) and the `hooks/sync/` grouping accepted and applied; F1 (parse local v2 once per store instead of once per slice) declined.
+    - Google sign-in cannot complete in the automated browser, so Google is faked at the `fetch` boundary: `test/fakeDrive.ts` answers the Drive and userinfo calls and logs every request; a stored access token stands in for sign-in. `driveSync.integration.test.ts` (`fa3f965`) runs two devices through it with the real migration, transport, and merge; mutation checks (merge disabled, local always wins) make it fail.
+    - Manual Chrome test (dev server, isolated contexts, the fake Drive served locally; the user's real Drive was never touched):
+      - Tokenless boot migrates legacy data (epoch timestamps, tombstoned deleted built-in, legacy keys removed, device settings kept) and the UI reflects it; edits write only v2 with real timestamps and survive reload; a current module pointing at a deleted module falls back to the default at card 1.
+      - An activated device connecting creates `progress-v2.json` from its own state and ignores `progress.json`; a second legacy device joins via the existing-v2 path (Drive wins the epoch tie, device-only words append, `progress.json` never read).
+      - Return-to-visible and the 30-second timer bring the other device's edits into the running UI without reload; **Sync now** shows the success toast and PATCHes the existing file; idle timer syncs are read-only; `progress.json` stays unchanged.
+      - Console is clean on fresh loads; the only errors came from a dev-server hot reload during mutation testing.
+    - Finding (resolved with a single-flight guard: a `syncWithDrive` call while one is running shares that run; two devices at once stays the reviewed limitation): overlapping syncs in one tab can each find Drive empty and both create `progress-v2.json`. Seen via React StrictMode's doubled boot effect in dev; in production it needs two overlapping syncs before Drive v2 exists. Duplicates resolve to the newest `modifiedTime` (the reviewed limitation), but the stale copy remains.
 
 ## Current review gate
 
-### Step 11 — activate v2 synchronization
+### Step 11.5 — audit what legacy removal leaves unused
 
-- Slices hydrate from local v2 whenever it is valid, otherwise from legacy keys, applying the legacy loader's repairs (seed new built-in modules and the default exercise unless tombstoned, fall back from a current ID that points at a deleted entity, clamp the module card index). A repaired current ID keeps its `updatedAt` and resets its card index to 0, since a position belongs to its own exercise or module (Step 8's navigation pair); an empty stored module ID still reopens on the stored index, as the legacy loader did.
-- Boot without a token runs `migrateToV2(false)` in `main.tsx` before the store is created; boot with a token runs `migrateToV2(true)` inside the existing restore, behind the spinner.
-- Connect, boot, the visible 30-second timer, return-to-visible, and **Sync now** share one entry point: a not-yet-activated device runs `migrateToV2(true)` (resuming from its checkpoint); an activated one reads Drive v2, merges it with the live store's state, applies the result, then writes Drive (skipped when unchanged). Merge and apply run synchronously after the read, so edits made during the upload are kept and pushed next sync.
-- The page-hide `keepalive` push is removed; the existing 401 → one silent re-issue → retry and silent passive failures stay.
-- Legacy write-through is removed: only local v2 (plus device-local system voices) is written.
-- An activated device connecting with only a legacy `progress.json` on Drive ignores it and creates Drive v2 from its own state; the other device's data arrives when it migrates.
-- The unreachable legacy push path (`syncIfDirty`, `recordSynced`, `writeSnapshot`, the sync-hash key usage) is deleted now; `readSnapshot` stays for the migration.
-- Applying merged Drive state reuses the slices' reload reducers and is skipped when the merge changed nothing, so view-only Modules toggles reset only when another device's edits arrive.
-- After Step 11, a full manual test runs in Chrome via MCP (the user can sign in to Google if needed).
-- The slices share one `reloadFromStorage` action (in `store/persistedState.ts`): separate per-slice reloads let the write-through save a half-reloaded state over local v2 between dispatches.
-- Functions added in this step are split into small named helpers (`withDefaultExercise`, `resolveCurrentExerciseId`, `clampCardIndex`, `isRepairedId`, `mergeWithDrive`, `applyLocallyIfChanged`, `syncActivatedDevice`, `syncSilentlyIfVisible`, `migrateTokenlessDevice`); the refactor runs before the review.
-- The sync hooks live in `src/hooks/sync/` (`GoogleConnectContext`, `useDriveSync`, `useGoogleConnect`, `useRehydrateFromStorage`, `useSyncWithDrive`).
-- Commits: `3e6ec42`, `ca13121`, `f7783b6`, `b4a3f0b`, `8495e8e`; review `[QS]` commits: `4c9ab34`, `0e15d39`.
-- Validation: 340 tests, type-check (including forced `tsc -b --force`), lint, changed-file format, build, and diff checks pass.
-- Review: F2 (shared `storeTestLocale` test helper) and the `hooks/sync/` grouping accepted and applied; F1 (parse local v2 once per store instead of once per slice) declined.
-- Google sign-in cannot complete in the automated browser, so Google is faked at the `fetch` boundary: `test/fakeDrive.ts` answers the Drive and userinfo calls and logs every request; a stored access token stands in for sign-in. `driveSync.integration.test.ts` (`fa3f965`) runs two devices through it with the real migration, transport, and merge; mutation checks (merge disabled, local always wins) make it fail.
-- Manual Chrome test (dev server, isolated contexts, the fake Drive served locally; the user's real Drive was never touched):
-  - Tokenless boot migrates legacy data (epoch timestamps, tombstoned deleted built-in, legacy keys removed, device settings kept) and the UI reflects it; edits write only v2 with real timestamps and survive reload; a current module pointing at a deleted module falls back to the default at card 1.
-  - An activated device connecting creates `progress-v2.json` from its own state and ignores `progress.json`; a second legacy device joins via the existing-v2 path (Drive wins the epoch tie, device-only words append, `progress.json` never read).
-  - Return-to-visible and the 30-second timer bring the other device's edits into the running UI without reload; **Sync now** shows the success toast and PATCHes the existing file; idle timer syncs are read-only; `progress.json` stays unchanged.
-  - Console is clean on fresh loads; the only errors came from a dev-server hot reload during mutation testing.
-- Finding (resolved with a single-flight guard: a `syncWithDrive` call while one is running shares that run; two devices at once stays the reviewed limitation): overlapping syncs in one tab can each find Drive empty and both create `progress-v2.json`. Seen via React StrictMode's doubled boot effect in dev; in production it needs two overlapping syncs before Drive v2 exists. Duplicates resolve to the newest `modifiedTime` (the reviewed limitation), but the stale copy remains.
+- In progress.
 
 ## Step definitions
 
