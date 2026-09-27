@@ -20,7 +20,7 @@ const isSameLiveVersion = <T>(
   compareIsraelTimestamps(local.updatedAt, remote.updatedAt) === 0
 
 /** A replaced exercise wins with its whole subtree; the same version merges its progress record by record. */
-const mergeExercises = (
+const mergeExercise = (
   local: VersionedValue<UnseenExercise>,
   remote: VersionedValue<UnseenExercise>,
 ): VersionedValue<UnseenExercise> => {
@@ -71,7 +71,7 @@ const mergeUnseenSection = (
     local.exercises,
     remote.exercises,
     exercise => exercise.exerciseId,
-    mergeExercises,
+    mergeExercise,
   ),
   ...mergeNavigation(
     { currentId: local.currentId, cardIndex: local.cardIndex },
