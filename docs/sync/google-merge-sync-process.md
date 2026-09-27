@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–7 approved; Step 7.5 is in review, then Step 8.**
+**Status: in progress on `google-merge-sync` — Steps 1–7.5 approved; Step 8 is next.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -16,19 +16,14 @@
   - Decisions: legacy-loaded values get the epoch `updatedAt`; deleted entities are tombstones (replacing `deletedBuiltInIds`); versioned preferences are `dyslexiaFont`, `shuffleUnseenAnswers`, and both speech rates; system voice stays device-local; dark mode and locale stay with Mantine/i18n.
 - [x] Step 7 — canonical local v2 (`220a8c8`, `53b664f`, `70fa4d9`), 298 tests/full gate/review/manual approved.
   - Decisions: envelope is `{ schemaVersion: 2, unseen: { exercises, currentId, cardIndex }, modules: { modules, progress, currentModuleId, cardIndex }, preferences: { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang } }`; `filterMissed`, `reviewingMissed`, and system voice stay out; app hydration keeps reading legacy keys until Step 11 while `english_progress_v2` is written through on every change (loader tested, not wired into startup); a missing, corrupt, or Zod-invalid v2 document falls back to legacy with a console warning on validation failure; `english_progress_v2` is excluded from the legacy Google payload; `SpeechLang` lives in `src/types/speech.ts` so schemas never import store slices; `src/utils/sync/` stays flat (v2 subfolder proposed, not accepted).
+- [x] Step 7.5 — rename the sync document to `PersistedState` (`8f8e626`, `54223ae`, `41ca337`), 298 tests/full gate/manual approved; full `review-code-quality` stopped at the user's request, only F2 applied.
+  - Decisions: it's the app's main storage in both localStorage and Drive, not a sync-only format, so `SyncDocumentV2` became `PersistedState` (`persistedStateSchema`, `selectPersistedState`, `readPersistedState`/`writePersistedState`); the V2 suffix is dropped from names while the storage key `english_progress_v2` and `schemaVersion: 2` stay; the selector, key, and read/write helpers live in `src/store/persistedState.ts` and the schema in `src/types/schemas/persistedState.ts`; every object schema there is a named variable, with section schemas named after their envelope keys.
 
 ## Current review gate
 
-### Step 7.5 — rename the sync document to `PersistedState`
+### Step 8 — pure merge engine
 
-- It's the app's main storage, not a sync-only format, so `SyncDocumentV2` becomes `PersistedState` (schema `persistedStateSchema`, selector `selectPersistedState`, `readPersistedState`/`writePersistedState`).
-- The V2 suffix is dropped from names; the storage key `english_progress_v2` and `schemaVersion: 2` are unchanged.
-- The selector, key, and read/write helpers live together in `src/store/persistedState.ts`; the schema lives in `src/types/schemas/persistedState.ts`.
-- Every object schema in the persisted-state schema file is a named variable.
-- Commits: `8f8e626`, `54223ae`; `[QS]` commit: `41ca337`.
-- Validation: 298 tests, type-check, lint, changed-file format, build, and diff checks pass.
-- Review: full `review-code-quality` stopped at the user's request; only F2 (name the section schemas `unseenSchema`/`modulesSchema` after their envelope keys) applied.
-- Awaiting manual approval.
+- In progress; scope decisions pending.
 
 ## Step definitions
 
