@@ -50,7 +50,7 @@
   - An activated device connecting creates `progress-v2.json` from its own state and ignores `progress.json`; a second legacy device joins via the existing-v2 path (Drive wins the epoch tie, device-only words append, `progress.json` never read).
   - Return-to-visible and the 30-second timer bring the other device's edits into the running UI without reload; **Sync now** shows the success toast and PATCHes the existing file; idle timer syncs are read-only; `progress.json` stays unchanged.
   - Console is clean on fresh loads; the only errors came from a dev-server hot reload during mutation testing.
-- Finding (open): overlapping syncs in one tab can each find Drive empty and both create `progress-v2.json`. Seen via React StrictMode's doubled boot effect in dev; in production it needs two overlapping syncs before Drive v2 exists. Duplicates resolve to the newest `modifiedTime` (the reviewed limitation), but the stale copy remains.
+- Finding (resolved with a single-flight guard: a `syncWithDrive` call while one is running shares that run; two devices at once stays the reviewed limitation): overlapping syncs in one tab can each find Drive empty and both create `progress-v2.json`. Seen via React StrictMode's doubled boot effect in dev; in production it needs two overlapping syncs before Drive v2 exists. Duplicates resolve to the newest `modifiedTime` (the reviewed limitation), but the stale copy remains.
 
 ## Step definitions
 
