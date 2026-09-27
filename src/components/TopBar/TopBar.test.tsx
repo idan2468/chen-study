@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react"
 import i18next from "i18next"
 import type { UseGoogleLoginOptionsImplicitFlow } from "@react-oauth/google"
+import { storeTestLocale } from "@test/helpers"
 import { renderWithProviders } from "@test/render"
 import { GoogleConnectProvider } from "@/hooks/GoogleConnectContext"
 import type * as GoogleAuthModule from "@/utils/sync/google/googleAuth"
@@ -68,9 +69,7 @@ const mockMobileViewport = () => {
 
 beforeEach(() => {
   localStorage.clear()
-  // Rehydrating after a sync re-reads the stored locale; without one it falls
-  // back to the app's Hebrew default instead of the tests' English.
-  localStorage.setItem(StorageKeys.locale, "en")
+  storeTestLocale()
   latestLoginOptions = undefined
   latestLoginFn.mockClear()
   vi.stubGlobal("fetch", vi.fn())

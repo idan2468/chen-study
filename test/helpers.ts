@@ -7,6 +7,8 @@
  * when the guard is false is worse than one that fails loudly.
  */
 
+import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+
 /**
  * Narrows a `{ ok: true, ... } | { ok: false, ... }` result to its success
  * branch, or throws.
@@ -54,4 +56,12 @@ export const omitKey = <T extends object, K extends keyof T>(
   // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
   delete clone[key]
   return clone
+}
+
+/**
+ * Rehydrating after a sync re-reads the stored locale; without one it falls
+ * back to the app's Hebrew default instead of the tests' English.
+ */
+export const storeTestLocale = () => {
+  localStorage.setItem(StorageKeys.locale, "en")
 }

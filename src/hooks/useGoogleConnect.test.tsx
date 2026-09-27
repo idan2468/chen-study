@@ -6,6 +6,7 @@ import type {
   UseGoogleLoginOptionsImplicitFlow,
 } from "@react-oauth/google"
 import i18next from "i18next"
+import { storeTestLocale } from "@test/helpers"
 import { renderWithProviders } from "@test/render"
 import { useAppSelector } from "@/store/hooks"
 import { selectDyslexiaFont } from "@/store/slices/settingsSlice"
@@ -18,7 +19,6 @@ import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import { V2_ACTIVATED_KEY } from "@/utils/sync/legacy/migrateToV2"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { useGoogleConnect } from "./useGoogleConnect"
 
 /** Captured by the `useGoogleLogin` mock below, so tests can fire `onSuccess`/`onError` directly. */
@@ -110,9 +110,7 @@ const Host = () => {
 
 beforeEach(() => {
   localStorage.clear()
-  // Rehydrating after a sync re-reads the stored locale; without one it falls
-  // back to the app's Hebrew default instead of the tests' English.
-  localStorage.setItem(StorageKeys.locale, "en")
+  storeTestLocale()
   vi.mocked(useGoogleLogin).mockClear()
   latestLoginFn.mockClear()
   latestLoginOptions = undefined

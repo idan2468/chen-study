@@ -1,5 +1,6 @@
 import { renderHook, screen, waitFor } from "@testing-library/react"
 import i18next from "i18next"
+import { storeTestLocale } from "@test/helpers"
 import { renderWithProviders } from "@test/render"
 import { setAccessToken } from "@/utils/sync/google/googleAuth"
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
@@ -40,9 +41,7 @@ const Consumer = () => {
 
 beforeEach(() => {
   localStorage.clear()
-  // Rehydrating after a sync re-reads the stored locale; without one it falls
-  // back to the app's Hebrew default instead of the tests' English.
-  localStorage.setItem(StorageKeys.locale, "en")
+  storeTestLocale()
   vi.stubGlobal("fetch", vi.fn())
 })
 
