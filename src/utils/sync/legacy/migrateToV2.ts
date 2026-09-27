@@ -18,7 +18,7 @@ import {
 import { mergePersistedState } from "@/utils/sync/mergePersistedState"
 
 /** Device-local; not `english_`-prefixed, so the legacy payload never syncs it. */
-const V2_ACTIVATED_KEY = "sync_v2_activated"
+export const V2_ACTIVATED_KEY = "sync_v2_activated"
 
 export const isV2Activated = () => readFlag(V2_ACTIVATED_KEY, false)
 

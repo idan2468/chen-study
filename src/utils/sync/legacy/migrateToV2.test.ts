@@ -13,7 +13,7 @@ import {
 } from "@/utils/sync/google/drivePersistedState"
 import { readSnapshot } from "@/utils/sync/google/driveStore"
 import { flashcardStatusKey, StorageKeys } from "./legacyStorage"
-import { isV2Activated, migrateToV2 } from "./migrateToV2"
+import { isV2Activated, migrateToV2, V2_ACTIVATED_KEY } from "./migrateToV2"
 import { mergePersistedState } from "@/utils/sync/mergePersistedState"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 
@@ -52,7 +52,7 @@ const expectLegacyDataDeleted = () => {
   expect(Object.keys(localStorage).sort()).toStrictEqual(
     [
       PERSISTED_STATE_KEY,
-      "sync_v2_activated",
+      V2_ACTIVATED_KEY,
       ...Object.keys(DEVICE_SETTINGS),
     ].sort(),
   )
