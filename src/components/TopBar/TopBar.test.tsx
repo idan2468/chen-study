@@ -68,6 +68,9 @@ const mockMobileViewport = () => {
 
 beforeEach(() => {
   localStorage.clear()
+  // Rehydrating after a sync re-reads the stored locale; without one it falls
+  // back to the app's Hebrew default instead of the tests' English.
+  localStorage.setItem(StorageKeys.locale, "en")
   latestLoginOptions = undefined
   latestLoginFn.mockClear()
   vi.stubGlobal("fetch", vi.fn())
@@ -181,12 +184,11 @@ test("hides the Sync now button while signed out", () => {
   ).not.toBeInTheDocument()
 })
 
-test("shows a Sync now button once connected, which pushes the local snapshot on click", async () => {
+test("shows a Sync now button once connected, which uploads the persisted state on click", async () => {
   setAccessToken("ya29.token")
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" })) // boot's email fetch
-    // `readSnapshot` and `writeSnapshot` each locate the file independently --
-    // an empty Drive means two `files.list` calls before boot's own upload.
+    // Boot migrates: no progress-v2.json, no legacy progress.json, then create.
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
@@ -197,10 +199,9 @@ test("shows a Sync now button once connected, which pushes the local snapshot on
   })
   expect(fetch).toHaveBeenCalledTimes(4)
 
-  localStorage.setItem(StorageKeys.speechRate, "1.5")
   vi.mocked(fetch)
     .mockResolvedValueOnce(filesResponse([])) // syncNow's own locate
-    .mockResolvedValueOnce(okResponse()) // syncNow's own push
+    .mockResolvedValueOnce(okResponse()) // syncNow's own upload
   await user.click(syncButton)
 
   await waitFor(() => {
@@ -208,9 +209,7 @@ test("shows a Sync now button once connected, which pushes the local snapshot on
   })
   const [url, init] = vi.mocked(fetch).mock.calls[5] ?? []
   expect(url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
-  expect(init?.body as string).toContain(
-    JSON.stringify({ [StorageKeys.speechRate]: "1.5" }),
-  )
+  expect(init?.body as string).toContain('"name":"progress-v2.json"')
 })
 
 test("marks the Sync now button aria-busy (spinning icon) while a sync is in flight", async () => {

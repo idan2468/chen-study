@@ -3,10 +3,9 @@ import {
   type SyncPayload,
   StorageKeys,
 } from "@/utils/sync/legacy/legacyStorage"
-import { readSnapshot, writeSnapshot } from "./driveStore"
+import { readSnapshot } from "./driveStore"
 
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
-const DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
 
 /** Mirrors the query the source builds, so assertions aren't duplicating its encoding logic by hand. */
 const locateUrl = () => {
@@ -22,8 +21,6 @@ const filesResponse = (files: { id: string; modifiedTime: string }[]) =>
 
 const textResponse = (body: string, status = 200) =>
   new Response(body, { status })
-
-const okResponse = () => new Response(null, { status: 200 })
 
 /** `init.headers` is a `Headers` instance -- `toEqual` can't diff those, so pull the value out instead. */
 const authorizationHeader = (init: RequestInit | undefined) =>
@@ -108,94 +105,5 @@ describe("readSnapshot", () => {
 
     await expect(readSnapshot()).rejects.toThrow("No Google access token")
     expect(fetch).not.toHaveBeenCalled()
-  })
-})
-
-describe("writeSnapshot", () => {
-  test("creates the file with a multipart/related upload when none exists", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(filesResponse([]))
-      .mockResolvedValueOnce(okResponse())
-
-    await writeSnapshot(payload)
-
-    const [url, init] = vi.mocked(fetch).mock.calls[1] ?? []
-    expect(url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
-    expect(init?.method).toBe("POST")
-
-    // Drive's multipart upload is RFC 2387 `multipart/related`, not the
-    // browser's `multipart/form-data` -- see docs/sync/google-account-sync.md.
-    const contentType = new Headers(init?.headers).get("Content-Type") ?? ""
-    expect(contentType).toMatch(/^multipart\/related; boundary=.+/)
-    const boundary = contentType.replace("multipart/related; boundary=", "")
-
-    const body = init?.body
-    expect(typeof body).toBe("string")
-    const metadataJson = JSON.stringify({
-      name: "progress.json",
-      parents: ["appDataFolder"],
-    })
-    const payloadJson = JSON.stringify(payload)
-    expect((body as string).indexOf(metadataJson)).toBeGreaterThan(
-      (body as string).indexOf(`--${boundary}`),
-    )
-    expect((body as string).indexOf(payloadJson)).toBeGreaterThan(
-      (body as string).indexOf(metadataJson),
-    )
-    expect((body as string).trimEnd().endsWith(`--${boundary}--`)).toBe(true)
-  })
-
-  test("overwrites the existing file with a media PATCH", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(
-        filesResponse([
-          { id: "abc", modifiedTime: "2024-01-01T00:00:00.000Z" },
-        ]),
-      )
-      .mockResolvedValueOnce(okResponse())
-
-    await writeSnapshot(payload)
-
-    const [url, init] = vi.mocked(fetch).mock.calls[1] ?? []
-    expect(url).toBe(`${DRIVE_UPLOAD_URL}/abc?uploadType=media`)
-    expect(init).toMatchObject({
-      method: "PATCH",
-      body: JSON.stringify(payload),
-    })
-  })
-
-  test("throws a plain error instead of calling fetch when there is no access token", async () => {
-    localStorage.removeItem(StorageKeys.googleAccessToken)
-
-    await expect(writeSnapshot(payload)).rejects.toThrow(
-      "No Google access token",
-    )
-    expect(fetch).not.toHaveBeenCalled()
-  })
-
-  test("threads keepalive through to both the locate and write requests when requested", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(filesResponse([]))
-      .mockResolvedValueOnce(okResponse())
-
-    await writeSnapshot(payload, true)
-
-    const [, locateInit] = vi.mocked(fetch).mock.calls[0] ?? []
-    const [, writeInit] = vi.mocked(fetch).mock.calls[1] ?? []
-    expect(locateInit?.keepalive).toBe(true)
-    expect(writeInit?.keepalive).toBe(true)
-  })
-
-  test("defaults keepalive to false when not requested", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(filesResponse([]))
-      .mockResolvedValueOnce(okResponse())
-
-    await writeSnapshot(payload)
-
-    const [, locateInit] = vi.mocked(fetch).mock.calls[0] ?? []
-    const [, writeInit] = vi.mocked(fetch).mock.calls[1] ?? []
-    expect(locateInit?.keepalive).toBeFalsy()
-    expect(writeInit?.keepalive).toBeFalsy()
   })
 })

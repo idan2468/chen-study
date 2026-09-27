@@ -10,6 +10,14 @@ import { renderWithProviders } from "@test/render"
 import { useAppSelector } from "@/store/hooks"
 import { selectDyslexiaFont } from "@/store/slices/settingsSlice"
 import { getAccessToken, setAccessToken } from "@/utils/sync/google/googleAuth"
+import {
+  readLocalPersistedState,
+  selectPersistedState,
+} from "@/store/persistedState"
+import { makeStore } from "@/store/store"
+import type { PersistedState } from "@/types/schemas/persistedState"
+import { V2_ACTIVATED_KEY } from "@/utils/sync/legacy/migrateToV2"
+import { toVersionedValue } from "@/utils/sync/versionedValue"
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { useGoogleConnect } from "./useGoogleConnect"
 
@@ -39,6 +47,17 @@ const jsonResponse = (body: unknown, status = 200) =>
 
 const filesResponse = (files: { id: string; modifiedTime: string }[]) =>
   jsonResponse({ files })
+
+const withDyslexiaFont = (value: boolean): PersistedState => {
+  const state = selectPersistedState(makeStore().getState())
+  return {
+    ...state,
+    preferences: {
+      ...state.preferences,
+      dyslexiaFont: toVersionedValue(value, "2026-09-27T10:00:00.000+03:00"),
+    },
+  }
+}
 
 /** `init.headers` is a `Headers` instance -- `toEqual` can't diff those, so pull the value out instead. */
 const authorizationHeader = (init: RequestInit | undefined) =>
@@ -91,6 +110,9 @@ const Host = () => {
 
 beforeEach(() => {
   localStorage.clear()
+  // Rehydrating after a sync re-reads the stored locale; without one it falls
+  // back to the app's Hebrew default instead of the tests' English.
+  localStorage.setItem(StorageKeys.locale, "en")
   vi.mocked(useGoogleLogin).mockClear()
   latestLoginFn.mockClear()
   latestLoginOptions = undefined
@@ -228,13 +250,15 @@ test("disconnect clears the stored token", async () => {
   expect(getAccessToken()).toBeNull()
 })
 
-test("connecting pulls an existing Drive snapshot and rehydrates the app", async () => {
+test("connecting merges newer Drive v2 changes and rehydrates the app", async () => {
+  localStorage.setItem(V2_ACTIVATED_KEY, "1")
+  const driveState = withDyslexiaFont(true)
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
     .mockResolvedValueOnce(
-      filesResponse([{ id: "f1", modifiedTime: "2024-01-01T00:00:00.000Z" }]),
+      filesResponse([{ id: "f1", modifiedTime: "2026-01-01T00:00:00.000Z" }]),
     )
-    .mockResolvedValueOnce(jsonResponse({ [StorageKeys.dyslexiaFont]: "1" }))
+    .mockResolvedValueOnce(jsonResponse(driveState))
 
   renderWithProviders(<Host />)
   triggerLoginSuccess("ya29.new")
@@ -242,17 +266,15 @@ test("connecting pulls an existing Drive snapshot and rehydrates the app", async
   await waitFor(() => {
     expect(screen.getByText("dyslexia-on")).toBeInTheDocument()
   })
-  expect(localStorage.getItem(StorageKeys.dyslexiaFont)).toBe("1")
+  expect(readLocalPersistedState()).toStrictEqual(driveState)
+  // Drive already holds the merged state, so nothing is uploaded.
+  expect(fetch).toHaveBeenCalledTimes(3)
 })
 
-test("connecting pushes the local snapshot when Drive has none yet", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+test("connecting uploads local state when Drive has no v2 yet", async () => {
+  localStorage.setItem(V2_ACTIVATED_KEY, "1")
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-    // `readSnapshot` and `writeSnapshot` each locate the file independently --
-    // no combined primitive exists yet, so an empty Drive means two `files.list`
-    // calls before the upload.
-    .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(new Response(null, { status: 200 }))
 
@@ -260,15 +282,29 @@ test("connecting pushes the local snapshot when Drive has none yet", async () =>
   triggerLoginSuccess("ya29.new")
 
   await waitFor(() => {
-    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(4)
+    expect(fetch).toHaveBeenCalledTimes(3)
   })
-  const [url, init] = vi.mocked(fetch).mock.calls[3] ?? []
+  const [url, init] = vi.mocked(fetch).mock.calls[2] ?? []
   expect(url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
-  expect(init?.body as string).toContain(
-    JSON.stringify({ [StorageKeys.dyslexiaFont]: "1" }),
-  )
+  expect(init?.body as string).toContain('"name":"progress-v2.json"')
 })
 
+test("connecting an unactivated device migrates it and creates Drive v2", async () => {
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
+    .mockResolvedValueOnce(filesResponse([])) // progress-v2.json
+    .mockResolvedValueOnce(filesResponse([])) // legacy progress.json
+    .mockResolvedValueOnce(new Response(null, { status: 200 }))
+
+  renderWithProviders(<Host />)
+  triggerLoginSuccess("ya29.new")
+
+  await waitFor(() => {
+    expect(localStorage.getItem(V2_ACTIVATED_KEY)).toBe("1")
+  })
+  const [url] = vi.mocked(fetch).mock.calls[3] ?? []
+  expect(url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
+})
 test("a failed email fetch during connect shows the error notification and stays signed out", async () => {
   vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 500 }))
 
@@ -305,30 +341,31 @@ test("a Drive failure during connect shows the error notification but keeps the 
   expect(getAccessToken()).toBe("ya29.new")
 })
 
-test("an unparsable Drive snapshot is treated as none, so connecting pushes local data instead", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  const existingFile = { id: "f1", modifiedTime: "2024-01-01T00:00:00.000Z" }
+test("an invalid Drive v2 file is renamed aside, not overwritten", async () => {
+  localStorage.setItem(V2_ACTIVATED_KEY, "1")
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-    .mockResolvedValueOnce(filesResponse([existingFile]))
+    .mockResolvedValueOnce(
+      filesResponse([{ id: "f1", modifiedTime: "2026-01-01T00:00:00.000Z" }]),
+    )
     .mockResolvedValueOnce(new Response("not json", { status: 200 }))
-    .mockResolvedValueOnce(filesResponse([existingFile]))
+    .mockResolvedValueOnce(new Response(null, { status: 200 }))
     .mockResolvedValueOnce(new Response(null, { status: 200 }))
 
   renderWithProviders(<Host />)
   triggerLoginSuccess("ya29.new")
 
   await waitFor(() => {
-    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(5)
+    expect(fetch).toHaveBeenCalledTimes(5)
   })
-  const [url, init] = vi.mocked(fetch).mock.calls[4] ?? []
-  expect(url).toBe(`${DRIVE_UPLOAD_URL}/f1?uploadType=media`)
-  expect(init).toMatchObject({
-    method: "PATCH",
-    body: JSON.stringify({ [StorageKeys.dyslexiaFont]: "1" }),
-  })
+  const [renameUrl, renameInit] = vi.mocked(fetch).mock.calls[3] ?? []
+  expect(renameUrl).toBe("https://www.googleapis.com/drive/v3/files/f1")
+  expect(renameInit?.body as string).toMatch(
+    /progress-v2\.invalid-.+\.json\.bck/,
+  )
+  const [createUrl] = vi.mocked(fetch).mock.calls[4] ?? []
+  expect(createUrl).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
 })
-
 test("reissueForSync refreshes the token and reports success, without fetching email or syncing", async () => {
   const { user } = renderWithProviders(<Host />)
 

@@ -31,20 +31,18 @@ export const requireAccessToken = () => {
  * The newest `modifiedTime` wins if a failed create ever left duplicates
  * behind; the older copies are left alone (see docs/sync/google-account-sync.md).
  * @param name Exact file name in `appDataFolder`; other names (e.g. backups) never match.
- * @param keepalive Lets the request outlive a closing tab (legacy page-hide push only).
  * @returns `null` when no file has that name.
  */
 export const locateAppDataFile = async (
   token: string,
   name: string,
-  keepalive = false,
 ): Promise<DriveFile | null> => {
   const url = new URL(DRIVE_FILES_URL)
   url.searchParams.set("spaces", "appDataFolder")
   url.searchParams.set("q", `name='${name}'`)
   url.searchParams.set("fields", "files(id,modifiedTime)")
 
-  const response = await authorizedFetch(token, url.toString(), { keepalive })
+  const response = await authorizedFetch(token, url.toString())
   const parsed = driveFilesResponseSchema.safeParse(await response.json())
   const files = parsed.success ? parsed.data.files : []
 
@@ -90,13 +88,11 @@ const buildMultipartRelatedBody = (name: string, content: string) => {
 
 /**
  * @param content The file body, already serialized as JSON.
- * @param keepalive Lets the request outlive a closing tab (legacy page-hide push only).
  */
 export const createAppDataFile = async (
   token: string,
   name: string,
   content: string,
-  keepalive = false,
 ) => {
   const { boundary, body } = buildMultipartRelatedBody(name, content)
 
@@ -104,20 +100,17 @@ export const createAppDataFile = async (
     method: "POST",
     headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
     body,
-    keepalive,
   })
 }
 
 /**
  * Replaces the body of an existing file, keeping its ID and name.
  * @param content The new body, already serialized as JSON.
- * @param keepalive Lets the request outlive a closing tab (legacy page-hide push only).
  */
 export const updateFileContent = async (
   token: string,
   fileId: string,
   content: string,
-  keepalive = false,
 ) => {
   await authorizedFetch(
     token,
@@ -126,7 +119,6 @@ export const updateFileContent = async (
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: content,
-      keepalive,
     },
   )
 }

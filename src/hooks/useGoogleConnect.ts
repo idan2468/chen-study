@@ -4,8 +4,7 @@ import type { TokenResponse } from "@react-oauth/google"
 import { hasGrantedAllScopesGoogle, useGoogleLogin } from "@react-oauth/google"
 import { useTranslation } from "react-i18next"
 import { useLatest } from "@/hooks/useLatest"
-import { useRehydrateFromStorage } from "@/hooks/useRehydrateFromStorage"
-import { applySyncPayload } from "@/utils/sync/legacy/legacyStorage"
+import { useSyncWithDrive } from "@/hooks/useSyncWithDrive"
 import {
   fetchConnectedEmail,
   getAccessToken,
@@ -15,8 +14,6 @@ import {
   GOOGLE_SCOPES,
   setAccessToken,
 } from "@/utils/sync/google/googleAuth"
-import { readSnapshot } from "@/utils/sync/google/driveStore"
-import { recordSynced, syncIfDirty } from "@/utils/sync/google/driveSync"
 
 type ImplicitTokenResponse = Omit<
   TokenResponse,
@@ -28,15 +25,15 @@ type PendingLogin =
   | { kind: "syncReissue"; onSettled: (success: boolean) => void }
 
 /**
- * Connecting (by click, or silently at boot with a saved token) pulls the
- * Drive snapshot if one exists and rehydrates the running app, or pushes the
- * local snapshot if Drive has none yet. A 401 at boot triggers one silent
+ * Connecting (by click, or silently at boot with a saved token) runs a full
+ * `syncWithDrive`: migrating this device first if needed, then merging with
+ * Drive and rehydrating the running app. A 401 at boot triggers one silent
  * GIS re-issue before falling back to signed-out. See
  * docs/sync/google-account-sync.md.
  */
 export const useGoogleConnect = () => {
   const { t } = useTranslation()
-  const rehydrate = useRehydrateFromStorage()
+  const syncNow = useSyncWithDrive()
   const [connecting, setConnecting] = useState(() => Boolean(getAccessToken()))
   const [connectedEmail, setConnectedEmail] = useState<string | null>(null)
   /** True only until the boot flow (including any re-issue) first settles; never set true again after that. */
@@ -47,17 +44,6 @@ export const useGoogleConnect = () => {
   const settle = () => {
     setConnecting(false)
     setRestoring(false)
-  }
-
-  const syncNow = async () => {
-    const payload = await readSnapshot()
-    if (payload) {
-      applySyncPayload(payload)
-      rehydrate()
-      recordSynced(payload)
-    } else {
-      await syncIfDirty()
-    }
   }
 
   const connectWithToken = async (tokenResponse: ImplicitTokenResponse) => {
@@ -160,7 +146,7 @@ export const useGoogleConnect = () => {
     },
   })
 
-  /** A silent GIS re-issue for `useDriveSync.ts`'s mid-session 401s -- only refreshes the token, never pulls, since only Connect and boot may (see docs/sync/google-account-sync.md). */
+  /** A silent GIS re-issue for `useDriveSync.ts`'s mid-session 401s -- only refreshes the token; `useDriveSync` then retries its own sync. */
   const reissueForSync = (onSettled: (success: boolean) => void) => {
     pendingLoginRef.current = { kind: "syncReissue", onSettled }
     login({ prompt: "none" })

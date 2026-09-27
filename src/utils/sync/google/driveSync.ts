@@ -1,43 +1,41 @@
 /**
- * The dirty-check policy on top of `driveStore.ts` -- see
- * "The dirty check" in docs/sync/google-account-sync.md. An idle device re-hashes
- * localStorage every tick instead of always re-pushing it, so it can't
- * clobber a device that's actively syncing.
+ * The one sync every trigger runs -- connect, boot, the visible-tab timer,
+ * return-to-visible, and "Sync now" (see docs/sync/google-merge-sync-plan.md).
  */
 import objectHash from "object-hash"
-import { writeSnapshot } from "./driveStore"
+import { writeLocalPersistedState } from "@/store/persistedState"
+import type { PersistedState } from "@/types/schemas/persistedState"
+import { isV2Activated, migrateToV2 } from "@/utils/sync/legacy/migrateToV2"
+import { mergePersistedState } from "@/utils/sync/mergePersistedState"
 import {
-  buildSyncPayload,
-  type SyncPayload,
-  StorageKeys,
-} from "@/utils/sync/legacy/legacyStorage"
-import { readString, writeString } from "@/store/storage"
+  readDrivePersistedState,
+  writeDrivePersistedState,
+} from "./drivePersistedState"
 
 /**
- * object-hash sorts object keys by default, so localStorage's key order can't
- * change the result. Only needs to detect "did anything change", not resist
- * tampering.
+ * Reads Drive, merges it with the running app's state, applies the result
+ * locally, then uploads it (skipped when Drive already matches). A device
+ * that hasn't activated v2 yet runs the migration instead, which resumes
+ * from its checkpoint.
+ * @param readLocalState Returns the running app's state. Called right after the Drive read, so edits made while it was in flight are merged, not lost.
+ * @param reloadApp Reloads the running app from local storage; called only when local state changed.
  */
-const hashPayload = (payload: SyncPayload): string => objectHash(payload)
-
-/** Marks `payload` as the current Drive state, so a later dirty check treats it as clean. */
-export const recordSynced = (payload: SyncPayload) => {
-  writeString(StorageKeys.googleLastSyncedHash, hashPayload(payload))
-}
-
-/**
- * Pushes the local snapshot to Drive only if it differs from the last
- * successful sync. A failed push does not record the new hash, so the next
- * call retries instead of silently giving up. `keepalive` is set for the
- * page-hide trigger only -- see "Trigger mechanics" in
- * docs/sync/google-account-sync.md.
- */
-export const syncIfDirty = async (keepalive = false) => {
-  const payload = buildSyncPayload()
-  const hash = hashPayload(payload)
-  if (hash === readString(StorageKeys.googleLastSyncedHash)) {
+export const syncWithDrive = async (
+  readLocalState: () => PersistedState,
+  reloadApp: () => void,
+) => {
+  if (!isV2Activated()) {
+    await migrateToV2(true)
+    reloadApp()
     return
   }
-  await writeSnapshot(payload, keepalive)
-  recordSynced(payload)
+  const drive = await readDrivePersistedState()
+  const local = readLocalState()
+  const merged =
+    drive.status === "valid" ? mergePersistedState(local, drive.state) : local
+  if (objectHash(merged) !== objectHash(local)) {
+    writeLocalPersistedState(merged)
+    reloadApp()
+  }
+  await writeDrivePersistedState(drive, merged)
 }

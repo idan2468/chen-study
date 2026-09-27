@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { PERSISTED_STATE_KEY } from "@/store/persistedState"
-import { listKeys, readFlag, readJson, readString } from "@/store/storage"
+import { readFlag, readJson, readString } from "@/store/storage"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import { SpeechLang } from "@/types/speech"
 import { CardStatus } from "@/types/moduleExercise"
@@ -92,16 +92,6 @@ const LEGACY_DATA_KEYS = new Set<string>([
 
 export const isLegacyDataKey = (key: string) =>
   LEGACY_DATA_KEYS.has(key) || key.startsWith(FLASHCARD_STATUS_PREFIX)
-
-export const buildSyncPayload = (): SyncPayload => {
-  const payload: SyncPayload = {}
-  for (const key of listKeys()) {
-    if (isSyncableKey(key)) {
-      payload[key] = readString(key)
-    }
-  }
-  return payload
-}
 
 export const applySyncPayload = (payload: SyncPayload) => {
   let applied = 0

@@ -20,7 +20,11 @@ import {
 } from "./i18n"
 import { makeStore } from "./store/store"
 import { colorSchemeManager, cssVariablesResolver, theme } from "./theme"
-import { GOOGLE_CLIENT_ID } from "./utils/sync/google/googleAuth"
+import {
+  getAccessToken,
+  GOOGLE_CLIENT_ID,
+} from "./utils/sync/google/googleAuth"
+import { migrateToV2 } from "./utils/sync/legacy/migrateToV2"
 
 /** No-op when unset, so a build without `VITE_GOOGLE_CLIENT_ID` doesn't load GIS at all. */
 const GoogleAuthGate = ({ children }: { children: ReactNode }) =>
@@ -32,7 +36,12 @@ const GoogleAuthGate = ({ children }: { children: ReactNode }) =>
     children
   )
 
-const bootstrap = () => {
+const bootstrap = async () => {
+  // A connected device migrates during the boot restore, which can reach Drive;
+  // this one never will, so it migrates before the store first reads storage.
+  if (!getAccessToken()) {
+    await migrateToV2(false)
+  }
   const store = makeStore()
 
   const locale = readStoredLocale()
@@ -85,4 +94,4 @@ const bootstrap = () => {
   )
 }
 
-bootstrap()
+void bootstrap()

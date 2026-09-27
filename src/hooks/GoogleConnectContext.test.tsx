@@ -40,6 +40,9 @@ const Consumer = () => {
 
 beforeEach(() => {
   localStorage.clear()
+  // Rehydrating after a sync re-reads the stored locale; without one it falls
+  // back to the app's Hebrew default instead of the tests' English.
+  localStorage.setItem(StorageKeys.locale, "en")
   vi.stubGlobal("fetch", vi.fn())
 })
 
@@ -91,8 +94,7 @@ test("exposes syncNow, wired to useDriveSync and gated on being connected", asyn
   setAccessToken("ya29.token")
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" })) // boot's email fetch
-    // `readSnapshot` and `writeSnapshot` each locate the file independently --
-    // an empty Drive means two `files.list` calls before boot's own upload.
+    // Boot migrates: no progress-v2.json, no legacy progress.json, then create.
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
@@ -107,10 +109,9 @@ test("exposes syncNow, wired to useDriveSync and gated on being connected", asyn
   })
   expect(fetch).toHaveBeenCalledTimes(4)
 
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
   vi.mocked(fetch)
     .mockResolvedValueOnce(filesResponse([])) // syncNow's own locate
-    .mockResolvedValueOnce(okResponse()) // syncNow's own push
+    .mockResolvedValueOnce(okResponse()) // syncNow's own upload
   await user.click(screen.getByRole("button", { name: "Sync now" }))
 
   await waitFor(() => {
@@ -118,9 +119,7 @@ test("exposes syncNow, wired to useDriveSync and gated on being connected", asyn
   })
   const [url, init] = vi.mocked(fetch).mock.calls[5] ?? []
   expect(url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
-  expect(init?.body as string).toContain(
-    JSON.stringify({ [StorageKeys.dyslexiaFont]: "1" }),
-  )
+  expect(init?.body as string).toContain('"name":"progress-v2.json"')
 })
 
 test("exposes syncing, wired to useDriveSync", async () => {

@@ -1,104 +1,113 @@
-import objectHash from "object-hash"
-import { GoogleAuthError } from "./googleAuth"
-import { recordSynced, syncIfDirty } from "./driveSync"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import {
+  readLocalPersistedState,
+  selectPersistedState,
+} from "@/store/persistedState"
+import { makeStore } from "@/store/store"
+import type { PersistedState } from "@/types/schemas/persistedState"
+import { isV2Activated, migrateToV2 } from "@/utils/sync/legacy/migrateToV2"
+import { toVersionedValue } from "@/utils/sync/versionedValue"
+import {
+  readDrivePersistedState,
+  writeDrivePersistedState,
+} from "./drivePersistedState"
+import { syncWithDrive } from "./driveSync"
 
-const filesResponse = (files: { id: string; modifiedTime: string }[]) =>
-  new Response(JSON.stringify({ files }), { status: 200 })
+vi.mock("./drivePersistedState")
+vi.mock("@/utils/sync/legacy/migrateToV2")
 
-const okResponse = () => new Response(null, { status: 200 })
+const EDITED_AT = "2026-09-27T10:00:00.000+03:00"
+
+const localState = () => selectPersistedState(makeStore().getState())
+
+const withDyslexiaFont = (
+  state: PersistedState,
+  value: boolean,
+): PersistedState => ({
+  ...state,
+  preferences: {
+    ...state.preferences,
+    dyslexiaFont: toVersionedValue(value, EDITED_AT),
+  },
+})
 
 beforeEach(() => {
   localStorage.clear()
-  localStorage.setItem(StorageKeys.googleAccessToken, "ya29.token")
-  vi.stubGlobal("fetch", vi.fn())
+  vi.clearAllMocks()
+  vi.mocked(isV2Activated).mockReturnValue(true)
+  vi.mocked(readDrivePersistedState).mockResolvedValue({ status: "missing" })
+  vi.mocked(writeDrivePersistedState).mockResolvedValue()
+  vi.mocked(migrateToV2).mockResolvedValue()
 })
 
-afterEach(() => {
-  vi.unstubAllGlobals()
+test("an unactivated device migrates, reloads, and skips the v2 sync", async () => {
+  vi.mocked(isV2Activated).mockReturnValue(false)
+  const reloadApp = vi.fn()
+
+  await syncWithDrive(localState, reloadApp)
+
+  expect(migrateToV2).toHaveBeenCalledWith(true)
+  expect(reloadApp).toHaveBeenCalledOnce()
+  expect(readDrivePersistedState).not.toHaveBeenCalled()
 })
 
-describe("syncIfDirty", () => {
-  test("pushes when there is no prior synced state", async () => {
-    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(filesResponse([]))
-      .mockResolvedValueOnce(okResponse())
+test("uploads local state as-is when Drive has none, without reloading", async () => {
+  const local = localState()
+  const reloadApp = vi.fn()
 
-    await syncIfDirty()
+  await syncWithDrive(() => local, reloadApp)
 
-    expect(fetch).toHaveBeenCalledTimes(2)
-  })
+  expect(writeDrivePersistedState).toHaveBeenCalledWith(
+    { status: "missing" },
+    local,
+  )
+  expect(reloadApp).not.toHaveBeenCalled()
+  expect(readLocalPersistedState()).toBeNull()
+})
 
-  test("is a no-op when the current payload matches the recorded synced baseline, regardless of key order", async () => {
-    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-    localStorage.setItem(StorageKeys.speechRate, "1.5")
-    recordSynced({
-      [StorageKeys.speechRate]: "1.5",
-      [StorageKeys.dyslexiaFont]: "1",
+test("applies newer Drive changes locally, then uploads the merge", async () => {
+  const local = localState()
+  const drive = {
+    status: "valid",
+    fileId: "abc",
+    state: withDyslexiaFont(local, true),
+  } as const
+  vi.mocked(readDrivePersistedState).mockResolvedValue(drive)
+  const reloadApp = vi.fn()
+
+  await syncWithDrive(() => local, reloadApp)
+
+  expect(readLocalPersistedState()).toStrictEqual(drive.state)
+  expect(reloadApp).toHaveBeenCalledOnce()
+  expect(writeDrivePersistedState).toHaveBeenCalledWith(drive, drive.state)
+})
+
+test("reads local state only after the Drive read, so in-flight edits are merged", async () => {
+  const beforeRead = localState()
+  const editedDuringRead = withDyslexiaFont(beforeRead, true)
+  let current = beforeRead
+  vi.mocked(readDrivePersistedState).mockImplementation(() => {
+    current = editedDuringRead
+    return Promise.resolve({
+      status: "valid",
+      fileId: "abc",
+      state: beforeRead,
     })
-
-    await syncIfDirty()
-
-    expect(fetch).not.toHaveBeenCalled()
   })
 
-  test("pushes again once a synced key's value changes", async () => {
-    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-    recordSynced({ [StorageKeys.dyslexiaFont]: "0" })
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(
-        filesResponse([
-          { id: "abc", modifiedTime: "2024-01-01T00:00:00.000Z" },
-        ]),
-      )
-      .mockResolvedValueOnce(okResponse())
+  await syncWithDrive(() => current, vi.fn())
 
-    await syncIfDirty()
-
-    expect(fetch).toHaveBeenCalledTimes(2)
-  })
-
-  test("does not record synced state when the push fails", async () => {
-    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(filesResponse([]))
-      .mockResolvedValueOnce(new Response(null, { status: 500 }))
-
-    await expect(syncIfDirty()).rejects.toThrow()
-
-    expect(localStorage.getItem(StorageKeys.googleLastSyncedHash)).toBeNull()
-  })
-
-  test("propagates a GoogleAuthError on a 401 without recording synced state", async () => {
-    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 401 }))
-
-    await expect(syncIfDirty()).rejects.toBeInstanceOf(GoogleAuthError)
-    expect(localStorage.getItem(StorageKeys.googleLastSyncedHash)).toBeNull()
-  })
-
-  test("passes keepalive through to the write request when requested", async () => {
-    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(filesResponse([]))
-      .mockResolvedValueOnce(okResponse())
-
-    await syncIfDirty(true)
-
-    const [, writeInit] = vi.mocked(fetch).mock.calls[1] ?? []
-    expect(writeInit?.keepalive).toBe(true)
-  })
+  expect(writeDrivePersistedState).toHaveBeenCalledWith(
+    expect.anything(),
+    editedDuringRead,
+  )
 })
 
-describe("recordSynced", () => {
-  test("writes the given payload's hash to storage", () => {
-    const payload = { [StorageKeys.dyslexiaFont]: "1" }
+test("a failed Drive read changes nothing locally", async () => {
+  vi.mocked(readDrivePersistedState).mockRejectedValue(new Error("offline"))
+  const reloadApp = vi.fn()
 
-    recordSynced(payload)
+  await expect(syncWithDrive(localState, reloadApp)).rejects.toThrow("offline")
 
-    expect(localStorage.getItem(StorageKeys.googleLastSyncedHash)).toBe(
-      objectHash(payload),
-    )
-  })
+  expect(reloadApp).not.toHaveBeenCalled()
+  expect(writeDrivePersistedState).not.toHaveBeenCalled()
 })

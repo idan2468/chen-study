@@ -2,37 +2,34 @@ import { useEffect, useState } from "react"
 import { notifications } from "@mantine/notifications"
 import { useTranslation } from "react-i18next"
 import { useLatest } from "@/hooks/useLatest"
+import { useSyncWithDrive } from "@/hooks/useSyncWithDrive"
 import { GoogleAuthError } from "@/utils/sync/google/googleAuth"
-import { syncIfDirty } from "@/utils/sync/google/driveSync"
 
 const SYNC_INTERVAL_MS = 30_000
 
 /**
- * The push-only triggers on top of `driveSync.ts`'s dirty check: a visible-tab
- * 30-second timer, visibility changes, and manual "Sync now". Returning to a
- * visible tab syncs immediately; hiding keeps the existing final keepalive push.
- * Only Connect and boot ever pull.
+ * The session triggers for `syncWithDrive`: a visible-tab 30-second timer,
+ * returning to a visible tab, and manual "Sync now". Hidden tabs never sync.
  */
 export const useDriveSync = (
   connected: boolean,
   reissueForSync: (onSettled: (success: boolean) => void) => void,
 ) => {
   const { t } = useTranslation()
+  const sync = useSyncWithDrive()
   const [needsReconnect, setNeedsReconnect] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
   const attemptSync = async ({
-    keepalive,
     silent,
     hasRetried = false,
   }: {
-    keepalive: boolean
     silent: boolean
     hasRetried?: boolean
   }) => {
     setSyncing(true)
     try {
-      await syncIfDirty(keepalive)
+      await sync()
       setNeedsReconnect(false)
       if (!silent) {
         notifications.show({
@@ -54,10 +51,10 @@ export const useDriveSync = (
         setNeedsReconnect(true)
         return
       }
-      // Retry once so the push doesn't wait a full interval for the token refresh.
+      // Retry once so the sync doesn't wait a full interval for the token refresh.
       reissueForSync(success => {
         if (success) {
-          void attemptSync({ keepalive, silent, hasRetried: true })
+          void attemptSync({ silent, hasRetried: true })
         } else {
           setNeedsReconnect(true)
         }
@@ -67,8 +64,8 @@ export const useDriveSync = (
     }
   }
 
-  const syncSilently = (keepalive = false) => {
-    void attemptSync({ keepalive, silent: true })
+  const syncSilently = () => {
+    void attemptSync({ silent: true })
   }
 
   const latest = useLatest({ syncSilently, needsReconnect })
@@ -96,10 +93,13 @@ export const useDriveSync = (
       return
     }
     const onVisibilityChange = () => {
-      if (latest.current.needsReconnect) {
+      if (
+        document.visibilityState !== "visible" ||
+        latest.current.needsReconnect
+      ) {
         return
       }
-      latest.current.syncSilently(document.visibilityState === "hidden")
+      latest.current.syncSilently()
     }
     document.addEventListener("visibilitychange", onVisibilityChange)
     return () => {
@@ -108,7 +108,7 @@ export const useDriveSync = (
   }, [connected, latest])
 
   const syncNow = () => {
-    void attemptSync({ keepalive: false, silent: false })
+    void attemptSync({ silent: false })
   }
 
   return { needsReconnect, syncing, syncNow }

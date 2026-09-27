@@ -4,7 +4,6 @@ import { at } from "@test/helpers"
 import { CardStatus } from "@/types/moduleExercise"
 import {
   applySyncPayload,
-  buildSyncPayload,
   flashcardStatusKey,
   isLegacyDataKey,
   readLegacyModuleProgress,
@@ -27,24 +26,6 @@ import {
 
 beforeEach(() => {
   localStorage.clear()
-})
-
-test("collects progress from localStorage, but never device-local keys", () => {
-  localStorage.setItem(
-    StorageKeys.modulesProgress,
-    JSON.stringify({ HAT: "known" }),
-  )
-  localStorage.setItem(StorageKeys.darkMode, "1")
-  localStorage.setItem(StorageKeys.shuffleUnseenAnswers, "1")
-  localStorage.setItem(StorageKeys.systemVoice, "Microsoft David - English")
-  localStorage.setItem(StorageKeys.googleAccessToken, "ya29.secret")
-  localStorage.setItem(StorageKeys.googleLastSyncedHash, "abc123")
-
-  expect(buildSyncPayload()).toStrictEqual({
-    [StorageKeys.modulesProgress]: JSON.stringify({ HAT: "known" }),
-    [StorageKeys.darkMode]: "1",
-    [StorageKeys.shuffleUnseenAnswers]: "1",
-  })
 })
 
 describe("applySyncPayload", () => {
@@ -77,12 +58,7 @@ describe("applySyncPayload", () => {
   })
 })
 
-test("keeps the persisted state out of the legacy payload in both directions", () => {
-  localStorage.setItem(PERSISTED_STATE_KEY, "{}")
-
-  expect(buildSyncPayload()).not.toHaveProperty(PERSISTED_STATE_KEY)
-
-  localStorage.clear()
+test("never lets a legacy payload overwrite the persisted state", () => {
   applySyncPayload({ [PERSISTED_STATE_KEY]: "{}" })
   expect(localStorage.getItem(PERSISTED_STATE_KEY)).toBeNull()
 })

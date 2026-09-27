@@ -1,14 +1,11 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react"
 import i18next from "i18next"
 import { renderWithProviders } from "@test/render"
-import { setAccessToken } from "@/utils/sync/google/googleAuth"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import { syncWithDrive } from "@/utils/sync/google/driveSync"
+import { GoogleAuthError } from "@/utils/sync/google/googleAuth"
 import { useDriveSync } from "./useDriveSync"
 
-const filesResponse = (files: { id: string; modifiedTime: string }[]) =>
-  new Response(JSON.stringify({ files }), { status: 200 })
-
-const okResponse = () => new Response(null, { status: 200 })
+vi.mock("@/utils/sync/google/driveSync")
 
 /** Captured whenever the hook asks for a silent re-issue, so tests can settle it like GIS would. */
 let pendingReissueSettled: ((success: boolean) => void) | undefined
@@ -32,145 +29,108 @@ const Host = ({ connected }: { connected: boolean }) => {
   )
 }
 
+const setVisibility = (state: DocumentVisibilityState) => {
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue(state)
+  document.dispatchEvent(new Event("visibilitychange"))
+}
+
+const clickSyncNow = () => {
+  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+}
+
 beforeEach(() => {
-  localStorage.clear()
-  setAccessToken("ya29.token")
-  vi.stubGlobal("fetch", vi.fn())
-  reissueForSync.mockClear()
+  vi.clearAllMocks()
+  vi.mocked(syncWithDrive).mockResolvedValue()
   pendingReissueSettled = undefined
 })
 
 afterEach(() => {
   vi.useRealTimers()
-  vi.unstubAllGlobals()
 })
 
-test("pushes once the 30-second timer fires while connected", async () => {
+test("syncs once the 30-second timer fires while connected", async () => {
   vi.useFakeTimers()
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
 
   renderWithProviders(<Host connected />)
   await vi.advanceTimersByTimeAsync(30_000)
 
-  expect(fetch).toHaveBeenCalledTimes(2)
+  expect(syncWithDrive).toHaveBeenCalledOnce()
 })
 
-test("does not push while not connected, even once 30 seconds elapse", async () => {
+test("does not sync while not connected, even once 30 seconds elapse", async () => {
   vi.useFakeTimers()
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
 
   renderWithProviders(<Host connected={false} />)
   await vi.advanceTimersByTimeAsync(30_000)
 
-  expect(fetch).not.toHaveBeenCalled()
+  expect(syncWithDrive).not.toHaveBeenCalled()
 })
 
-test("syncNow pushes immediately, without waiting for the timer", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
-
+test("syncNow syncs immediately, without waiting for the timer", async () => {
   renderWithProviders(<Host connected />)
-  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+  clickSyncNow()
 
   await waitFor(() => {
-    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(syncWithDrive).toHaveBeenCalledOnce()
   })
 })
 
-test("pushes with keepalive when the tab becomes hidden", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
+test("hiding the tab does not sync", async () => {
+  vi.useFakeTimers()
 
   renderWithProviders(<Host connected />)
-  vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden")
-  document.dispatchEvent(new Event("visibilitychange"))
+  setVisibility("hidden")
+  await vi.advanceTimersByTimeAsync(0)
 
-  await waitFor(() => {
-    expect(fetch).toHaveBeenCalledTimes(2)
-  })
-  const [, writeInit] = vi.mocked(fetch).mock.calls[1] ?? []
-  expect(writeInit?.keepalive).toBe(true)
+  expect(syncWithDrive).not.toHaveBeenCalled()
 })
 
 test("syncs immediately and silently when the tab becomes visible", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
-
   renderWithProviders(<Host connected />)
-  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible")
-  document.dispatchEvent(new Event("visibilitychange"))
+  setVisibility("visible")
 
   await waitFor(() => {
-    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(syncWithDrive).toHaveBeenCalledOnce()
   })
-  const [, writeInit] = vi.mocked(fetch).mock.calls[1] ?? []
-  expect(writeInit?.keepalive).toBe(false)
   expect(
     screen.queryByText(i18next.t("common.googleSyncSuccess")),
   ).not.toBeInTheDocument()
 })
 
-test("the 30-second timer does not push while the tab is hidden", async () => {
+test("the 30-second timer does not sync while the tab is hidden", async () => {
   vi.useFakeTimers()
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
 
   renderWithProviders(<Host connected />)
   vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden")
-  document.dispatchEvent(new Event("visibilitychange"))
-  await vi.advanceTimersByTimeAsync(0)
-  expect(fetch).toHaveBeenCalledTimes(2)
-
-  localStorage.setItem(StorageKeys.speechRate, "1.5")
-  vi.mocked(fetch).mockClear()
   await vi.advanceTimersByTimeAsync(30_000)
 
-  expect(fetch).not.toHaveBeenCalled()
+  expect(syncWithDrive).not.toHaveBeenCalled()
 })
 
-test("a 401 during syncNow triggers a silent reissue and retries the push once it succeeds", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(new Response(null, { status: 401 }))
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
+test("a 401 during syncNow triggers a silent reissue and retries the sync once it succeeds", async () => {
+  vi.mocked(syncWithDrive).mockRejectedValueOnce(new GoogleAuthError())
 
   renderWithProviders(<Host connected />)
-  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+  clickSyncNow()
   await waitFor(() => {
-    expect(reissueForSync).toHaveBeenCalledTimes(1)
+    expect(reissueForSync).toHaveBeenCalledOnce()
   })
   act(() => {
     pendingReissueSettled?.(true)
   })
 
   await waitFor(() => {
-    expect(fetch).toHaveBeenCalledTimes(4)
+    expect(syncWithDrive).toHaveBeenCalledTimes(2)
   })
 })
 
 test("a failed reissue sets needsReconnect", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(new Response(null, { status: 401 }))
+  vi.mocked(syncWithDrive).mockRejectedValueOnce(new GoogleAuthError())
 
   renderWithProviders(<Host connected />)
-  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+  clickSyncNow()
   await waitFor(() => {
-    expect(reissueForSync).toHaveBeenCalledTimes(1)
+    expect(reissueForSync).toHaveBeenCalledOnce()
   })
   act(() => {
     pendingReissueSettled?.(false)
@@ -181,58 +141,31 @@ test("a failed reissue sets needsReconnect", async () => {
   })
 })
 
-test("the background timer pauses once needsReconnect is set", async () => {
+test("the timer and return-to-visible both stay paused after a failed reissue", async () => {
   vi.useFakeTimers()
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(new Response(null, { status: 401 }))
+  vi.mocked(syncWithDrive).mockRejectedValueOnce(new GoogleAuthError())
 
   renderWithProviders(<Host connected />)
   await vi.advanceTimersByTimeAsync(30_000)
-  expect(reissueForSync).toHaveBeenCalledTimes(1)
+  expect(reissueForSync).toHaveBeenCalledOnce()
   act(() => {
     pendingReissueSettled?.(false)
   })
 
-  vi.mocked(fetch).mockClear()
+  vi.mocked(syncWithDrive).mockClear()
+  setVisibility("visible")
   await vi.advanceTimersByTimeAsync(30_000)
 
-  expect(fetch).not.toHaveBeenCalled()
+  expect(syncWithDrive).not.toHaveBeenCalled()
 })
 
-test("the background timer and page-hide push both stay paused after a failed reissue, even while the tab is hidden", async () => {
-  vi.useFakeTimers()
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(new Response(null, { status: 401 }))
+test("syncNow retries while needsReconnect is true, clearing it on success", async () => {
+  vi.mocked(syncWithDrive).mockRejectedValueOnce(new GoogleAuthError())
 
   renderWithProviders(<Host connected />)
-  await vi.advanceTimersByTimeAsync(30_000)
-  expect(reissueForSync).toHaveBeenCalledTimes(1)
-  act(() => {
-    pendingReissueSettled?.(false)
-  })
-
-  vi.mocked(fetch).mockClear()
-  vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden")
-  document.dispatchEvent(new Event("visibilitychange"))
-  await vi.advanceTimersByTimeAsync(30_000)
-
-  expect(fetch).not.toHaveBeenCalled()
-})
-
-test("syncNow retries the reissue path while needsReconnect is true, clearing it on success", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(new Response(null, { status: 401 }))
-
-  renderWithProviders(<Host connected />)
-  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+  clickSyncNow()
   await waitFor(() => {
-    expect(reissueForSync).toHaveBeenCalledTimes(1)
+    expect(reissueForSync).toHaveBeenCalledOnce()
   })
   act(() => {
     pendingReissueSettled?.(false)
@@ -241,10 +174,7 @@ test("syncNow retries the reissue path while needsReconnect is true, clearing it
     expect(screen.getByText("needs-reconnect")).toBeInTheDocument()
   })
 
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
-  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+  clickSyncNow()
 
   await waitFor(() => {
     expect(screen.getByText("ok")).toBeInTheDocument()
@@ -252,11 +182,10 @@ test("syncNow retries the reissue path while needsReconnect is true, clearing it
 })
 
 test("a non-auth error during syncNow shows an error toast", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 500 }))
+  vi.mocked(syncWithDrive).mockRejectedValueOnce(new Error("offline"))
 
   renderWithProviders(<Host connected />)
-  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+  clickSyncNow()
 
   await waitFor(() => {
     expect(
@@ -267,8 +196,7 @@ test("a non-auth error during syncNow shows an error toast", async () => {
 
 test("a non-auth error during the background timer stays silent", async () => {
   vi.useFakeTimers()
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 500 }))
+  vi.mocked(syncWithDrive).mockRejectedValueOnce(new Error("offline"))
 
   renderWithProviders(<Host connected />)
   await vi.advanceTimersByTimeAsync(30_000)
@@ -279,23 +207,20 @@ test("a non-auth error during the background timer stays silent", async () => {
 })
 
 test("syncing is true while a sync is in flight, and false once it settles", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  let resolveLocate: (response: Response) => void = () => undefined
-  vi.mocked(fetch)
-    .mockReturnValueOnce(
-      new Promise(resolve => {
-        resolveLocate = resolve
-      }),
-    )
-    .mockResolvedValueOnce(okResponse())
+  let settleSync: () => void = () => undefined
+  vi.mocked(syncWithDrive).mockReturnValueOnce(
+    new Promise(resolve => {
+      settleSync = resolve
+    }),
+  )
 
   renderWithProviders(<Host connected />)
-  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+  clickSyncNow()
   await waitFor(() => {
     expect(screen.getByText("syncing")).toBeInTheDocument()
   })
 
-  resolveLocate(filesResponse([]))
+  settleSync()
 
   await waitFor(() => {
     expect(screen.getByText("idle")).toBeInTheDocument()
@@ -303,13 +228,8 @@ test("syncing is true while a sync is in flight, and false once it settles", asy
 })
 
 test("shows a success toast once a manual sync completes", async () => {
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
-
   renderWithProviders(<Host connected />)
-  fireEvent.click(screen.getByRole("button", { name: "Sync now" }))
+  clickSyncNow()
 
   await waitFor(() => {
     expect(
@@ -318,12 +238,8 @@ test("shows a success toast once a manual sync completes", async () => {
   })
 })
 
-test("the background timer's successful push stays silent, without a success toast", async () => {
+test("the background timer's successful sync stays silent, without a success toast", async () => {
   vi.useFakeTimers()
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
 
   renderWithProviders(<Host connected />)
   await vi.advanceTimersByTimeAsync(30_000)
