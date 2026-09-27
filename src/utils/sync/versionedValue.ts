@@ -52,7 +52,7 @@ export const upsertValue = <T>(
  * Tombstones the live entry `matches` finds; does nothing when it is missing or already deleted.
  * @param entries Mutated in place (an Immer draft inside reducers).
  */
-export const deleteValue = <T>(
+export const tombstoneValue = <T>(
   entries: VersionedValue<T>[],
   matches: (value: T) => boolean,
   updatedAt: IsoTimestamp,

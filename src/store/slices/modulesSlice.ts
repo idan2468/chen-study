@@ -11,7 +11,7 @@ import {
   StorageKeys,
 } from "@/utils/sync/legacy/legacyStorage"
 import {
-  deleteValue,
+  tombstoneValue,
   findLiveValue,
   liveValues,
   upsertValue,
@@ -293,7 +293,7 @@ export const modulesSlice = createAppSlice({
           return
         }
 
-        deleteValue(
+        tombstoneValue(
           state.modules,
           hasModuleId(action.payload),
           action.meta.updatedAt,

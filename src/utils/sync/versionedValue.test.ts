@@ -1,6 +1,6 @@
 import type { VersionedValue } from "@/types/versionedValue"
 import {
-  deleteValue,
+  tombstoneValue,
   findLiveValue,
   INITIAL_UPDATED_AT,
   liveValues,
@@ -84,9 +84,9 @@ test("appends new and revived entries at the end", () => {
 test("tombstones a live entry and ignores missing or deleted ones", () => {
   const values = entries()
 
-  deleteValue(values, matchesWord("HAT"), LATER)
-  deleteValue(values, matchesWord("FOX"), LATER)
-  deleteValue(values, matchesWord("DOG"), LATER)
+  tombstoneValue(values, matchesWord("HAT"), LATER)
+  tombstoneValue(values, matchesWord("FOX"), LATER)
+  tombstoneValue(values, matchesWord("DOG"), LATER)
 
   expect(values).toStrictEqual([
     markDeleted(toVersionedValue({ word: "HAT" }, EARLIER), LATER),

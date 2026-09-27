@@ -5,7 +5,7 @@ import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { hasWord, keepFinalOccurrencesBy } from "@/utils/collections"
 import { readLegacyUnseenState } from "@/utils/sync/legacy/legacyStorage"
 import {
-  deleteValue,
+  tombstoneValue,
   findLiveValue,
   liveValues,
   markDeleted,
@@ -119,7 +119,7 @@ export const unseenSlice = createAppSlice({
           return
         }
 
-        deleteValue(
+        tombstoneValue(
           state.exercises,
           hasExerciseId(action.payload),
           action.meta.updatedAt,
@@ -168,7 +168,7 @@ export const unseenSlice = createAppSlice({
           hasWord(word),
         )
         if (existing?.isKnown === isKnown) {
-          deleteValue(exercise.flashcardProgress, hasWord(word), updatedAt)
+          tombstoneValue(exercise.flashcardProgress, hasWord(word), updatedAt)
         } else {
           upsertValue(
             exercise.flashcardProgress,
@@ -204,7 +204,7 @@ export const unseenSlice = createAppSlice({
         const word = action.payload
         const { updatedAt } = action.meta
         if (findLiveValue(exercise.highlights, hasWord(word))) {
-          deleteValue(exercise.highlights, hasWord(word), updatedAt)
+          tombstoneValue(exercise.highlights, hasWord(word), updatedAt)
         } else {
           upsertValue(exercise.highlights, hasWord(word), { word }, updatedAt)
         }
