@@ -4,7 +4,11 @@ import { SpeechLang } from "@/types/speech"
 import type { UnseenExercise } from "@/types/unseenExercise"
 import type { VersionedValue } from "@/types/versionedValue"
 import { compareIsraelTimestamps } from "@/utils/sync/israelTimestamp"
-import { mergeVersionedArrays, pickNewer } from "@/utils/sync/versionedValue"
+import {
+  isNewer,
+  mergeVersionedArrays,
+  pickNewer,
+} from "@/utils/sync/versionedValue"
 
 type Navigation = {
   currentId: VersionedValue<string>
@@ -53,9 +57,7 @@ const mergeExercise = (
 /** The side that switched more recently keeps its card index, so a position never lands in the other side's exercise. */
 const mergeNavigation = (local: Navigation, remote: Navigation): Navigation => {
   if (local.currentId.value !== remote.currentId.value) {
-    return pickNewer(local.currentId, remote.currentId) === local.currentId
-      ? local
-      : remote
+    return isNewer(local.currentId, remote.currentId) ? local : remote
   }
   return {
     currentId: pickNewer(local.currentId, remote.currentId),

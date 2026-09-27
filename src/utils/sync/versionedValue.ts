@@ -72,14 +72,16 @@ export const setVersionedValue = <T>(
   }
 }
 
+export const isNewer = <T>(
+  candidate: VersionedValue<T>,
+  other: VersionedValue<T>,
+) => compareIsraelTimestamps(candidate.updatedAt, other.updatedAt) > 0
+
 /** Newest `updatedAt` wins; Drive wins ties so every device converges on the shared copy. */
 export const pickNewer = <T>(
   local: VersionedValue<T>,
   remote: VersionedValue<T>,
-): VersionedValue<T> =>
-  compareIsraelTimestamps(local.updatedAt, remote.updatedAt) > 0
-    ? local
-    : remote
+): VersionedValue<T> => (isNewer(local, remote) ? local : remote)
 
 /** Keeps Drive's order, then appends local-only IDs in local order. */
 export const mergeVersionedArrays = <T>(
