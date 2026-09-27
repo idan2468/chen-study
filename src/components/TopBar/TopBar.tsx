@@ -11,7 +11,7 @@ import {
 import { useTranslation } from "react-i18next"
 import { SpeechSettingsModal } from "@/components/SpeechSettingsModal/SpeechSettingsModal"
 import { ICON_SIZE } from "@/constants/icons"
-import { useGoogleConnectContext } from "@/hooks/GoogleConnectContext"
+import { useGoogleConnectContext } from "@/hooks/sync/GoogleConnectContext"
 import { useIsMobile } from "@/hooks/useIsMobile"
 import { useLocale } from "@/i18n/useLocale"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"

@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { Route, Routes, useLocation } from "react-router-dom"
 import { APP_ROUTES } from "./constants/routes"
-import { GoogleConnectProvider } from "./hooks/GoogleConnectContext"
+import { GoogleConnectProvider } from "./hooks/sync/GoogleConnectContext"
 import { useAppDispatch, useAppSelector } from "./store/hooks"
 import { selectDyslexiaFont } from "./store/slices/settingsSlice"
 import { speechStopped } from "./store/slices/speechSlice"

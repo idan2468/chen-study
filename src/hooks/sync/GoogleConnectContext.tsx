@@ -2,8 +2,8 @@ import type { ReactNode } from "react"
 import { createContext, use } from "react"
 import { Center, Loader } from "@mantine/core"
 import { useTranslation } from "react-i18next"
-import { useDriveSync } from "@/hooks/useDriveSync"
-import { useGoogleConnect } from "@/hooks/useGoogleConnect"
+import { useDriveSync } from "@/hooks/sync/useDriveSync"
+import { useGoogleConnect } from "@/hooks/sync/useGoogleConnect"
 
 type GoogleConnectValue = ReturnType<typeof useGoogleConnect> &
   Pick<

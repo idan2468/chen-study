@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { notifications } from "@mantine/notifications"
 import { useTranslation } from "react-i18next"
 import { useLatest } from "@/hooks/useLatest"
-import { useSyncWithDrive } from "@/hooks/useSyncWithDrive"
+import { useSyncWithDrive } from "@/hooks/sync/useSyncWithDrive"
 import { GoogleAuthError } from "@/utils/sync/google/googleAuth"
 
 const SYNC_INTERVAL_MS = 30_000

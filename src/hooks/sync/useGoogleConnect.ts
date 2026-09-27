@@ -4,7 +4,7 @@ import type { TokenResponse } from "@react-oauth/google"
 import { hasGrantedAllScopesGoogle, useGoogleLogin } from "@react-oauth/google"
 import { useTranslation } from "react-i18next"
 import { useLatest } from "@/hooks/useLatest"
-import { useSyncWithDrive } from "@/hooks/useSyncWithDrive"
+import { useSyncWithDrive } from "@/hooks/sync/useSyncWithDrive"
 import {
   fetchConnectedEmail,
   getAccessToken,

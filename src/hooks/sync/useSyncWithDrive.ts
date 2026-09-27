@@ -1,4 +1,4 @@
-import { useRehydrateFromStorage } from "@/hooks/useRehydrateFromStorage"
+import { useRehydrateFromStorage } from "@/hooks/sync/useRehydrateFromStorage"
 import { useAppStore } from "@/store/hooks"
 import { selectPersistedState } from "@/store/persistedState"
 import { syncWithDrive } from "@/utils/sync/google/driveSync"
