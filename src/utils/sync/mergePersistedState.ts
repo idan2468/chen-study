@@ -63,7 +63,7 @@ const mergeNavigation = (local: Navigation, remote: Navigation): Navigation => {
   }
 }
 
-const mergeUnseen = (
+const mergeUnseenSection = (
   local: PersistedState["unseen"],
   remote: PersistedState["unseen"],
 ): PersistedState["unseen"] => ({
@@ -79,7 +79,7 @@ const mergeUnseen = (
   ),
 })
 
-const mergeModules = (
+const mergeModulesSection = (
   local: PersistedState["modules"],
   remote: PersistedState["modules"],
 ): PersistedState["modules"] => {
@@ -103,7 +103,7 @@ const mergeModules = (
   }
 }
 
-const mergePreferences = (
+const mergePreferencesSection = (
   local: PersistedState["preferences"],
   remote: PersistedState["preferences"],
 ): PersistedState["preferences"] => ({
@@ -130,7 +130,7 @@ export const mergePersistedState = (
   remote: PersistedState,
 ): PersistedState => ({
   schemaVersion: PERSISTED_STATE_VERSION,
-  unseen: mergeUnseen(local.unseen, remote.unseen),
-  modules: mergeModules(local.modules, remote.modules),
-  preferences: mergePreferences(local.preferences, remote.preferences),
+  unseen: mergeUnseenSection(local.unseen, remote.unseen),
+  modules: mergeModulesSection(local.modules, remote.modules),
+  preferences: mergePreferencesSection(local.preferences, remote.preferences),
 })
