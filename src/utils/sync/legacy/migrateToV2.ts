@@ -41,24 +41,30 @@ const deleteLegacyData = () => {
   }
 }
 
-/** Local v2 is written before Drive, so a retry resumes from it instead of converting again. */
+/** Resumes from the local v2 checkpoint an earlier attempt wrote, or converts legacy data. */
+const readCheckpointOrConvert = async (pullLegacyFirst: boolean) => {
+  const checkpoint = readLocalPersistedState()
+  if (checkpoint) {
+    return checkpoint
+  }
+  if (pullLegacyFirst) {
+    await pullLegacySnapshot()
+  }
+  return convertLegacyState()
+}
+
+/** Local v2 is written before Drive, so a failed upload leaves a checkpoint to resume from. */
 const migrateWithDrive = async () => {
   const drive = await readDrivePersistedState()
   const hasDriveV2 = drive.status === "valid"
-  let local = readLocalPersistedState()
-  if (!local) {
-    if (!hasDriveV2) {
-      await pullLegacySnapshot()
-    }
-    local = convertLegacyState()
-  }
+  const local = await readCheckpointOrConvert(!hasDriveV2)
   const state = hasDriveV2 ? mergePersistedState(local, drive.state) : local
   writeLocalPersistedState(state)
   await writeDrivePersistedState(drive, state)
 }
 
-const migrateLocally = () => {
-  writeLocalPersistedState(readLocalPersistedState() ?? convertLegacyState())
+const migrateLocally = async () => {
+  writeLocalPersistedState(await readCheckpointOrConvert(false))
 }
 
 /**
@@ -71,7 +77,7 @@ export const migrateToV2 = async (connected: boolean) => {
     if (connected) {
       await migrateWithDrive()
     } else {
-      migrateLocally()
+      await migrateLocally()
     }
     writeFlag(V2_ACTIVATED_KEY, true)
   }
