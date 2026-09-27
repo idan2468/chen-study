@@ -14,7 +14,7 @@ import {
   deleteValue,
   findLiveValue,
   liveValues,
-  putValue,
+  upsertValue,
   setVersionedValue,
   toVersionedValue,
 } from "@/utils/sync/versionedValue"
@@ -98,7 +98,7 @@ const setModuleProgressStatus = (
   status: CardStatus,
   updatedAt: IsoTimestamp,
 ) => {
-  putValue(progress, hasWord(word), { word, status }, updatedAt)
+  upsertValue(progress, hasWord(word), { word, status }, updatedAt)
 }
 
 const loadFromStorage = (): ModulesState => {
@@ -135,7 +135,7 @@ const addOrReplaceModule = (
   updatedAt: IsoTimestamp,
 ) => {
   const existing = findLiveValue(state.modules, hasModuleId(module.id))
-  putValue(state.modules, hasModuleId(module.id), module, updatedAt)
+  upsertValue(state.modules, hasModuleId(module.id), module, updatedAt)
   if (!existing) {
     return
   }

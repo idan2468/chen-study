@@ -7,7 +7,7 @@ import {
   markDeleted,
   mergeVersionedArrays,
   pickNewer,
-  putValue,
+  upsertValue,
   setVersionedValue,
   toVersionedValue,
 } from "./versionedValue"
@@ -59,7 +59,7 @@ test("reads only live values", () => {
 test("replaces a live entry in place", () => {
   const values = entries()
 
-  putValue(values, matchesWord("HAT"), { word: "HAT", note: "new" }, LATER)
+  upsertValue(values, matchesWord("HAT"), { word: "HAT", note: "new" }, LATER)
 
   expect(values[0]).toStrictEqual(
     toVersionedValue({ word: "HAT", note: "new" }, LATER),
@@ -69,8 +69,8 @@ test("replaces a live entry in place", () => {
 test("appends new and revived entries at the end", () => {
   const values = entries()
 
-  putValue(values, matchesWord("FOX"), { word: "FOX" }, LATER)
-  putValue(values, matchesWord("DOG"), { word: "DOG" }, LATER)
+  upsertValue(values, matchesWord("FOX"), { word: "FOX" }, LATER)
+  upsertValue(values, matchesWord("DOG"), { word: "DOG" }, LATER)
 
   expect(values.map(entry => entry.value.word)).toStrictEqual([
     "HAT",

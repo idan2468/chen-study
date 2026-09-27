@@ -9,7 +9,7 @@ import {
   findLiveValue,
   liveValues,
   markDeleted,
-  putValue,
+  upsertValue,
   setVersionedValue,
 } from "@/utils/sync/versionedValue"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
@@ -47,7 +47,7 @@ const replaceExercise = (
     highlights: [],
     flashcardProgress: [],
   }
-  putValue(
+  upsertValue(
     state.exercises,
     hasExerciseId(exercise.exerciseId),
     replacement,
@@ -144,7 +144,7 @@ export const unseenSlice = createAppSlice({
           return
         }
         const { questionId, selected, correct } = action.payload
-        putValue(
+        upsertValue(
           exercise.answers,
           answer => answer.questionId === questionId,
           { questionId, selected, correct },
@@ -170,7 +170,7 @@ export const unseenSlice = createAppSlice({
         if (existing?.isKnown === isKnown) {
           deleteValue(exercise.flashcardProgress, hasWord(word), updatedAt)
         } else {
-          putValue(
+          upsertValue(
             exercise.flashcardProgress,
             hasWord(word),
             { word, isKnown },
@@ -206,7 +206,7 @@ export const unseenSlice = createAppSlice({
         if (findLiveValue(exercise.highlights, hasWord(word))) {
           deleteValue(exercise.highlights, hasWord(word), updatedAt)
         } else {
-          putValue(exercise.highlights, hasWord(word), { word }, updatedAt)
+          upsertValue(exercise.highlights, hasWord(word), { word }, updatedAt)
         }
       },
     ),

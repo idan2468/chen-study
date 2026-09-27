@@ -30,7 +30,7 @@ export const findLiveValue = <T>(
  * @param matches Identifies the entity by its semantic ID, e.g. `hasWord(word)`.
  * @param updatedAt Stamped on the stored entry.
  */
-export const putValue = <T>(
+export const upsertValue = <T>(
   entries: VersionedValue<T>[],
   matches: (value: T) => boolean,
   value: T,
