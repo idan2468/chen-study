@@ -70,7 +70,7 @@ export const tombstoneValue = <T>(
  * Leaves `updatedAt` alone when the value is unchanged, so no-op navigation never wins a merge.
  * @param entry Mutated in place (an Immer draft inside reducers).
  */
-export const setVersionedValue = <T>(
+export const setValueIfChanged = <T>(
   entry: VersionedValue<T>,
   value: T,
   updatedAt: IsoTimestamp,

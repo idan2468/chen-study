@@ -15,7 +15,7 @@ import {
   findLiveValue,
   liveValues,
   upsertValue,
-  setVersionedValue,
+  setValueIfChanged,
   toVersionedValue,
 } from "@/utils/sync/versionedValue"
 import {
@@ -149,7 +149,7 @@ const addOrReplaceModule = (
   }
 
   if (state.currentModuleId.value === module.id) {
-    setVersionedValue(state.cardIndex, 0, updatedAt)
+    setValueIfChanged(state.cardIndex, 0, updatedAt)
     state.filterMissed = false
   }
 }
@@ -159,8 +159,8 @@ const openModule = (
   moduleId: string,
   updatedAt: IsoTimestamp,
 ) => {
-  setVersionedValue(state.currentModuleId, moduleId, updatedAt)
-  setVersionedValue(state.cardIndex, 0, updatedAt)
+  setValueIfChanged(state.currentModuleId, moduleId, updatedAt)
+  setValueIfChanged(state.cardIndex, 0, updatedAt)
   // The original cleared the filter when switching modules.
   state.filterMissed = false
 }
@@ -179,7 +179,7 @@ export const modulesSlice = createAppSlice({
     setCardIndex: create.preparedReducer(
       withUpdatedAt<number>,
       (state, action: TimestampedAction<number>) => {
-        setVersionedValue(
+        setValueIfChanged(
           state.cardIndex,
           Math.max(0, action.payload),
           action.meta.updatedAt,
@@ -191,7 +191,7 @@ export const modulesSlice = createAppSlice({
       withUpdatedAt<number>,
       (state, action: TimestampedAction<number>) => {
         // Payload is the active list length; no wraparound, as in the original.
-        setVersionedValue(
+        setValueIfChanged(
           state.cardIndex,
           Math.min(state.cardIndex.value + 1, action.payload - 1),
           action.meta.updatedAt,
@@ -202,7 +202,7 @@ export const modulesSlice = createAppSlice({
     prevCard: create.preparedReducer(
       withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
-        setVersionedValue(
+        setValueIfChanged(
           state.cardIndex,
           Math.max(state.cardIndex.value - 1, 0),
           action.meta.updatedAt,
@@ -214,7 +214,7 @@ export const modulesSlice = createAppSlice({
       withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
         state.filterMissed = !state.filterMissed
-        setVersionedValue(state.cardIndex, 0, action.meta.updatedAt)
+        setValueIfChanged(state.cardIndex, 0, action.meta.updatedAt)
       },
     ),
 
@@ -222,7 +222,7 @@ export const modulesSlice = createAppSlice({
       withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
         state.reviewingMissed = !state.reviewingMissed
-        setVersionedValue(state.cardIndex, 0, action.meta.updatedAt)
+        setValueIfChanged(state.cardIndex, 0, action.meta.updatedAt)
       },
     ),
 
@@ -259,7 +259,7 @@ export const modulesSlice = createAppSlice({
             action.meta.updatedAt,
           )
         }
-        setVersionedValue(state.cardIndex, 0, action.meta.updatedAt)
+        setValueIfChanged(state.cardIndex, 0, action.meta.updatedAt)
         state.filterMissed = false
       },
     ),

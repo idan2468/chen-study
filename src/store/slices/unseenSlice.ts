@@ -10,7 +10,7 @@ import {
   liveValues,
   markDeleted,
   upsertValue,
-  setVersionedValue,
+  setValueIfChanged,
 } from "@/utils/sync/versionedValue"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type {
@@ -60,8 +60,8 @@ const openExercise = (
   exerciseId: string,
   updatedAt: IsoTimestamp,
 ) => {
-  setVersionedValue(state.currentId, exerciseId, updatedAt)
-  setVersionedValue(state.cardIndex, 0, updatedAt)
+  setValueIfChanged(state.currentId, exerciseId, updatedAt)
+  setValueIfChanged(state.cardIndex, 0, updatedAt)
 }
 
 export const unseenSlice = createAppSlice({
@@ -214,7 +214,7 @@ export const unseenSlice = createAppSlice({
     setFlashcardIndex: create.preparedReducer(
       withUpdatedAt<number>,
       (state, action: TimestampedAction<number>) => {
-        setVersionedValue(
+        setValueIfChanged(
           state.cardIndex,
           Math.max(0, action.payload),
           action.meta.updatedAt,
@@ -225,7 +225,7 @@ export const unseenSlice = createAppSlice({
     nextFlashcard: create.preparedReducer(
       withUpdatedAt<number>,
       (state, action: TimestampedAction<number>) => {
-        setVersionedValue(
+        setValueIfChanged(
           state.cardIndex,
           Math.min(state.cardIndex.value + 1, action.payload - 1),
           action.meta.updatedAt,
@@ -236,7 +236,7 @@ export const unseenSlice = createAppSlice({
     prevFlashcard: create.preparedReducer(
       withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
-        setVersionedValue(
+        setValueIfChanged(
           state.cardIndex,
           Math.max(state.cardIndex.value - 1, 0),
           action.meta.updatedAt,

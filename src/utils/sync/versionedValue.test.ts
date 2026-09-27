@@ -8,7 +8,7 @@ import {
   mergeVersionedArrays,
   pickNewer,
   upsertValue,
-  setVersionedValue,
+  setValueIfChanged,
   toVersionedValue,
 } from "./versionedValue"
 
@@ -98,10 +98,10 @@ test("tombstones a live entry and ignores missing or deleted ones", () => {
 test("stamps a scalar only when its value changes", () => {
   const index = toVersionedValue(2, EARLIER)
 
-  setVersionedValue(index, 2, LATER)
+  setValueIfChanged(index, 2, LATER)
   expect(index).toStrictEqual(toVersionedValue(2, EARLIER))
 
-  setVersionedValue(index, 3, LATER)
+  setValueIfChanged(index, 3, LATER)
   expect(index).toStrictEqual(toVersionedValue(3, LATER))
 })
 

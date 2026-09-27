@@ -7,7 +7,7 @@ import { SpeechLang } from "@/types/speech"
 import type { VersionedValue } from "@/types/versionedValue"
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import {
-  setVersionedValue,
+  setValueIfChanged,
   toVersionedValue,
 } from "@/utils/sync/versionedValue"
 
@@ -73,7 +73,7 @@ export const settingsSlice = createAppSlice({
     toggleDyslexiaFont: create.preparedReducer(
       withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
-        setVersionedValue(
+        setValueIfChanged(
           state.dyslexiaFont,
           !state.dyslexiaFont.value,
           action.meta.updatedAt,
@@ -83,7 +83,7 @@ export const settingsSlice = createAppSlice({
     setDyslexiaFont: create.preparedReducer(
       withUpdatedAt<boolean>,
       (state, action: TimestampedAction<boolean>) => {
-        setVersionedValue(
+        setValueIfChanged(
           state.dyslexiaFont,
           action.payload,
           action.meta.updatedAt,
@@ -93,7 +93,7 @@ export const settingsSlice = createAppSlice({
     toggleShuffleUnseenAnswers: create.preparedReducer(
       withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
-        setVersionedValue(
+        setValueIfChanged(
           state.shuffleUnseenAnswers,
           !state.shuffleUnseenAnswers.value,
           action.meta.updatedAt,
@@ -106,7 +106,7 @@ export const settingsSlice = createAppSlice({
         state,
         action: TimestampedAction<{ lang: SpeechLang; rate: number }>,
       ) => {
-        setVersionedValue(
+        setValueIfChanged(
           state.speechRateByLang[action.payload.lang],
           clampRate(action.payload.rate),
           action.meta.updatedAt,
