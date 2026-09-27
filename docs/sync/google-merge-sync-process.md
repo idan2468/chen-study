@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–9 approved; Step 10 is in review.**
+**Status: in progress on `google-merge-sync` — Steps 1–10 approved; Step 11 is next.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -22,24 +22,14 @@
   - Decisions: newest `updatedAt` wins, compared as parsed instants, and Drive wins ties; deletion is plain newest-wins with tombstones kept forever, so a later re-import beats an older tombstone; a newer Unseen exercise wins with its whole subtree, while equal live versions keep Drive's exercise fields and merge each child record by newest-wins; Modules, global Module progress words, and each preference merge independently; navigation merges as a pair (differing current IDs → the side that switched more recently wins both ID and card index; same ID → each field newest-wins); merged arrays keep Drive's order, then append local-only IDs in local order; timestamp helpers are generic (`timestamp.ts`, `IsoTimestamp`, `Asia/Jerusalem` as the default zone); a merged current ID can point at an entity the other side deleted — left to Step 11 hydration.
 - [x] Step 9 — Drive v2 transport (`7c34326`, `814bc02`, `6a2b27f`, `f93021f`, `b1d6087`), 336 tests/full gate/review/manual approved.
   - Decisions: `progress-v2.json` lives in `appDataFolder`, is validated with `persistedStateSchema`, and duplicates resolve to the newest `modifiedTime`; no `keepalive`; a write reuses the file ID from the preceding read (reviewed concurrent-write limitation stands); an unparsable or Zod-invalid Drive file is never overwritten — it is renamed to `progress-v2.invalid-<IsoTimestamp>.json.bck` and a fresh `progress-v2.json` is created; the write is skipped when the state equals the Drive copy just read (`object-hash`); the localStorage pair is `readLocalPersistedState`/`writeLocalPersistedState` and the Drive pair `readDrivePersistedState`/`writeDrivePersistedState`; shared file operations live in `google/driveFiles.ts`.
+- [x] Step 10 — migration/activation coordinator, uninvoked (`453e44f`, `5563643`, `d312bdf`, `9b8d7dc`, `672d84f`, `27fbe40`, `5937935`, `da907db`, `848ee7f`, `6e4e5de`, `cb272f3`), 345 tests/full gate/review/manual approved.
+  - Decisions: the coordinator is temporary legacy code in `src/utils/sync/legacy/migrateToV2.ts`, converting via `selectPersistedState(makeStore().getState())` with epoch timestamps; a device-local `sync_v2_activated` marker is set only after every earlier step succeeds, after which only idempotent cleanup reruns; never-connected devices migrate locally with no Drive calls; with valid Drive v2 the legacy pull is skipped and converted local data merges into Drive v2; with missing or invalid Drive v2, `progress.json` is pulled into the legacy keys before converting; local v2 is written before Drive v2 as a checkpoint, and a retry resumes from it (skipping pull and conversion) so pending edits keep real timestamps; cleanup deletes only legacy data keys plus `google_last_synced_hash`, keeping dark mode, locale, system voices, the Google token, and Drive's `progress.json` until Step 12; non-trivial sync functions carry short `@param` docs; utilities renamed `upsertValue`, `tombstoneValue`, `setValueIfChanged`, `downloadFileContent`, `keepLastBy`.
 
 ## Current review gate
 
-### Step 10 — migration/activation coordinator, uninvoked
+### Step 11 — activate v2 synchronization
 
-- The coordinator is temporary legacy code under `src/utils/sync/legacy/`; local conversion reuses the slices' legacy initializers via `selectPersistedState(makeStore().getState())`, so converted values get the epoch `updatedAt` (Step 6).
-- A device-local `sync_v2_activated` marker is set only after every earlier step succeeds; once set, the coordinator only reruns idempotent cleanup.
-- Devices that never connected Google migrate locally too: convert → local v2 → activate → cleanup, with no Drive calls.
-- Existing Drive v2: skip the legacy pull, merge the converted local legacy data with Drive v2 (Drive wins shared records; local-only IDs append), write local v2 and Drive v2, activate, clean up.
-- Missing or invalid Drive v2: pull `progress.json` into local legacy keys as connect does today, convert, write local v2, create Drive v2 (renaming an invalid file aside), activate, clean up.
-- Cleanup deletes only this device's legacy data keys and `google_last_synced_hash`; dark mode, locale, system voices, and the Google token stay, and Drive's `progress.json` stays until Step 12.
-- Recovery: local v2 is written before Drive v2 and acts as a checkpoint; a retry with a valid local v2 and no marker skips the legacy pull and conversion and resumes from it, so edits made while the migration was pending keep their real timestamps.
-- Utility renames (user-requested): `putValue` → `upsertValue`, `deleteValue` → `tombstoneValue`, `setVersionedValue` → `setValueIfChanged`, `downloadFileText` → `downloadFileContent`, `keepFinalOccurrencesBy` → `keepLastBy`; `DrivePersistedState` keeps its name (`5937935`, `da907db`, `848ee7f`, `6e4e5de`, `cb272f3`).
-- Commits: `453e44f`, `5563643`; review `[QS]` commits: `d312bdf`, `9b8d7dc`, `672d84f`; follow-up `27fbe40` (user-requested: `@param` docs on non-trivial functions across the plan's sync files).
-- No activation path: `grep` finds no caller of `migrateToV2`, `isV2Activated`, the Drive v2 transport, or `mergePersistedState` outside their own files and tests.
-- Validation: 345 tests, type-check, lint, changed-file format, build, and diff checks pass.
-- Review: all three findings accepted and applied (shared checkpoint-or-convert helper, exported marker key in tests, fixture-only merge assertion dropped).
-- Awaiting manual approval.
+- In progress; scope decisions pending.
 
 ## Step definitions
 
