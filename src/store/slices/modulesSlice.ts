@@ -101,7 +101,15 @@ const setModuleProgressStatus = (
   upsertValue(progress, hasWord(word), { word, status }, updatedAt)
 }
 
-/** Seeds built-ins and repairs navigation the same way for local v2 and legacy storage. */
+/** Clamps in case the module's deck has shrunk since the index was saved. */
+const clampCardIndex = (index: number, module: ModuleExercise) =>
+  Math.min(Math.max(index, 0), Math.max(module.cards.length - 1, 0))
+
+/** An empty stored ID was never saved, so falling back from it is not a repair. */
+const isRepairedId = (storedId: string, resolvedId: string) =>
+  storedId !== "" && storedId !== resolvedId
+
+/** Seeds built-ins and repairs navigation the same way for local v2 and legacy storage; a repaired current module starts at its first card. */
 const resolveModulesState = (
   stored: PersistedState["modules"],
 ): ModulesState => {
@@ -112,18 +120,11 @@ const resolveModulesState = (
     stored.currentModuleId.value,
   )
 
-  // A repaired current module starts at its first card; otherwise clamp in
-  // case the deck has shrunk since the index was saved.
   const currentModule = modules.find(module => module.id === currentModuleId)
-  const wasRepaired =
-    stored.currentModuleId.value !== "" &&
-    stored.currentModuleId.value !== currentModuleId
   const cardIndex =
-    currentModule && !wasRepaired
-      ? Math.min(
-          Math.max(stored.cardIndex.value, 0),
-          Math.max(currentModule.cards.length - 1, 0),
-        )
+    currentModule &&
+    !isRepairedId(stored.currentModuleId.value, currentModuleId)
+      ? clampCardIndex(stored.cardIndex.value, currentModule)
       : 0
 
   return {

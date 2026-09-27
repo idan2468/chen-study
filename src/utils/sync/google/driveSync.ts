@@ -7,10 +7,37 @@ import { writeLocalPersistedState } from "@/store/persistedState"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import { isV2Activated, migrateToV2 } from "@/utils/sync/legacy/migrateToV2"
 import { mergePersistedState } from "@/utils/sync/mergePersistedState"
+import type { DrivePersistedState } from "./drivePersistedState"
 import {
   readDrivePersistedState,
   writeDrivePersistedState,
 } from "./drivePersistedState"
+
+const mergeWithDrive = (local: PersistedState, drive: DrivePersistedState) =>
+  drive.status === "valid" ? mergePersistedState(local, drive.state) : local
+
+/** Skips the write and reload when the merge brought nothing new, so view-only state survives. */
+const applyLocallyIfChanged = (
+  local: PersistedState,
+  merged: PersistedState,
+  reloadApp: () => void,
+) => {
+  if (objectHash(merged) !== objectHash(local)) {
+    writeLocalPersistedState(merged)
+    reloadApp()
+  }
+}
+
+const syncActivatedDevice = async (
+  readLocalState: () => PersistedState,
+  reloadApp: () => void,
+) => {
+  const drive = await readDrivePersistedState()
+  const local = readLocalState()
+  const merged = mergeWithDrive(local, drive)
+  applyLocallyIfChanged(local, merged, reloadApp)
+  await writeDrivePersistedState(drive, merged)
+}
 
 /**
  * Reads Drive, merges it with the running app's state, applies the result
@@ -24,18 +51,10 @@ export const syncWithDrive = async (
   readLocalState: () => PersistedState,
   reloadApp: () => void,
 ) => {
-  if (!isV2Activated()) {
+  if (isV2Activated()) {
+    await syncActivatedDevice(readLocalState, reloadApp)
+  } else {
     await migrateToV2(true)
     reloadApp()
-    return
   }
-  const drive = await readDrivePersistedState()
-  const local = readLocalState()
-  const merged =
-    drive.status === "valid" ? mergePersistedState(local, drive.state) : local
-  if (objectHash(merged) !== objectHash(local)) {
-    writeLocalPersistedState(merged)
-    reloadApp()
-  }
-  await writeDrivePersistedState(drive, merged)
 }

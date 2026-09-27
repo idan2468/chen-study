@@ -35,25 +35,42 @@ export type UnseenState = {
 const hasExerciseId = (exerciseId: string) => (exercise: UnseenExercise) =>
   exercise.exerciseId === exerciseId
 
-/** Seeds the built-in exercise unless it has an entry (live or tombstoned); a current ID pointing at a deleted exercise falls back, starting at the first card. */
+const isDefaultExercise = hasExerciseId(defaultUnseenExercise.exerciseId)
+
+/** A tombstone counts as an entry, so a deleted built-in stays deleted. */
+const withDefaultExercise = (
+  exercises: VersionedValue<UnseenExercise>[],
+): VersionedValue<UnseenExercise>[] =>
+  exercises.some(entry => isDefaultExercise(entry.value))
+    ? exercises
+    : [...exercises, toVersionedValue(defaultUnseenExercise)]
+
+/** Keeps a live stored ID; otherwise falls back to the built-in, then the first live exercise. */
+const resolveCurrentExerciseId = (
+  exercises: readonly UnseenExercise[],
+  storedId: string,
+) => {
+  if (exercises.some(hasExerciseId(storedId))) {
+    return storedId
+  }
+  const fallback = exercises.find(isDefaultExercise) ?? exercises[0]
+  return fallback?.exerciseId ?? ""
+}
+
+/** Applies the same repairs to local v2 and legacy storage; a repaired current ID starts at the first card. */
 const resolveUnseenState = (stored: UnseenState): UnseenState => {
-  const exercises = stored.exercises.some(entry =>
-    hasExerciseId(defaultUnseenExercise.exerciseId)(entry.value),
+  const exercises = withDefaultExercise(stored.exercises)
+  const currentId = resolveCurrentExerciseId(
+    liveValues(exercises),
+    stored.currentId.value,
   )
-    ? stored.exercises
-    : [...stored.exercises, toVersionedValue(defaultUnseenExercise)]
-  const live = liveValues(exercises)
-  const currentId = live.some(hasExerciseId(stored.currentId.value))
-    ? stored.currentId.value
-    : ((live.find(hasExerciseId(defaultUnseenExercise.exerciseId)) ?? live[0])
-        ?.exerciseId ?? "")
+  const wasRepaired = currentId !== stored.currentId.value
   return {
     exercises,
     currentId: toVersionedValue(currentId, stored.currentId.updatedAt),
-    cardIndex:
-      currentId === stored.currentId.value
-        ? stored.cardIndex
-        : toVersionedValue(0, stored.cardIndex.updatedAt),
+    cardIndex: wasRepaired
+      ? toVersionedValue(0, stored.cardIndex.updatedAt)
+      : stored.cardIndex,
   }
 }
 

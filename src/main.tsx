@@ -36,12 +36,15 @@ const GoogleAuthGate = ({ children }: { children: ReactNode }) =>
     children
   )
 
-const bootstrap = async () => {
-  // A connected device migrates during the boot restore, which can reach Drive;
-  // this one never will, so it migrates before the store first reads storage.
+/** A connected device migrates during the boot restore, which can reach Drive; a tokenless one migrates here, before the store first reads storage. */
+const migrateTokenlessDevice = async () => {
   if (!getAccessToken()) {
     await migrateToV2(false)
   }
+}
+
+const bootstrap = async () => {
+  await migrateTokenlessDevice()
   const store = makeStore()
 
   const locale = readStoredLocale()

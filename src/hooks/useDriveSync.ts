@@ -64,24 +64,21 @@ export const useDriveSync = (
     }
   }
 
-  const syncSilently = () => {
-    void attemptSync({ silent: true })
+  /** Background triggers skip hidden tabs and wait for a reconnect after a failed re-issue. */
+  const syncSilentlyIfVisible = () => {
+    if (document.visibilityState === "visible" && !needsReconnect) {
+      void attemptSync({ silent: true })
+    }
   }
 
-  const latest = useLatest({ syncSilently, needsReconnect })
+  const latest = useLatest({ syncSilentlyIfVisible })
 
   useEffect(() => {
     if (!connected) {
       return
     }
     const interval = setInterval(() => {
-      if (
-        document.visibilityState !== "visible" ||
-        latest.current.needsReconnect
-      ) {
-        return
-      }
-      latest.current.syncSilently()
+      latest.current.syncSilentlyIfVisible()
     }, SYNC_INTERVAL_MS)
     return () => {
       clearInterval(interval)
@@ -93,13 +90,7 @@ export const useDriveSync = (
       return
     }
     const onVisibilityChange = () => {
-      if (
-        document.visibilityState !== "visible" ||
-        latest.current.needsReconnect
-      ) {
-        return
-      }
-      latest.current.syncSilently()
+      latest.current.syncSilentlyIfVisible()
     }
     document.addEventListener("visibilitychange", onVisibilityChange)
     return () => {
