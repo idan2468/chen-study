@@ -25,9 +25,9 @@
 - The V2 suffix is dropped from names; the storage key `english_progress_v2` and `schemaVersion: 2` are unchanged.
 - The selector, key, and read/write helpers live together in `src/store/persistedState.ts`; the schema lives in `src/types/schemas/persistedState.ts`.
 - Every object schema in the persisted-state schema file is a named variable.
-- Commits: `8f8e626`, `54223ae`.
+- Commits: `8f8e626`, `54223ae`; `[QS]` commit: `41ca337`.
 - Validation: 298 tests, type-check, lint, changed-file format, build, and diff checks pass.
-- Review: `review-code-quality` skipped for this refactor at the user's request.
+- Review: full `review-code-quality` stopped at the user's request; only F2 (name the section schemas `unseenSchema`/`modulesSchema` after their envelope keys) applied.
 - Awaiting manual approval.
 
 ## Step definitions
