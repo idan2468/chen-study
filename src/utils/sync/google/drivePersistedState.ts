@@ -1,7 +1,7 @@
 import objectHash from "object-hash"
 import {
   createAppDataFile,
-  downloadFileText,
+  downloadFileContent,
   locateAppDataFile,
   renameFile,
   requireAccessToken,
@@ -36,7 +36,7 @@ export const readDrivePersistedState =
     if (!file) {
       return { status: "missing" }
     }
-    const state = parsePersistedState(await downloadFileText(token, file.id))
+    const state = parsePersistedState(await downloadFileContent(token, file.id))
     return state
       ? { status: "valid", fileId: file.id, state }
       : { status: "invalid", fileId: file.id }

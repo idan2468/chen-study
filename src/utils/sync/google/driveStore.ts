@@ -5,7 +5,7 @@
  */
 import {
   createAppDataFile,
-  downloadFileText,
+  downloadFileContent,
   locateAppDataFile,
   requireAccessToken,
   updateFileContent,
@@ -32,7 +32,7 @@ const parseSnapshot = (text: string): SyncPayload | null => {
 export const readSnapshot = async (): Promise<SyncPayload | null> => {
   const token = requireAccessToken()
   const file = await locateAppDataFile(token, PROGRESS_FILE_NAME)
-  return file ? parseSnapshot(await downloadFileText(token, file.id)) : null
+  return file ? parseSnapshot(await downloadFileContent(token, file.id)) : null
 }
 
 /**

@@ -55,7 +55,7 @@ export const locateAppDataFile = async (
   )
 }
 
-export const downloadFileText = async (
+export const downloadFileContent = async (
   token: string,
   fileId: string,
 ): Promise<string> => {
