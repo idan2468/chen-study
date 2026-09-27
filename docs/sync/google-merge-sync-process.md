@@ -28,12 +28,12 @@
 ### Step 10 — migration/activation coordinator, uninvoked
 
 - The coordinator is temporary legacy code under `src/utils/sync/legacy/`; local conversion reuses the slices' legacy initializers via `selectPersistedState(makeStore().getState())`, so converted values get the epoch `updatedAt` (Step 6).
-- A device-local `sync_v2_activated` marker is set only after every earlier step succeeds; once set, the coordinator only reruns idempotent cleanup. A failed run leaves it unset, so the next run starts over.
+- A device-local `sync_v2_activated` marker is set only after every earlier step succeeds; once set, the coordinator only reruns idempotent cleanup.
 - Devices that never connected Google migrate locally too: convert → local v2 → activate → cleanup, with no Drive calls.
 - Existing Drive v2: skip the legacy pull, merge the converted local legacy data with Drive v2 (Drive wins shared records; local-only IDs append), write local v2 and Drive v2, activate, clean up.
 - Missing or invalid Drive v2: pull `progress.json` into local legacy keys as connect does today, convert, write local v2, create Drive v2 (renaming an invalid file aside), activate, clean up.
 - Cleanup deletes only this device's legacy data keys and `google_last_synced_hash`; dark mode, locale, system voices, and the Google token stay, and Drive's `progress.json` stays until Step 12.
-- Recovery source when a valid local v2 exists but the marker is unset: pending.
+- Recovery: local v2 is written before Drive v2 and acts as a checkpoint; a retry with a valid local v2 and no marker skips the legacy pull and conversion and resumes from it, so edits made while the migration was pending keep their real timestamps.
 
 ## Step definitions
 
