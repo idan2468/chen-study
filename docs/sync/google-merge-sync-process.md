@@ -19,6 +19,10 @@
 
 ### Step 7 — canonical local v2
 
+- Envelope mirrors versioned state: `{ schemaVersion: 2, unseen: { exercises, currentId, cardIndex }, modules: { modules, progress, currentModuleId, cardIndex }, preferences: { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang } }`; `filterMissed`, `reviewingMissed`, and system voice stay out.
+- App hydration keeps reading legacy keys until Step 11; `english_progress_v2` is written through on every change, and its loader is implemented and tested but not wired into startup yet.
+- A missing, corrupt, or Zod-invalid v2 document falls back to legacy (console warning on validation failure).
+- `english_progress_v2` is excluded from the legacy Google payload (no Drive v2 yet).
 - Not yet started.
 
 ## Step definitions
