@@ -64,7 +64,7 @@ Results for Step 12. Method: knip 6.38 (`npx knip --production`, so exports used
 
 **B. Keep, but move — permanent device keys**
 
-- `StorageKeys.darkMode`, `locale`, `systemVoice`, `systemVoiceHe`, `googleAccessToken` (same key strings, so device settings survive) move out of `legacyStorage.ts`. Importers: `theme.ts`, `i18n/index.ts`, `i18n/useLocale.ts`, `googleAuth.ts`, `settingsSlice.ts`, `listenerMiddleware.ts`, `test/helpers.ts`, and 13 test files.
+- `StorageKeys.darkMode`, `locale`, `systemVoice`, `systemVoiceHe`, `googleAccessToken` (same key strings, so device settings survive) move out of `legacyStorage.ts`. Importers: `theme.ts`, `i18n/index.ts`, `i18n/useLocale.ts`, `googleAuth.ts`, `settingsSlice.ts`, `listenerMiddleware.ts`, `test/helpers.ts`, and 11 test files.
 
 **C. Becomes unused once A is gone — delete**
 
