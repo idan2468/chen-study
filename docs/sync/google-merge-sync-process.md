@@ -34,6 +34,7 @@
 - Missing or invalid Drive v2: pull `progress.json` into local legacy keys as connect does today, convert, write local v2, create Drive v2 (renaming an invalid file aside), activate, clean up.
 - Cleanup deletes only this device's legacy data keys and `google_last_synced_hash`; dark mode, locale, system voices, and the Google token stay, and Drive's `progress.json` stays until Step 12.
 - Recovery: local v2 is written before Drive v2 and acts as a checkpoint; a retry with a valid local v2 and no marker skips the legacy pull and conversion and resumes from it, so edits made while the migration was pending keep their real timestamps.
+- Utility renames (user-requested): `putValue` → `upsertValue`, `deleteValue` → `tombstoneValue`, `setVersionedValue` → `setValueIfChanged`, `downloadFileText` → `downloadFileContent`, `keepFinalOccurrencesBy` → `keepLastBy`; `DrivePersistedState` keeps its name.
 - Commits: `453e44f`, `5563643`; review `[QS]` commits: `d312bdf`, `9b8d7dc`, `672d84f`; follow-up `27fbe40` (user-requested: `@param` docs on non-trivial functions across the plan's sync files).
 - No activation path: `grep` finds no caller of `migrateToV2`, `isV2Activated`, the Drive v2 transport, or `mergePersistedState` outside their own files and tests.
 - Validation: 345 tests, type-check, lint, changed-file format, build, and diff checks pass.
