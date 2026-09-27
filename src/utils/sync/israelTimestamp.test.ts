@@ -1,4 +1,7 @@
-import { toIsraelIsoTimestamp } from "./israelTimestamp"
+import {
+  compareIsraelTimestamps,
+  toIsraelIsoTimestamp,
+} from "./israelTimestamp"
 
 test("formats summer time with the +03:00 offset", () => {
   expect(toIsraelIsoTimestamp(new Date("2026-09-26T08:02:56.123Z"))).toBe(
@@ -25,6 +28,20 @@ test("round-trips to the same instant", () => {
   const date = new Date("2026-03-27T00:15:42.007Z")
 
   expect(Date.parse(toIsraelIsoTimestamp(date))).toBe(date.getTime())
+})
+
+test("compares parsed instants across different offsets", () => {
+  const winterEarlier = "2026-03-27T01:59:00.000+02:00"
+  const summerLater = "2026-03-27T03:00:00.000+03:00"
+
+  expect(compareIsraelTimestamps(winterEarlier, summerLater)).toBeLessThan(0)
+  expect(compareIsraelTimestamps(summerLater, winterEarlier)).toBeGreaterThan(0)
+  expect(
+    compareIsraelTimestamps(
+      "2026-03-27T02:00:00.000+02:00",
+      "2026-03-27T03:00:00.000+03:00",
+    ),
+  ).toBe(0)
 })
 
 test("rejects an invalid date", () => {

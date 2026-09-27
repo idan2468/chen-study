@@ -13,3 +13,9 @@ export const toIsraelIsoTimestamp = (date: Date): IsraelIsoTimestamp => {
   }
   return timestamp
 }
+
+/** Orders timestamps by the instant they represent, not by their string form. */
+export const compareIsraelTimestamps = (
+  a: IsraelIsoTimestamp,
+  b: IsraelIsoTimestamp,
+): number => DateTime.fromISO(a).toMillis() - DateTime.fromISO(b).toMillis()
