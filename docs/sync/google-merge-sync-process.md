@@ -23,7 +23,12 @@
 - App hydration keeps reading legacy keys until Step 11; `english_progress_v2` is written through on every change, and its loader is implemented and tested but not wired into startup yet.
 - A missing, corrupt, or Zod-invalid v2 document falls back to legacy (console warning on validation failure).
 - `english_progress_v2` is excluded from the legacy Google payload (no Drive v2 yet).
-- Not yet started.
+- `SpeechLang` lives in `src/types/speech.ts` so schemas never import store slices.
+- `src/utils/sync/` keeps its flat layout for now; grouping the v2 files into a subfolder was proposed and not accepted.
+- Commits: `220a8c8`, `53b664f`; review `[QS]` commit: `70fa4d9`.
+- Validation: 298 tests, type-check, lint, changed-file format, build, and diff checks pass.
+- Review: import-cycle finding accepted and applied.
+- Awaiting manual approval.
 
 ## Step definitions
 
