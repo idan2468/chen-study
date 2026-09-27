@@ -1,6 +1,9 @@
 import type { VersionedValue } from "@/types/versionedValue"
 import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
-import { toIsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
+import {
+  compareIsraelTimestamps,
+  toIsraelIsoTimestamp,
+} from "@/utils/sync/israelTimestamp"
 
 /** Older than any real edit, for values that predate versioning (built-ins, legacy storage). */
 export const INITIAL_UPDATED_AT = toIsraelIsoTimestamp(new Date(0))
@@ -67,4 +70,34 @@ export const setVersionedValue = <T>(
     entry.value = value
     entry.updatedAt = updatedAt
   }
+}
+
+/** Newest `updatedAt` wins; Drive wins ties so every device converges on the shared copy. */
+export const pickNewer = <T>(
+  local: VersionedValue<T>,
+  remote: VersionedValue<T>,
+): VersionedValue<T> =>
+  compareIsraelTimestamps(local.updatedAt, remote.updatedAt) > 0
+    ? local
+    : remote
+
+/** Keeps Drive's order, then appends local-only IDs in local order. */
+export const mergeVersionedArrays = <T>(
+  local: readonly VersionedValue<T>[],
+  remote: readonly VersionedValue<T>[],
+  getId: (value: T) => string,
+  mergeEntries: (
+    local: VersionedValue<T>,
+    remote: VersionedValue<T>,
+  ) => VersionedValue<T> = pickNewer,
+): VersionedValue<T>[] => {
+  const localById = new Map(local.map(entry => [getId(entry.value), entry]))
+  const remoteIds = new Set(remote.map(entry => getId(entry.value)))
+  return [
+    ...remote.map(remoteEntry => {
+      const localEntry = localById.get(getId(remoteEntry.value))
+      return localEntry ? mergeEntries(localEntry, remoteEntry) : remoteEntry
+    }),
+    ...local.filter(entry => !remoteIds.has(getId(entry.value))),
+  ]
 }

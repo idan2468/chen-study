@@ -5,6 +5,8 @@ import {
   INITIAL_UPDATED_AT,
   liveValues,
   markDeleted,
+  mergeVersionedArrays,
+  pickNewer,
   putValue,
   setVersionedValue,
   toVersionedValue,
@@ -101,4 +103,116 @@ test("stamps a scalar only when its value changes", () => {
 
   setVersionedValue(index, 3, LATER)
   expect(index).toStrictEqual(toVersionedValue(3, LATER))
+})
+
+describe("pickNewer", () => {
+  test("keeps whichever side was updated later", () => {
+    const earlier = toVersionedValue("a", EARLIER)
+    const later = toVersionedValue("b", LATER)
+
+    expect(pickNewer(later, earlier)).toBe(later)
+    expect(pickNewer(earlier, later)).toBe(later)
+  })
+
+  test("compares instants, not strings, across offsets", () => {
+    const winterLater = toVersionedValue(
+      "winter",
+      "2026-03-27T02:30:00.000+02:00",
+    )
+    const summerEarlier = toVersionedValue(
+      "summer",
+      "2026-03-27T03:10:00.000+03:00",
+    )
+
+    expect(pickNewer(winterLater, summerEarlier)).toBe(winterLater)
+  })
+
+  test("lets Drive win a tie, including a same-time deletion", () => {
+    const local = toVersionedValue("local", LATER)
+    const remote = toVersionedValue("remote", LATER)
+    const localTombstone = markDeleted(local, LATER)
+
+    expect(pickNewer(local, remote)).toBe(remote)
+    expect(pickNewer(localTombstone, remote)).toBe(remote)
+  })
+
+  test("lets a later value revive an older tombstone", () => {
+    const tombstone = markDeleted(toVersionedValue("x", EARLIER), EARLIER)
+    const revived = toVersionedValue("x", LATER)
+
+    expect(pickNewer(tombstone, revived)).toBe(revived)
+    expect(pickNewer(revived, tombstone)).toBe(revived)
+  })
+
+  test("lets a later tombstone beat an older live value", () => {
+    const live = toVersionedValue("x", EARLIER)
+    const tombstone = markDeleted(live, LATER)
+
+    expect(pickNewer(live, tombstone)).toBe(tombstone)
+    expect(pickNewer(tombstone, live)).toBe(tombstone)
+  })
+})
+
+describe("mergeVersionedArrays", () => {
+  const getWord = (value: Word) => value.word
+  const words = (merged: VersionedValue<Word>[]) =>
+    merged.map(entry => entry.value.word)
+
+  test("keeps Drive's order, then local-only entries in local order", () => {
+    const local = [
+      toVersionedValue({ word: "DOG" }, EARLIER),
+      toVersionedValue({ word: "CAT" }, EARLIER),
+      toVersionedValue({ word: "EMU" }, EARLIER),
+    ]
+    const remote = [
+      toVersionedValue({ word: "CAT" }, EARLIER),
+      toVersionedValue({ word: "HAT" }, EARLIER),
+    ]
+
+    expect(words(mergeVersionedArrays(local, remote, getWord))).toStrictEqual([
+      "CAT",
+      "HAT",
+      "DOG",
+      "EMU",
+    ])
+  })
+
+  test("resolves shared IDs by newest-wins and keeps tombstones", () => {
+    const local = [
+      toVersionedValue({ word: "HAT", note: "local" }, LATER),
+      markDeleted(toVersionedValue({ word: "FOX" }, EARLIER), LATER),
+      markDeleted(toVersionedValue({ word: "CAT" }, EARLIER), EARLIER),
+    ]
+    const remote = [
+      toVersionedValue({ word: "HAT", note: "remote" }, EARLIER),
+      toVersionedValue({ word: "FOX" }, EARLIER),
+    ]
+
+    expect(mergeVersionedArrays(local, remote, getWord)).toStrictEqual([
+      toVersionedValue({ word: "HAT", note: "local" }, LATER),
+      markDeleted(toVersionedValue({ word: "FOX" }, EARLIER), LATER),
+      markDeleted(toVersionedValue({ word: "CAT" }, EARLIER), EARLIER),
+    ])
+  })
+
+  test("uses the given resolver for IDs present on both sides", () => {
+    const local = [toVersionedValue({ word: "HAT", note: "local" }, EARLIER)]
+    const remote = [toVersionedValue({ word: "HAT", note: "remote" }, EARLIER)]
+
+    const merged = mergeVersionedArrays(
+      local,
+      remote,
+      getWord,
+      localEntry => localEntry,
+    )
+
+    expect(merged).toStrictEqual(local)
+  })
+
+  test("returns the other side when one is empty", () => {
+    const values = entries()
+
+    expect(mergeVersionedArrays(values, [], getWord)).toStrictEqual(values)
+    expect(mergeVersionedArrays([], values, getWord)).toStrictEqual(values)
+  })
 })
