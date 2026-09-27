@@ -118,3 +118,16 @@ export const updateFileContent = async (
     },
   )
 }
+
+/** Metadata-only update: the file's content is untouched. */
+export const renameFile = async (
+  token: string,
+  fileId: string,
+  name: string,
+) => {
+  await authorizedFetch(token, `${DRIVE_FILES_URL}/${fileId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  })
+}
