@@ -34,7 +34,8 @@
 - Commits: `7c34326`, `814bc02`, `6a2b27f`; `[Step 8]` doc heading fix in this gate's doc commit.
 - `readDrivePersistedState`/`writeDrivePersistedState` have no callers outside their tests; legacy Google sync is unchanged.
 - Validation: 336 tests, type-check, lint, changed-file format, build, and diff checks pass.
-- Review: pending.
+- Review: both findings accepted and applied — `f93021f` (exhaustive `switch` on the read status), `b1d6087` (backup name built from one base, with the user-requested `.bck` suffix).
+- Awaiting manual approval.
 
 ## Step definitions
 
