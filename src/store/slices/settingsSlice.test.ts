@@ -9,9 +9,9 @@ import {
   selectSpeechRate,
   selectSystemVoiceUri,
   setSpeechRate,
-  SpeechLang,
   toggleDyslexiaFont,
 } from "./settingsSlice"
+import { SpeechLang } from "@/types/speech"
 
 describe("hydration", () => {
   beforeEach(() => {

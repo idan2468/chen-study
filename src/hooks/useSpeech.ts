@@ -10,8 +10,8 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   selectSpeechRate,
   selectSystemVoiceUri,
-  SpeechLang,
 } from "@/store/slices/settingsSlice"
+import { SpeechLang } from "@/types/speech"
 import {
   selectSpeechOwnerId,
   speechAdvanced,

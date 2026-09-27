@@ -26,10 +26,10 @@ import {
 } from "./slices/unseenSlice"
 import {
   setSpeechRate,
-  SpeechLang,
   toggleDyslexiaFont,
   toggleShuffleUnseenAnswers,
 } from "./slices/settingsSlice"
+import { SpeechLang } from "@/types/speech"
 
 const otherId = "other_1"
 

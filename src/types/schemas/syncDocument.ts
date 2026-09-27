@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { SpeechLang } from "@/store/slices/settingsSlice"
+import { SpeechLang } from "@/types/speech"
 import { CardStatus } from "@/types/moduleExercise"
 import type { ModuleExercise } from "@/types/moduleExercise"
 import type { UnseenExercise } from "@/types/unseenExercise"

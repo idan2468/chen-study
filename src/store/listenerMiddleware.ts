@@ -19,10 +19,10 @@ import {
   setDyslexiaFont,
   setSpeechRate,
   setSystemVoiceUri,
-  SpeechLang,
   toggleDyslexiaFont,
   toggleShuffleUnseenAnswers,
 } from "./slices/settingsSlice"
+import { SpeechLang } from "@/types/speech"
 import type { UnseenState } from "./slices/unseenSlice"
 import {
   addExercise,

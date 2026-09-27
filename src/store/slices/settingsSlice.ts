@@ -3,6 +3,7 @@ import { createAppSlice } from "@/store/createAppSlice"
 import { readFlag, readString } from "@/store/storage"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
+import { SpeechLang } from "@/types/speech"
 import type { VersionedValue } from "@/types/versionedValue"
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import {
@@ -17,13 +18,6 @@ import {
  * `useMantineColorScheme` and the custom manager in `src/theme.ts`. Neither is
  * the UI language, which `react-i18next` owns; see `i18n/useLocale.ts`.
  */
-
-/** The two languages speech settings are tracked for -- distinct from
- *  `i18n`'s `Locale`, which is the UI chrome language. */
-export enum SpeechLang {
-  English = "en",
-  Hebrew = "he",
-}
 
 export type SettingsState = {
   dyslexiaFont: VersionedValue<boolean>
