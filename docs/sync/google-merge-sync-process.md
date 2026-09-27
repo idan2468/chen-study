@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–10 approved; Step 11 is next.**
+**Status: in progress on `google-merge-sync` — Steps 1–10 approved; Step 11 is in review.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -38,6 +38,13 @@
 - The unreachable legacy push path (`syncIfDirty`, `recordSynced`, `writeSnapshot`, the sync-hash key usage) is deleted now; `readSnapshot` stays for the migration.
 - Applying merged Drive state reuses the slices' reload reducers and is skipped when the merge changed nothing, so view-only Modules toggles reset only when another device's edits arrive.
 - After Step 11, a full manual test runs in Chrome via MCP (the user can sign in to Google if needed).
+- The slices share one `reloadFromStorage` action (in `store/persistedState.ts`): separate per-slice reloads let the write-through save a half-reloaded state over local v2 between dispatches.
+- Functions added in this step are split into small named helpers (`withDefaultExercise`, `resolveCurrentExerciseId`, `clampCardIndex`, `isRepairedId`, `mergeWithDrive`, `applyLocallyIfChanged`, `syncActivatedDevice`, `syncSilentlyIfVisible`, `migrateTokenlessDevice`); the refactor runs before the review.
+- The sync hooks live in `src/hooks/sync/` (`GoogleConnectContext`, `useDriveSync`, `useGoogleConnect`, `useRehydrateFromStorage`, `useSyncWithDrive`).
+- Commits: `3e6ec42`, `ca13121`, `f7783b6`, `b4a3f0b`, `8495e8e`; review `[QS]` commits: `4c9ab34`, `0e15d39`.
+- Validation: 340 tests, type-check (including forced `tsc -b --force`), lint, changed-file format, build, and diff checks pass.
+- Review: F2 (shared `storeTestLocale` test helper) and the `hooks/sync/` grouping accepted and applied; F1 (parse local v2 once per store instead of once per slice) declined.
+- Manual Chrome test: pending.
 
 ## Step definitions
 
