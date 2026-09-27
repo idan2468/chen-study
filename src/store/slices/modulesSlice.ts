@@ -1,6 +1,9 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
-import { readLocalPersistedState } from "@/store/persistedState"
+import {
+  readLocalPersistedState,
+  reloadFromStorage,
+} from "@/store/persistedState"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { hasWord, keepLastBy } from "@/utils/collections"
@@ -319,9 +322,10 @@ export const modulesSlice = createAppSlice({
         }
       },
     ),
-
-    reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
+  extraReducers: builder => {
+    builder.addCase(reloadFromStorage, () => loadFromStorage())
+  },
   selectors: {
     selectModuleEntries: state => state.modules,
     selectCurrentModuleId: state => state.currentModuleId.value,
@@ -343,7 +347,6 @@ export const {
   resetCurrentModuleProgress,
   addModules,
   deleteModule,
-  reloadFromStorage,
 } = modulesSlice.actions
 
 export const {

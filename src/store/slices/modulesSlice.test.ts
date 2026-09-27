@@ -10,6 +10,7 @@ import type {
 } from "@/types/moduleExercise"
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import {
+  reloadFromStorage,
   selectPersistedState,
   writeLocalPersistedState,
 } from "@/store/persistedState"
@@ -27,7 +28,6 @@ import {
   deleteModule,
   markCard,
   mergeModules,
-  reloadFromStorage,
   resetCurrentModuleProgress,
   selectActiveCards,
   selectCurrentModuleId,
@@ -485,17 +485,16 @@ describe("hydration from local v2", () => {
   })
 
   test("seeds built-ins missing from v2 but keeps their tombstones", () => {
-    const [first, second] = defaultModuleExercises
+    const first = at(defaultModuleExercises, 0)
+    const second = at(defaultModuleExercises, 1)
     writeModules({
-      modules: [
-        markDeleted(toVersionedValue(at([first], 0)), INITIAL_UPDATED_AT),
-      ],
+      modules: [markDeleted(toVersionedValue(first), INITIAL_UPDATED_AT)],
     })
 
     const ids = selectModules(makeStore().getState()).map(module => module.id)
 
-    expect(ids).not.toContain(first?.id)
-    expect(ids).toContain(second?.id)
+    expect(ids).not.toContain(first.id)
+    expect(ids).toContain(second.id)
   })
 
   test("repairs a current module that the merge left deleted, keeping its timestamp", () => {

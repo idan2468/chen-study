@@ -1,4 +1,4 @@
-import { createSelector } from "@reduxjs/toolkit"
+import { createAction, createSelector } from "@reduxjs/toolkit"
 import { readJson, writeJson } from "@/store/storage"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import {
@@ -8,6 +8,14 @@ import {
 import type { RootState } from "./store"
 
 export const PERSISTED_STATE_KEY = "english_progress_v2"
+
+/**
+ * Every slice re-reads storage in one reducer pass. Separate per-slice reloads
+ * would let the write-through save a half-reloaded state over local v2.
+ */
+export const reloadFromStorage = createAction(
+  "persistedState/reloadFromStorage",
+)
 
 export const selectPersistedState = createSelector(
   [

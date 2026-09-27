@@ -1,9 +1,7 @@
 import { useDirection, useMantineColorScheme } from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import { useAppDispatch } from "@/store/hooks"
-import { reloadFromStorage as reloadModules } from "@/store/slices/modulesSlice"
-import { reloadFromStorage as reloadSettings } from "@/store/slices/settingsSlice"
-import { reloadFromStorage as reloadUnseen } from "@/store/slices/unseenSlice"
+import { reloadFromStorage } from "@/store/persistedState"
 import { colorSchemeManager } from "@/theme"
 import { applyDocumentLocale, directionFor, readStoredLocale } from "@/i18n"
 
@@ -29,9 +27,7 @@ export const useRehydrateFromStorage = () => {
   }
 
   return () => {
-    dispatch(reloadSettings())
-    dispatch(reloadUnseen())
-    dispatch(reloadModules())
+    dispatch(reloadFromStorage())
 
     reloadLocale()
 

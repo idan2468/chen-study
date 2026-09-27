@@ -5,6 +5,7 @@ import {
   StorageKeys,
 } from "@/utils/sync/legacy/legacyStorage"
 import {
+  reloadFromStorage,
   selectPersistedState,
   writeLocalPersistedState,
 } from "@/store/persistedState"
@@ -19,7 +20,6 @@ import {
   deleteExercise,
   markFlashcard,
   nextFlashcard,
-  reloadFromStorage,
   resetFlashcardProgress,
   selectAllMarkedWords,
   selectAllProgress,

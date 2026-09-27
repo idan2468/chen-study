@@ -1,5 +1,6 @@
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import {
+  reloadFromStorage,
   selectPersistedState,
   writeLocalPersistedState,
 } from "@/store/persistedState"
@@ -7,7 +8,6 @@ import { makeStore } from "@/store/store"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
   DEFAULT_SPEECH_RATE,
-  reloadFromStorage,
   selectDyslexiaFont,
   selectShuffleUnseenAnswers,
   selectSpeechRate,

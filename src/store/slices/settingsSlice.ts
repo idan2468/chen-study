@@ -1,6 +1,9 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
-import { readLocalPersistedState } from "@/store/persistedState"
+import {
+  readLocalPersistedState,
+  reloadFromStorage,
+} from "@/store/persistedState"
 import { readString } from "@/store/storage"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
@@ -126,8 +129,10 @@ export const settingsSlice = createAppSlice({
         state.systemVoiceUriByLang[action.payload.lang] = action.payload.uri
       },
     ),
-    reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
+  extraReducers: builder => {
+    builder.addCase(reloadFromStorage, () => loadFromStorage())
+  },
   selectors: {
     selectDyslexiaFont: settings => settings.dyslexiaFont.value,
     selectShuffleUnseenAnswers: settings => settings.shuffleUnseenAnswers.value,
@@ -144,7 +149,6 @@ export const {
   toggleShuffleUnseenAnswers,
   setSpeechRate,
   setSystemVoiceUri,
-  reloadFromStorage,
 } = settingsSlice.actions
 
 export const {

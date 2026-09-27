@@ -1,6 +1,9 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
-import { readLocalPersistedState } from "@/store/persistedState"
+import {
+  readLocalPersistedState,
+  reloadFromStorage,
+} from "@/store/persistedState"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { hasWord, keepLastBy } from "@/utils/collections"
@@ -270,9 +273,10 @@ export const unseenSlice = createAppSlice({
         )
       },
     ),
-
-    reloadFromStorage: create.reducer(() => loadFromStorage()),
   }),
+  extraReducers: builder => {
+    builder.addCase(reloadFromStorage, () => loadFromStorage())
+  },
   selectors: {
     selectExerciseEntries: state => state.exercises,
     selectCurrentExerciseId: state => state.currentId.value,
@@ -292,7 +296,6 @@ export const {
   setFlashcardIndex,
   nextFlashcard,
   prevFlashcard,
-  reloadFromStorage,
 } = unseenSlice.actions
 
 export const {
