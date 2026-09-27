@@ -86,13 +86,13 @@ const moduleProgressRecordSchema = z.object({
 
 const cardIndexSchema = versionedValueSchema(z.number().int().nonnegative())
 
-const unseenStateSchema = z.object({
+const unseenSchema = z.object({
   exercises: z.array(versionedValueSchema(unseenExerciseSchema)),
   currentId: versionedValueSchema(z.string()),
   cardIndex: cardIndexSchema,
 })
 
-const modulesStateSchema = z.object({
+const modulesSchema = z.object({
   modules: z.array(versionedValueSchema(moduleExerciseSchema)),
   progress: z.array(versionedValueSchema(moduleProgressRecordSchema)),
   currentModuleId: versionedValueSchema(z.string()),
@@ -112,8 +112,8 @@ export const PERSISTED_STATE_VERSION = 2
 
 export const persistedStateSchema = z.object({
   schemaVersion: z.literal(PERSISTED_STATE_VERSION),
-  unseen: unseenStateSchema,
-  modules: modulesStateSchema,
+  unseen: unseenSchema,
+  modules: modulesSchema,
   preferences: preferencesSchema,
 })
 
