@@ -23,11 +23,11 @@
 ## Canonical model
 
 ```ts
-type IsraelIsoTimestamp = string
+type IsoTimestamp = string
 
 interface VersionedValue<T> {
   value: T
-  updatedAt: IsraelIsoTimestamp
+  updatedAt: IsoTimestamp
   deleted: boolean
 }
 

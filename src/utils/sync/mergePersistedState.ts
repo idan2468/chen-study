@@ -3,7 +3,7 @@ import { PERSISTED_STATE_VERSION } from "@/types/schemas/persistedState"
 import { SpeechLang } from "@/types/speech"
 import type { UnseenExercise } from "@/types/unseenExercise"
 import type { VersionedValue } from "@/types/versionedValue"
-import { compareIsraelTimestamps } from "@/utils/sync/israelTimestamp"
+import { compareTimestamps } from "@/utils/sync/timestamp"
 import {
   isNewer,
   mergeVersionedArrays,
@@ -21,7 +21,7 @@ const isSameLiveVersion = <T>(
 ) =>
   !local.deleted &&
   !remote.deleted &&
-  compareIsraelTimestamps(local.updatedAt, remote.updatedAt) === 0
+  compareTimestamps(local.updatedAt, remote.updatedAt) === 0
 
 /** A replaced exercise wins with its whole subtree; the same version merges its progress record by record. */
 const mergeExercise = (

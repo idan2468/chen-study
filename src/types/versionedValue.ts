@@ -1,7 +1,7 @@
-import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
+import type { IsoTimestamp } from "@/utils/sync/timestamp"
 
 export type VersionedValue<T> = {
   value: T
-  updatedAt: IsraelIsoTimestamp
+  updatedAt: IsoTimestamp
   deleted: boolean
 }

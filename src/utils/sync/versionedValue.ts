@@ -1,21 +1,18 @@
 import type { VersionedValue } from "@/types/versionedValue"
-import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
-import {
-  compareIsraelTimestamps,
-  toIsraelIsoTimestamp,
-} from "@/utils/sync/israelTimestamp"
+import type { IsoTimestamp } from "@/utils/sync/timestamp"
+import { compareTimestamps, toIsoTimestamp } from "@/utils/sync/timestamp"
 
 /** Older than any real edit, for values that predate versioning (built-ins, legacy storage). */
-export const INITIAL_UPDATED_AT = toIsraelIsoTimestamp(new Date(0))
+export const INITIAL_UPDATED_AT = toIsoTimestamp(new Date(0))
 
 export const toVersionedValue = <T>(
   value: T,
-  updatedAt: IsraelIsoTimestamp = INITIAL_UPDATED_AT,
+  updatedAt: IsoTimestamp = INITIAL_UPDATED_AT,
 ): VersionedValue<T> => ({ value, updatedAt, deleted: false })
 
 export const markDeleted = <T>(
   entry: VersionedValue<T>,
-  updatedAt: IsraelIsoTimestamp,
+  updatedAt: IsoTimestamp,
 ): VersionedValue<T> => ({ ...entry, updatedAt, deleted: true })
 
 export const liveValues = <T>(entries: readonly VersionedValue<T>[]): T[] =>
@@ -32,7 +29,7 @@ export const putValue = <T>(
   entries: VersionedValue<T>[],
   matches: (value: T) => boolean,
   value: T,
-  updatedAt: IsraelIsoTimestamp,
+  updatedAt: IsoTimestamp,
 ) => {
   const index = entries.findIndex(entry => matches(entry.value))
   const existing = entries[index]
@@ -49,7 +46,7 @@ export const putValue = <T>(
 export const deleteValue = <T>(
   entries: VersionedValue<T>[],
   matches: (value: T) => boolean,
-  updatedAt: IsraelIsoTimestamp,
+  updatedAt: IsoTimestamp,
 ) => {
   const index = entries.findIndex(
     entry => !entry.deleted && matches(entry.value),
@@ -64,7 +61,7 @@ export const deleteValue = <T>(
 export const setVersionedValue = <T>(
   entry: VersionedValue<T>,
   value: T,
-  updatedAt: IsraelIsoTimestamp,
+  updatedAt: IsoTimestamp,
 ) => {
   if (entry.value !== value) {
     entry.value = value
@@ -75,7 +72,7 @@ export const setVersionedValue = <T>(
 export const isNewer = <T>(
   candidate: VersionedValue<T>,
   other: VersionedValue<T>,
-) => compareIsraelTimestamps(candidate.updatedAt, other.updatedAt) > 0
+) => compareTimestamps(candidate.updatedAt, other.updatedAt) > 0
 
 /** Newest `updatedAt` wins; Drive wins ties so every device converges on the shared copy. */
 export const pickNewer = <T>(

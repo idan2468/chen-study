@@ -1,17 +1,17 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
-import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
-import { toIsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
+import type { IsoTimestamp } from "@/utils/sync/timestamp"
+import { toIsoTimestamp } from "@/utils/sync/timestamp"
 
 export type TimestampedAction<P = void> = PayloadAction<
   P,
   string,
-  { updatedAt: IsraelIsoTimestamp }
+  { updatedAt: IsoTimestamp }
 >
 
 /** `prepare` callback that stamps the action, keeping reducers pure. */
 export const withUpdatedAt = <P>(payload: P) => ({
   payload,
-  meta: { updatedAt: toIsraelIsoTimestamp(new Date()) },
+  meta: { updatedAt: toIsoTimestamp(new Date()) },
 })
 
 export const withUpdatedAtOnly = () => withUpdatedAt(undefined)

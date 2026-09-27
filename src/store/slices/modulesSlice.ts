@@ -4,7 +4,7 @@ import { readJson, readString } from "@/store/storage"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { hasWord, keepFinalOccurrencesBy } from "@/utils/collections"
-import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
+import type { IsoTimestamp } from "@/utils/sync/timestamp"
 import {
   readLegacyModuleProgress,
   readLegacyModules,
@@ -96,7 +96,7 @@ const setModuleProgressStatus = (
   progress: ModulesProgress,
   word: string,
   status: CardStatus,
-  updatedAt: IsraelIsoTimestamp,
+  updatedAt: IsoTimestamp,
 ) => {
   putValue(progress, hasWord(word), { word, status }, updatedAt)
 }
@@ -132,7 +132,7 @@ const loadFromStorage = (): ModulesState => {
 const addOrReplaceModule = (
   state: ModulesState,
   module: ModuleExercise,
-  updatedAt: IsraelIsoTimestamp,
+  updatedAt: IsoTimestamp,
 ) => {
   const existing = findLiveValue(state.modules, hasModuleId(module.id))
   putValue(state.modules, hasModuleId(module.id), module, updatedAt)
@@ -157,7 +157,7 @@ const addOrReplaceModule = (
 const openModule = (
   state: ModulesState,
   moduleId: string,
-  updatedAt: IsraelIsoTimestamp,
+  updatedAt: IsoTimestamp,
 ) => {
   setVersionedValue(state.currentModuleId, moduleId, updatedAt)
   setVersionedValue(state.cardIndex, 0, updatedAt)

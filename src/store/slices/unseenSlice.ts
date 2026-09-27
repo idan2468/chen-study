@@ -19,7 +19,7 @@ import type {
   UnseenExercise,
 } from "@/types/unseenExercise"
 import type { VersionedValue } from "@/types/versionedValue"
-import type { IsraelIsoTimestamp } from "@/utils/sync/israelTimestamp"
+import type { IsoTimestamp } from "@/utils/sync/timestamp"
 
 export type UnseenState = {
   exercises: VersionedValue<UnseenExercise>[]
@@ -39,7 +39,7 @@ const findExercise = (state: UnseenState, exerciseId: string) =>
 const replaceExercise = (
   state: UnseenState,
   exercise: UnseenExercise,
-  updatedAt: IsraelIsoTimestamp,
+  updatedAt: IsoTimestamp,
 ) => {
   const replacement = {
     ...exercise,
@@ -58,7 +58,7 @@ const replaceExercise = (
 const openExercise = (
   state: UnseenState,
   exerciseId: string,
-  updatedAt: IsraelIsoTimestamp,
+  updatedAt: IsoTimestamp,
 ) => {
   setVersionedValue(state.currentId, exerciseId, updatedAt)
   setVersionedValue(state.cardIndex, 0, updatedAt)
