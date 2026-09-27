@@ -300,6 +300,28 @@ describe("navigation", () => {
     expect(merged.unseen.currentId).toStrictEqual(toVersionedValue("b", T2))
     expect(merged.unseen.cardIndex).toStrictEqual(toVersionedValue(2, T1))
   })
+
+  test("winning navigation never replaces the merged exercises", () => {
+    const local = state({
+      unseen: {
+        exercises: [toVersionedValue(exercise("u1"), T1)],
+        currentId: toVersionedValue("u1", T3),
+      },
+    })
+    const remote = state({
+      unseen: {
+        exercises: [toVersionedValue(exercise("u2"), T1)],
+        currentId: toVersionedValue("u2", T1),
+      },
+    })
+
+    const merged = mergePersistedState(local, remote).unseen
+
+    expect(merged.exercises.map(entry => entry.value.exerciseId)).toStrictEqual(
+      ["u2", "u1"],
+    )
+    expect(merged.currentId).toStrictEqual(toVersionedValue("u1", T3))
+  })
 })
 
 describe("Modules", () => {
