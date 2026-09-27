@@ -44,7 +44,13 @@
 - Commits: `3e6ec42`, `ca13121`, `f7783b6`, `b4a3f0b`, `8495e8e`; review `[QS]` commits: `4c9ab34`, `0e15d39`.
 - Validation: 340 tests, type-check (including forced `tsc -b --force`), lint, changed-file format, build, and diff checks pass.
 - Review: F2 (shared `storeTestLocale` test helper) and the `hooks/sync/` grouping accepted and applied; F1 (parse local v2 once per store instead of once per slice) declined.
-- Manual Chrome test: pending.
+- Google sign-in cannot complete in the automated browser, so Google is faked at the `fetch` boundary: `test/fakeDrive.ts` answers the Drive and userinfo calls and logs every request; a stored access token stands in for sign-in. `driveSync.integration.test.ts` (`fa3f965`) runs two devices through it with the real migration, transport, and merge; mutation checks (merge disabled, local always wins) make it fail.
+- Manual Chrome test (dev server, isolated contexts, the fake Drive served locally; the user's real Drive was never touched):
+  - Tokenless boot migrates legacy data (epoch timestamps, tombstoned deleted built-in, legacy keys removed, device settings kept) and the UI reflects it; edits write only v2 with real timestamps and survive reload; a current module pointing at a deleted module falls back to the default at card 1.
+  - An activated device connecting creates `progress-v2.json` from its own state and ignores `progress.json`; a second legacy device joins via the existing-v2 path (Drive wins the epoch tie, device-only words append, `progress.json` never read).
+  - Return-to-visible and the 30-second timer bring the other device's edits into the running UI without reload; **Sync now** shows the success toast and PATCHes the existing file; idle timer syncs are read-only; `progress.json` stays unchanged.
+  - Console is clean on fresh loads; the only errors came from a dev-server hot reload during mutation testing.
+- Finding (open): overlapping syncs in one tab can each find Drive empty and both create `progress-v2.json`. Seen via React StrictMode's doubled boot effect in dev; in production it needs two overlapping syncs before Drive v2 exists. Duplicates resolve to the newest `modifiedTime` (the reviewed limitation), but the stale copy remains.
 
 ## Step definitions
 
