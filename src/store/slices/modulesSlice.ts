@@ -3,7 +3,7 @@ import { createAppSlice } from "@/store/createAppSlice"
 import { readJson, readString } from "@/store/storage"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
-import { hasWord, keepFinalOccurrencesBy } from "@/utils/collections"
+import { hasWord, keepLastBy } from "@/utils/collections"
 import type { IsoTimestamp } from "@/utils/sync/timestamp"
 import {
   readLegacyModuleProgress,
@@ -269,10 +269,7 @@ export const modulesSlice = createAppSlice({
     addModules: create.preparedReducer(
       withUpdatedAt<ModuleExercise[]>,
       (state, action: TimestampedAction<ModuleExercise[]>) => {
-        const finalModules = keepFinalOccurrencesBy(
-          action.payload,
-          module => module.id,
-        )
+        const finalModules = keepLastBy(action.payload, module => module.id)
         for (const module of finalModules) {
           addOrReplaceModule(state, module, action.meta.updatedAt)
         }

@@ -1,4 +1,4 @@
-import { hasWord, keepFinalOccurrencesBy } from "./collections"
+import { hasWord, keepLastBy } from "./collections"
 
 test("keeps the final value for each key", () => {
   const values = [
@@ -7,7 +7,7 @@ test("keeps the final value for each key", () => {
     { id: "x", value: "final x" },
   ]
 
-  expect(keepFinalOccurrencesBy(values, value => value.id)).toStrictEqual([
+  expect(keepLastBy(values, value => value.id)).toStrictEqual([
     { id: "x", value: "final x" },
     { id: "y", value: "only y" },
   ])
@@ -19,7 +19,7 @@ test("does not mutate the input", () => {
     { id: "x", value: "final" },
   ]
 
-  keepFinalOccurrencesBy(values, value => value.id)
+  keepLastBy(values, value => value.id)
 
   expect(values).toStrictEqual([
     { id: "x", value: "first" },

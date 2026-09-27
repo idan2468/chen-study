@@ -2,7 +2,7 @@ import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
-import { hasWord, keepFinalOccurrencesBy } from "@/utils/collections"
+import { hasWord, keepLastBy } from "@/utils/collections"
 import { readLegacyUnseenState } from "@/utils/sync/legacy/legacyStorage"
 import {
   tombstoneValue,
@@ -93,7 +93,7 @@ export const unseenSlice = createAppSlice({
         if (action.payload.length === 0) {
           return
         }
-        const finalExercises = keepFinalOccurrencesBy(
+        const finalExercises = keepLastBy(
           action.payload,
           exercise => exercise.exerciseId,
         )
