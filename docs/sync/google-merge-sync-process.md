@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–11 approved; Step 11.5 is next.**
+**Status: in progress on `google-merge-sync` — Steps 1–11 approved; Step 11.5 is in review.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -52,7 +52,50 @@
 
 ### Step 11.5 — audit what legacy removal leaves unused
 
-- In progress.
+Results for Step 12. Method: knip 6.38 (`npx knip --production`, so exports used only by tests count as unused) on the current tree, then again in a throwaway worktree where Step 12's removal was simulated (legacy folder and `driveStore.ts` deleted, device keys moved out, slices given plain defaults, migration dropped from `syncWithDrive` and `main.tsx`; it type-checked and built). Every hit was then checked by hand. No code changed.
+
+**A. Delete — legacy code**
+
+- `src/utils/sync/legacy/legacyStorage.ts` (+ test) and `src/utils/sync/legacy/migrateToV2.ts` (+ test); the `legacy/` folder goes.
+- `src/utils/sync/google/driveStore.ts` (+ test): `readSnapshot` only served the migration's `progress.json` pull.
+- Hydration fallbacks: `readLegacyPreferences` (settings), `readLegacyUnseenState` (unseen), `readLegacyModulesState` (modules) are replaced by plain defaults; the slices' repair helpers still seed built-ins and the default exercise.
+- Migration wiring: `runSync`'s unactivated branch and the `isV2Activated`/`migrateToV2` import in `driveSync.ts`; `migrateTokenlessDevice` and its imports in `main.tsx`.
+- Tests: `useGoogleConnect.test.tsx`'s migration test, the legacy half of `driveSync.integration.test.ts` (seeded `progress.json`, "migrating two legacy devices"), and `driveSync.test.ts`'s unactivated-device test.
+
+**B. Keep, but move — permanent device keys**
+
+- `StorageKeys.darkMode`, `locale`, `systemVoice`, `systemVoiceHe`, `googleAccessToken` (same key strings, so device settings survive) move out of `legacyStorage.ts`. Importers: `theme.ts`, `i18n/index.ts`, `i18n/useLocale.ts`, `googleAuth.ts`, `settingsSlice.ts`, `listenerMiddleware.ts`, `test/helpers.ts`, and 13 test files.
+
+**C. Becomes unused once A is gone — delete**
+
+- `readFlag`, `writeFlag`, `listKeys` in `src/store/storage.ts` (their only callers were legacy readers, the activation marker, and cleanup).
+- `useRehydrateFromStorage`'s locale and colour-scheme reload: only a legacy `progress.json` pull could change those device-local keys, so a sync reload needs just `dispatch(reloadFromStorage())`; the hook can fold into `useSyncWithDrive`.
+- Legacy-only comments: `persistedState.ts:57` ("falls back to legacy storage"), `versionedValue.ts:5` (`INITIAL_UPDATED_AT` "legacy storage"), `unseenSlice.ts:59` and `modulesSlice.ts:111` ("local v2 and legacy storage"). `theme.ts:112,127` and `voices.ts:80` use "legacy" for other meanings and stay.
+- Exports only tests import after A (drop the `export`, or keep per G): `PERSISTED_STATE_KEY` (`persistedState.ts`), `INITIAL_UPDATED_AT` (`versionedValue.ts`).
+
+**D. Already unused before legacy removal (not caused by it)**
+
+- Dead code — no production caller: reducers/actions `setCardIndex` (modules), `setDyslexiaFont` (settings), `setFlashcardIndex` (unseen); `addExercise` (unseen, tests only); selectors `selectLibrary`, `selectAllMarkedWords`, `selectAllProgress` (tests only); type `AppThunk` (`store.ts`); file `src/store/records.ts` (`deleteEntry`); devDependency `eslint-plugin-prettier` (only `eslint-config-prettier` is imported).
+- Exported but used only inside their own file — drop `export`: `selectModuleEntries`, `selectModuleProgressEntries`, `selectExerciseEntries`, `selectExercises`, `moduleCardSchema`, `moduleExerciseSchema`, `flashcardSchema`, `cleanSpeechText`, `detectLang`, `locales`, the `i18next` re-export (`i18n/index.ts`), types `DeletableSelectItem`, `StatCount`, `SpeechState`.
+- Exported only for tests (function stays): `mergeModules`, `isoTimestampSchema`, `pickBestVoice`.
+
+**E. Unused parameter**
+
+- `toIsoTimestamp`'s `zone`: no production caller passes it (only its test). It exists by the Step 8 decision (Israel as the default zone), so it stays unless that decision changes.
+
+**F. knip false positives — keep**
+
+- `scripts/check-no-debug-files.cjs` (run by `.husky/pre-commit`), the `vite` "unlisted binary" (a devDependency, hidden only in production mode), and `test/*` helpers (production mode skips tests).
+
+**G. Open decisions for Step 12**
+
+- Where the device keys live and what the constant is called (e.g. `src/store/deviceStorageKeys.ts`).
+- Whether exports used only by tests (C and D's last group) lose their `export`, with tests going through public APIs instead.
+- Whether D's pre-existing dead code is in Step 12's scope or a separate cleanup.
+- Whether to delete Drive's `progress.json` (there is no delete operation yet) or leave it.
+- Whether to add knip as a devDependency with an `npm run knip` script so Step 12 can re-run this check.
+
+- Awaiting manual approval.
 
 ## Step definitions
 
