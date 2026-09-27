@@ -23,7 +23,12 @@
 
 ### Step 8 — pure merge engine
 
-- In progress; scope decisions pending.
+- Newest `updatedAt` wins, compared as parsed instants; Drive wins ties so every device converges on the shared copy.
+- Deletion is plain newest-wins: tombstones are kept forever, but a later re-import of the same ID beats an older tombstone.
+- Unseen exercises: a newer exercise wins with its whole subtree (answers, highlights, flashcard progress); equal live versions keep Drive's exercise fields and merge each child record by newest-wins.
+- Modules, global Module progress words, and each preference merge independently by newest-wins.
+- Navigation merges as a pair: when the current IDs differ, the side that switched more recently wins both the ID and its card index; when they match, each field is newest-wins.
+- Merged arrays keep Drive's order, then append local-only IDs in local order.
 
 ## Step definitions
 
