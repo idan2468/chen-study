@@ -191,7 +191,7 @@ describe("writeDrivePersistedState", () => {
       expect(fetchCall(0).init).toMatchObject({
         method: "PATCH",
         body: JSON.stringify({
-          name: "progress-v2.invalid-2026-09-27T12:00:00.000+03:00.json",
+          name: "progress-v2.invalid-2026-09-27T12:00:00.000+03:00.json.bck",
         }),
       })
       expect(fetchCall(1).url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)

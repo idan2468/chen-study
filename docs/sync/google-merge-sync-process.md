@@ -27,7 +27,7 @@
 
 - `progress-v2.json` lives in `appDataFolder`, is validated with `persistedStateSchema`, and duplicates resolve to the newest `modifiedTime` like `progress.json`; no `keepalive` (page-hide push is legacy-only).
 - A write reuses the file ID from the preceding read instead of locating again; the reviewed rare concurrent-write limitation stands.
-- An unparsable or Zod-invalid Drive file is never overwritten: the write renames it to `progress-v2.invalid-<IsoTimestamp>.json` (metadata-only `PATCH`) and then creates a fresh `progress-v2.json`.
+- An unparsable or Zod-invalid Drive file is never overwritten: the write renames it to `progress-v2.invalid-<IsoTimestamp>.json.bck` (metadata-only `PATCH`) and then creates a fresh `progress-v2.json`.
 - The write is skipped when the state to upload equals the Drive copy just read (compared with `object-hash`, ignoring key order).
 - The localStorage pair becomes `readLocalPersistedState`/`writeLocalPersistedState`; the Drive pair is `readDrivePersistedState`/`writeDrivePersistedState`.
 - Locate/download/create/update/rename move from `driveStore.ts` into a shared `google/driveFiles.ts` parameterized by file name; legacy `progress.json` behavior and tests stay unchanged.

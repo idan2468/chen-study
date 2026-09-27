@@ -11,7 +11,8 @@ import type { PersistedState } from "@/types/schemas/persistedState"
 import { persistedStateSchema } from "@/types/schemas/persistedState"
 import { toIsoTimestamp } from "@/utils/sync/timestamp"
 
-const PERSISTED_STATE_FILE_NAME = "progress-v2.json"
+const PERSISTED_STATE_FILE_BASE = "progress-v2"
+const PERSISTED_STATE_FILE_NAME = `${PERSISTED_STATE_FILE_BASE}.json`
 
 export type DrivePersistedState =
   | { status: "missing" }
@@ -41,7 +42,7 @@ export const readDrivePersistedState =
   }
 
 const invalidBackupName = () =>
-  `progress-v2.invalid-${toIsoTimestamp(new Date())}.json`
+  `${PERSISTED_STATE_FILE_BASE}.invalid-${toIsoTimestamp(new Date())}.json.bck`
 
 /**
  * Writes `state` over the Drive copy that `read` returned. Skips the upload when
