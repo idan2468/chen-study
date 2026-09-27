@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–7.5 approved; Step 8 is in review.**
+**Status: in progress on `google-merge-sync` — Steps 1–8 approved; Step 9 is next.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -18,25 +18,16 @@
   - Decisions: envelope is `{ schemaVersion: 2, unseen: { exercises, currentId, cardIndex }, modules: { modules, progress, currentModuleId, cardIndex }, preferences: { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang } }`; `filterMissed`, `reviewingMissed`, and system voice stay out; app hydration keeps reading legacy keys until Step 11 while `english_progress_v2` is written through on every change (loader tested, not wired into startup); a missing, corrupt, or Zod-invalid v2 document falls back to legacy with a console warning on validation failure; `english_progress_v2` is excluded from the legacy Google payload; `SpeechLang` lives in `src/types/speech.ts` so schemas never import store slices; `src/utils/sync/` stays flat (v2 subfolder proposed, not accepted).
 - [x] Step 7.5 — rename the sync document to `PersistedState` (`8f8e626`, `54223ae`, `41ca337`), 298 tests/full gate/manual approved; full `review-code-quality` stopped at the user's request, only F2 applied.
   - Decisions: it's the app's main storage in both localStorage and Drive, not a sync-only format, so `SyncDocumentV2` became `PersistedState` (`persistedStateSchema`, `selectPersistedState`, `readPersistedState`/`writePersistedState`); the V2 suffix is dropped from names while the storage key `english_progress_v2` and `schemaVersion: 2` stay; the selector, key, and read/write helpers live in `src/store/persistedState.ts` and the schema in `src/types/schemas/persistedState.ts`; every object schema there is a named variable, with section schemas named after their envelope keys.
+- [x] Step 8 — pure merge engine (`f39f66c`, `811b7d0`, `c1d2bcb`, `32ab173`, `7b80663`, `9a19496`, `20745cf`, `14f4e3b`, `95a8eee`, `47a398d`), 324 tests/full gate/review/manual approved.
+  - Decisions: newest `updatedAt` wins, compared as parsed instants, and Drive wins ties; deletion is plain newest-wins with tombstones kept forever, so a later re-import beats an older tombstone; a newer Unseen exercise wins with its whole subtree, while equal live versions keep Drive's exercise fields and merge each child record by newest-wins; Modules, global Module progress words, and each preference merge independently; navigation merges as a pair (differing current IDs → the side that switched more recently wins both ID and card index; same ID → each field newest-wins); merged arrays keep Drive's order, then append local-only IDs in local order; timestamp helpers are generic (`timestamp.ts`, `IsoTimestamp`, `Asia/Jerusalem` as the default zone); a merged current ID can point at an entity the other side deleted — left to Step 11 hydration.
 
-## Current review gate
+## Curr## Current review gate
 
-### Step 8 — pure merge engine
+### Step 9 — Drive v2 transport
 
-- Newest `updatedAt` wins, compared as parsed instants; Drive wins ties so every device converges on the shared copy.
-- Deletion is plain newest-wins: tombstones are kept forever, but a later re-import of the same ID beats an older tombstone.
-- Unseen exercises: a newer exercise wins with its whole subtree (answers, highlights, flashcard progress); equal live versions keep Drive's exercise fields and merge each child record by newest-wins.
-- Modules, global Module progress words, and each preference merge independently by newest-wins.
-- Navigation merges as a pair: when the current IDs differ, the side that switched more recently wins both the ID and its card index; when they match, each field is newest-wins.
-- Merged arrays keep Drive's order, then append local-only IDs in local order.
-- Timestamp helpers aren't Israel-specific (comparison works on any offset), so `israelTimestamp.ts` becomes `timestamp.ts`, `IsraelIsoTimestamp` becomes `IsoTimestamp`, and `Asia/Jerusalem` is the default time zone for new timestamps.
-- Commits: `f39f66c`, `811b7d0`, `c1d2bcb`; review `[QS]` commits: `32ab173`, `7b80663`, `9a19496`, `20745cf`, `14f4e3b`; follow-up `95a8eee` (user-requested: `mergeVersionedArrays` folds local entries into one Drive-ordered map), `47a398d` (user-requested: generic `timestamp.ts`/`IsoTimestamp`).
-- `mergePersistedState(local, remote)` is pure and has no callers outside its tests; production sync is unchanged.
-- Validation: 324 tests, type-check, lint, changed-file format, build, and diff checks pass.
-- Review: all five findings accepted and applied (section mergers renamed apart from the slice's `mergeModules`, per-exercise resolver named `mergeExercise`, `isNewer` predicate, no global `document` shadowing in tests, navigation-vs-exercises regression test).
-- Awaiting manual approval.
+- In progress; scope decisions pending.
 
-## Step definitions
+ definitions
 
 Each step's approved scope and review focus. Progress lives in [Completed](#completed) and [Current review gate](#current-review-gate).
 
