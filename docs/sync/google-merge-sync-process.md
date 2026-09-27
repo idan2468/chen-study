@@ -29,7 +29,15 @@
 
 ### Step 11 — activate v2 synchronization
 
-- In progress; scope decisions pending.
+- Slices hydrate from local v2 whenever it is valid, otherwise from legacy keys, applying the legacy loader's repairs (seed new built-in modules and the default exercise unless tombstoned, fall back from a current ID that points at a deleted entity, clamp the module card index).
+- Boot without a token runs `migrateToV2(false)` in `main.tsx` before the store is created; boot with a token runs `migrateToV2(true)` inside the existing restore, behind the spinner.
+- Connect, boot, the visible 30-second timer, return-to-visible, and **Sync now** share one entry point: a not-yet-activated device runs `migrateToV2(true)` (resuming from its checkpoint); an activated one reads Drive v2, merges it with the live store's state, applies the result, then writes Drive (skipped when unchanged). Merge and apply run synchronously after the read, so edits made during the upload are kept and pushed next sync.
+- The page-hide `keepalive` push is removed; the existing 401 → one silent re-issue → retry and silent passive failures stay.
+- Legacy write-through is removed: only local v2 (plus device-local system voices) is written.
+- An activated device connecting with only a legacy `progress.json` on Drive ignores it and creates Drive v2 from its own state; the other device's data arrives when it migrates.
+- The unreachable legacy push path (`syncIfDirty`, `recordSynced`, `writeSnapshot`, the sync-hash key usage) is deleted now; `readSnapshot` stays for the migration.
+- Applying merged Drive state reuses the slices' reload reducers and is skipped when the merge changed nothing, so view-only Modules toggles reset only when another device's edits arrive.
+- After Step 11, a full manual test runs in Chrome via MCP (the user can sign in to Google if needed).
 
 ## Step definitions
 
