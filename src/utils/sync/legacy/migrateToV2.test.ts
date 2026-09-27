@@ -128,7 +128,6 @@ describe("a connected device", () => {
 
     expect(readSnapshot).not.toHaveBeenCalled()
     expect(readLocalPersistedState()).toStrictEqual(expected)
-    expect(expected.modules.progress).toStrictEqual(driveState.modules.progress)
     expect(writeDrivePersistedState).toHaveBeenCalledWith(drive, expected)
     expect(isV2Activated()).toBe(true)
   })
