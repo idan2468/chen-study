@@ -93,13 +93,14 @@ export const mergeVersionedArrays = <T>(
     remote: VersionedValue<T>,
   ) => VersionedValue<T> = pickNewer,
 ): VersionedValue<T>[] => {
-  const localById = new Map(local.map(entry => [getId(entry.value), entry]))
-  const remoteIds = new Set(remote.map(entry => getId(entry.value)))
-  return [
-    ...remote.map(remoteEntry => {
-      const localEntry = localById.get(getId(remoteEntry.value))
-      return localEntry ? mergeEntries(localEntry, remoteEntry) : remoteEntry
-    }),
-    ...local.filter(entry => !remoteIds.has(getId(entry.value))),
-  ]
+  const merged = new Map(remote.map(entry => [getId(entry.value), entry]))
+  for (const localEntry of local) {
+    const id = getId(localEntry.value)
+    const remoteEntry = merged.get(id)
+    merged.set(
+      id,
+      remoteEntry ? mergeEntries(localEntry, remoteEntry) : localEntry,
+    )
+  }
+  return [...merged.values()]
 }
