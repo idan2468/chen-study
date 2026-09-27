@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–8 approved; Step 9 is next.**
+**Status: in progress on `google-merge-sync` — Steps 1–8 approved; Step 9 is in review.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -21,7 +21,7 @@
 - [x] Step 8 — pure merge engine (`f39f66c`, `811b7d0`, `c1d2bcb`, `32ab173`, `7b80663`, `9a19496`, `20745cf`, `14f4e3b`, `95a8eee`, `47a398d`), 324 tests/full gate/review/manual approved.
   - Decisions: newest `updatedAt` wins, compared as parsed instants, and Drive wins ties; deletion is plain newest-wins with tombstones kept forever, so a later re-import beats an older tombstone; a newer Unseen exercise wins with its whole subtree, while equal live versions keep Drive's exercise fields and merge each child record by newest-wins; Modules, global Module progress words, and each preference merge independently; navigation merges as a pair (differing current IDs → the side that switched more recently wins both ID and card index; same ID → each field newest-wins); merged arrays keep Drive's order, then append local-only IDs in local order; timestamp helpers are generic (`timestamp.ts`, `IsoTimestamp`, `Asia/Jerusalem` as the default zone); a merged current ID can point at an entity the other side deleted — left to Step 11 hydration.
 
-## Curr## Current review gate
+## Current review gate
 
 ### Step 9 — Drive v2 transport
 
@@ -31,8 +31,12 @@
 - The write is skipped when the state to upload equals the Drive copy just read (compared with `object-hash`, ignoring key order).
 - The localStorage pair becomes `readLocalPersistedState`/`writeLocalPersistedState`; the Drive pair is `readDrivePersistedState`/`writeDrivePersistedState`.
 - Locate/download/create/update/rename move from `driveStore.ts` into a shared `google/driveFiles.ts` parameterized by file name; legacy `progress.json` behavior and tests stay unchanged.
+- Commits: `7c34326`, `814bc02`, `6a2b27f`; `[Step 8]` doc heading fix in this gate's doc commit.
+- `readDrivePersistedState`/`writeDrivePersistedState` have no callers outside their tests; legacy Google sync is unchanged.
+- Validation: 336 tests, type-check, lint, changed-file format, build, and diff checks pass.
+- Review: pending.
 
- definitions
+## Step definitions
 
 Each step's approved scope and review focus. Progress lives in [Completed](#completed) and [Current review gate](#current-review-gate).
 
