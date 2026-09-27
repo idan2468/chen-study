@@ -47,7 +47,7 @@ export const selectPersistedState = createSelector(
 )
 
 /** `null` when missing or invalid, so the caller falls back to legacy storage. */
-export const readPersistedState = (): PersistedState | null => {
+export const readLocalPersistedState = (): PersistedState | null => {
   const stored = readJson<unknown>(PERSISTED_STATE_KEY, null)
   if (stored === null) {
     return null
@@ -60,6 +60,6 @@ export const readPersistedState = (): PersistedState | null => {
   return parsed.data
 }
 
-export const writePersistedState = (state: PersistedState) => {
+export const writeLocalPersistedState = (state: PersistedState) => {
   writeJson(PERSISTED_STATE_KEY, state)
 }

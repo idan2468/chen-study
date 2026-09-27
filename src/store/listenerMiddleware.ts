@@ -12,7 +12,10 @@ import {
   toLegacyUnseenLibrary,
 } from "@/utils/sync/legacy/legacyStorage"
 import { liveValues } from "@/utils/sync/versionedValue"
-import { selectPersistedState, writePersistedState } from "./persistedState"
+import {
+  selectPersistedState,
+  writeLocalPersistedState,
+} from "./persistedState"
 import type { SettingsState } from "./slices/settingsSlice"
 import {
   setDyslexiaFont,
@@ -288,6 +291,6 @@ startListening({
   predicate: (_action, current, previous) =>
     selectPersistedState(current) !== selectPersistedState(previous),
   effect: (_action, api) => {
-    writePersistedState(selectPersistedState(api.getState()))
+    writeLocalPersistedState(selectPersistedState(api.getState()))
   },
 })

@@ -1,9 +1,9 @@
 import { makeStore } from "./store"
 import {
   PERSISTED_STATE_KEY,
-  readPersistedState,
+  readLocalPersistedState,
   selectPersistedState,
-  writePersistedState,
+  writeLocalPersistedState,
 } from "./persistedState"
 
 beforeEach(() => {
@@ -15,19 +15,19 @@ const defaultState = () => selectPersistedState(makeStore().getState())
 test("round-trips the persisted default state", () => {
   const state = defaultState()
 
-  writePersistedState(state)
+  writeLocalPersistedState(state)
 
-  expect(readPersistedState()).toStrictEqual(state)
+  expect(readLocalPersistedState()).toStrictEqual(state)
 })
 
 test("returns null when nothing is stored", () => {
-  expect(readPersistedState()).toBeNull()
+  expect(readLocalPersistedState()).toBeNull()
 })
 
 test("returns null for malformed JSON", () => {
   localStorage.setItem(PERSISTED_STATE_KEY, "{not json")
 
-  expect(readPersistedState()).toBeNull()
+  expect(readLocalPersistedState()).toBeNull()
 })
 
 test("returns null and warns for a state that fails validation", () => {
@@ -37,6 +37,6 @@ test("returns null and warns for a state that fails validation", () => {
     JSON.stringify({ ...defaultState(), schemaVersion: 1 }),
   )
 
-  expect(readPersistedState()).toBeNull()
+  expect(readLocalPersistedState()).toBeNull()
   expect(warn).toHaveBeenCalledOnce()
 })

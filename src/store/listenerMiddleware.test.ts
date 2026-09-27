@@ -8,7 +8,7 @@ import {
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
   PERSISTED_STATE_KEY,
-  readPersistedState,
+  readLocalPersistedState,
   selectPersistedState,
 } from "./persistedState"
 import { makeStore } from "./store"
@@ -190,7 +190,7 @@ describe("persisted state", () => {
     const store = makeStore(preloaded())
     store.dispatch(markCard({ word: "HAT", isKnown: true }))
 
-    expect(readPersistedState()).toStrictEqual(
+    expect(readLocalPersistedState()).toStrictEqual(
       selectPersistedState(store.getState()),
     )
   })
