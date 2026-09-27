@@ -111,3 +111,15 @@ test("a failed Drive read changes nothing locally", async () => {
   expect(reloadApp).not.toHaveBeenCalled()
   expect(writeDrivePersistedState).not.toHaveBeenCalled()
 })
+
+test("a sync started while one is running shares it instead of reading Drive again", async () => {
+  const local = localState()
+
+  await Promise.all([
+    syncWithDrive(() => local, vi.fn()),
+    syncWithDrive(() => local, vi.fn()),
+  ])
+  await syncWithDrive(() => local, vi.fn())
+
+  expect(readDrivePersistedState).toHaveBeenCalledTimes(2)
+})

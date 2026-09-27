@@ -39,15 +39,7 @@ const syncActivatedDevice = async (
   await writeDrivePersistedState(drive, merged)
 }
 
-/**
- * Reads Drive, merges it with the running app's state, applies the result
- * locally, then uploads it (skipped when Drive already matches). A device
- * that hasn't activated v2 yet runs the migration instead, which resumes
- * from its checkpoint.
- * @param readLocalState Returns the running app's state. Called right after the Drive read, so edits made while it was in flight are merged, not lost.
- * @param reloadApp Reloads the running app from local storage; called only when local state changed.
- */
-export const syncWithDrive = async (
+const runSync = async (
   readLocalState: () => PersistedState,
   reloadApp: () => void,
 ) => {
@@ -57,4 +49,25 @@ export const syncWithDrive = async (
     await migrateToV2(true)
     reloadApp()
   }
+}
+
+let inFlight: Promise<void> | null = null
+
+/**
+ * Reads Drive, merges it with the running app's state, applies the result
+ * locally, then uploads it (skipped when Drive already matches). A device
+ * that hasn't activated v2 yet runs the migration instead, which resumes
+ * from its checkpoint. A call made while a sync is running shares that run,
+ * so overlapping triggers never both create `progress-v2.json`.
+ * @param readLocalState Returns the running app's state. Called right after the Drive read, so edits made while it was in flight are merged, not lost.
+ * @param reloadApp Reloads the running app from local storage; called only when local state changed.
+ */
+export const syncWithDrive = (
+  readLocalState: () => PersistedState,
+  reloadApp: () => void,
+): Promise<void> => {
+  inFlight ??= runSync(readLocalState, reloadApp).finally(() => {
+    inFlight = null
+  })
+  return inFlight
 }

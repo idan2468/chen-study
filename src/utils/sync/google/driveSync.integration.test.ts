@@ -159,6 +159,14 @@ describe("migrating two legacy devices", () => {
   })
 })
 
+test("overlapping syncs on one device create progress-v2.json only once", async () => {
+  const laptop = createDevice({})
+  await onDevice(laptop, store => Promise.all([sync(store), sync(store)]))
+
+  expect(drive.files.filter(file => file.name === V2_FILE)).toHaveLength(1)
+  expect(drive.calls().filter(call => call.startsWith("POST"))).toHaveLength(1)
+})
+
 describe("two activated devices", () => {
   let laptop: Device
   let phone: Device
