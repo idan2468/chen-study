@@ -6,6 +6,7 @@ import {
   applySyncPayload,
   buildSyncPayload,
   flashcardStatusKey,
+  isLegacyDataKey,
   readLegacyModuleProgress,
   readLegacyModules,
   readLegacyUnseenState,
@@ -84,6 +85,20 @@ test("keeps the persisted state out of the legacy payload in both directions", (
   localStorage.clear()
   applySyncPayload({ [PERSISTED_STATE_KEY]: "{}" })
   expect(localStorage.getItem(PERSISTED_STATE_KEY)).toBeNull()
+})
+
+test("treats every legacy key except device settings as migratable data", () => {
+  expect(
+    Object.values(StorageKeys).filter(key => !isLegacyDataKey(key)),
+  ).toStrictEqual([
+    StorageKeys.darkMode,
+    StorageKeys.locale,
+    StorageKeys.systemVoice,
+    StorageKeys.systemVoiceHe,
+    StorageKeys.googleAccessToken,
+  ])
+  expect(isLegacyDataKey(flashcardStatusKey("u1"))).toBe(true)
+  expect(isLegacyDataKey(PERSISTED_STATE_KEY)).toBe(false)
 })
 
 describe("legacy Module progress", () => {

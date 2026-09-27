@@ -47,8 +47,10 @@ export const StorageKeys = {
   currentModuleId: "english_current_module_id",
 } as const
 
+const FLASHCARD_STATUS_PREFIX = "flashcards_status_"
+
 export const flashcardStatusKey = (exerciseId: string) =>
-  `flashcards_status_${exerciseId || "default"}`
+  `${FLASHCARD_STATUS_PREFIX}${exerciseId || "default"}`
 
 const DEVICE_LOCAL_KEYS = new Set<string>([
   StorageKeys.systemVoice,
@@ -60,11 +62,34 @@ const DEVICE_LOCAL_KEYS = new Set<string>([
 export const isSyncableKey = (key: string) =>
   !DEVICE_LOCAL_KEYS.has(key) &&
   key !== PERSISTED_STATE_KEY &&
-  (key.startsWith("flashcards_status_") ||
+  (key.startsWith(FLASHCARD_STATUS_PREFIX) ||
     key.startsWith("english_") ||
     key.startsWith("hebrew_") ||
     key.includes("dyslexia") ||
     key.includes("dark_mode"))
+
+/** Everything the persisted state replaces, plus the legacy sync hash; device settings are not listed. */
+const LEGACY_DATA_KEYS = new Set<string>([
+  StorageKeys.dyslexiaFont,
+  StorageKeys.speechRate,
+  StorageKeys.speechRateHe,
+  StorageKeys.shuffleUnseenAnswers,
+  StorageKeys.googleLastSyncedHash,
+  StorageKeys.exerciseLibrary,
+  StorageKeys.currentExerciseId,
+  StorageKeys.currentExerciseData,
+  StorageKeys.markedWords,
+  StorageKeys.quizAnswers,
+  StorageKeys.flashcardIndex,
+  StorageKeys.allModules,
+  StorageKeys.modulesProgress,
+  StorageKeys.deletedBuiltInModules,
+  StorageKeys.moduleCardIndex,
+  StorageKeys.currentModuleId,
+])
+
+export const isLegacyDataKey = (key: string) =>
+  LEGACY_DATA_KEYS.has(key) || key.startsWith(FLASHCARD_STATUS_PREFIX)
 
 export const buildSyncPayload = (): SyncPayload => {
   const payload: SyncPayload = {}
