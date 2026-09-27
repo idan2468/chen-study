@@ -1,3 +1,7 @@
+/**
+ * Deduplicates by key, keeping each key's last value (a later import replaces an earlier one).
+ * @param getKey Returns the identity to deduplicate by, e.g. `exercise => exercise.exerciseId`.
+ */
 export const keepFinalOccurrencesBy = <T>(
   values: readonly T[],
   getKey: (value: T) => string,

@@ -23,7 +23,11 @@ const isSameLiveVersion = <T>(
   !remote.deleted &&
   compareTimestamps(local.updatedAt, remote.updatedAt) === 0
 
-/** A replaced exercise wins with its whole subtree; the same version merges its progress record by record. */
+/**
+ * A replaced exercise wins with its whole subtree; the same version merges its progress record by record.
+ * @param local This device's version of one exercise.
+ * @param remote The Drive copy's version of the same exercise ID.
+ */
 const mergeExercise = (
   local: VersionedValue<UnseenExercise>,
   remote: VersionedValue<UnseenExercise>,
@@ -54,7 +58,11 @@ const mergeExercise = (
   }
 }
 
-/** The side that switched more recently keeps its card index, so a position never lands in the other side's exercise. */
+/**
+ * The side that switched more recently keeps its card index, so a position never lands in the other side's exercise.
+ * @param local This device's current ID and card index (Unseen or Modules).
+ * @param remote The Drive copy's pair for the same section.
+ */
 const mergeNavigation = (local: Navigation, remote: Navigation): Navigation => {
   if (local.currentId.value !== remote.currentId.value) {
     return isNewer(local.currentId, remote.currentId) ? local : remote
@@ -126,7 +134,11 @@ const mergePreferencesSection = (
   },
 })
 
-/** `remote` is the Drive copy; it wins every tie. */
+/**
+ * Merges two full persisted states into one; pure, so neither argument is changed.
+ * @param local This device's state.
+ * @param remote The Drive copy; it wins every tie.
+ */
 export const mergePersistedState = (
   local: PersistedState,
   remote: PersistedState,

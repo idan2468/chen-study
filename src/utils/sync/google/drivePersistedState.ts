@@ -28,6 +28,7 @@ const parsePersistedState = (text: string): PersistedState | null => {
   }
 }
 
+/** A failed request or missing token throws; an unreadable file is reported as `invalid`, not thrown. */
 export const readDrivePersistedState =
   async (): Promise<DrivePersistedState> => {
     const token = requireAccessToken()
@@ -47,6 +48,8 @@ const invalidBackupName = () =>
 /**
  * Writes `state` over the Drive copy that `read` returned. Skips the upload when
  * nothing changed, and moves an invalid file aside instead of overwriting it.
+ * @param read This sync's `readDrivePersistedState()` result; decides whether to update, create, or back up first.
+ * @param state The full state to upload, usually the merge of local and `read.state`.
  */
 export const writeDrivePersistedState = async (
   read: DrivePersistedState,

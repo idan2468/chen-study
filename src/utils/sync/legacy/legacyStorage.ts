@@ -208,6 +208,10 @@ const toLegacyUnseenExercise = (
   flashcards: exercise.flashcards,
 })
 
+/**
+ * Converts the legacy Unseen keys into versioned state, all stamped `INITIAL_UPDATED_AT`.
+ * @param defaultExercise The built-in exercise, added when the stored library lacks it and used when no stored current ID is valid.
+ */
 export const readLegacyUnseenState = (
   defaultExercise: UnseenExercise,
 ): {

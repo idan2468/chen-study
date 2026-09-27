@@ -30,6 +30,9 @@ export const requireAccessToken = () => {
 /**
  * The newest `modifiedTime` wins if a failed create ever left duplicates
  * behind; the older copies are left alone (see docs/sync/google-account-sync.md).
+ * @param name Exact file name in `appDataFolder`; other names (e.g. backups) never match.
+ * @param keepalive Lets the request outlive a closing tab (legacy page-hide push only).
+ * @returns `null` when no file has that name.
  */
 export const locateAppDataFile = async (
   token: string,
@@ -85,6 +88,10 @@ const buildMultipartRelatedBody = (name: string, content: string) => {
   return { boundary, body }
 }
 
+/**
+ * @param content The file body, already serialized as JSON.
+ * @param keepalive Lets the request outlive a closing tab (legacy page-hide push only).
+ */
 export const createAppDataFile = async (
   token: string,
   name: string,
@@ -101,6 +108,11 @@ export const createAppDataFile = async (
   })
 }
 
+/**
+ * Replaces the body of an existing file, keeping its ID and name.
+ * @param content The new body, already serialized as JSON.
+ * @param keepalive Lets the request outlive a closing tab (legacy page-hide push only).
+ */
 export const updateFileContent = async (
   token: string,
   fileId: string,

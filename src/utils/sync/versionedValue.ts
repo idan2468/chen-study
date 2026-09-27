@@ -24,7 +24,12 @@ export const findLiveValue = <T>(
 ): T | undefined =>
   entries.find(entry => !entry.deleted && matches(entry.value))?.value
 
-/** Replaces a live entry in place; a new or previously deleted value is appended at the end. */
+/**
+ * Replaces a live entry in place; a new or previously deleted value is appended at the end.
+ * @param entries Mutated in place (an Immer draft inside reducers).
+ * @param matches Identifies the entity by its semantic ID, e.g. `hasWord(word)`.
+ * @param updatedAt Stamped on the stored entry.
+ */
 export const putValue = <T>(
   entries: VersionedValue<T>[],
   matches: (value: T) => boolean,
@@ -43,6 +48,10 @@ export const putValue = <T>(
   entries.push(toVersionedValue(value, updatedAt))
 }
 
+/**
+ * Tombstones the live entry `matches` finds; does nothing when it is missing or already deleted.
+ * @param entries Mutated in place (an Immer draft inside reducers).
+ */
 export const deleteValue = <T>(
   entries: VersionedValue<T>[],
   matches: (value: T) => boolean,
@@ -57,7 +66,10 @@ export const deleteValue = <T>(
   }
 }
 
-/** Leaves `updatedAt` alone when the value is unchanged, so no-op navigation never wins a merge. */
+/**
+ * Leaves `updatedAt` alone when the value is unchanged, so no-op navigation never wins a merge.
+ * @param entry Mutated in place (an Immer draft inside reducers).
+ */
 export const setVersionedValue = <T>(
   entry: VersionedValue<T>,
   value: T,
@@ -69,18 +81,29 @@ export const setVersionedValue = <T>(
   }
 }
 
+/** Strictly later, so a tie is `false`. */
 export const isNewer = <T>(
   candidate: VersionedValue<T>,
   other: VersionedValue<T>,
 ) => compareTimestamps(candidate.updatedAt, other.updatedAt) > 0
 
-/** Newest `updatedAt` wins; Drive wins ties so every device converges on the shared copy. */
+/**
+ * Newest `updatedAt` wins; Drive wins ties so every device converges on the shared copy.
+ * @param local This device's entry.
+ * @param remote The Drive copy's entry for the same ID.
+ */
 export const pickNewer = <T>(
   local: VersionedValue<T>,
   remote: VersionedValue<T>,
 ): VersionedValue<T> => (isNewer(local, remote) ? local : remote)
 
-/** Keeps Drive's order, then appends local-only IDs in local order. */
+/**
+ * Keeps Drive's order, then appends local-only IDs in local order.
+ * @param local This device's entries.
+ * @param remote The Drive copy's entries.
+ * @param getId Returns the semantic ID that pairs a local entry with its Drive counterpart.
+ * @param mergeEntries Resolves an ID present on both sides; defaults to newest-wins.
+ */
 export const mergeVersionedArrays = <T>(
   local: readonly VersionedValue<T>[],
   remote: readonly VersionedValue<T>[],

@@ -41,7 +41,10 @@ const deleteLegacyData = () => {
   }
 }
 
-/** Resumes from the local v2 checkpoint an earlier attempt wrote, or converts legacy data. */
+/**
+ * Resumes from the local v2 checkpoint an earlier attempt wrote, or converts legacy data.
+ * @param pullLegacyFirst Apply Drive's `progress.json` to the legacy keys before converting; only when Drive has no valid v2.
+ */
 const readCheckpointOrConvert = async (pullLegacyFirst: boolean) => {
   const checkpoint = readLocalPersistedState()
   if (checkpoint) {
@@ -71,6 +74,8 @@ const migrateLocally = async () => {
  * Moves this device onto the v2 persisted state; safe to rerun after any
  * failure. Activation is marked only once every write succeeded, and legacy
  * data is deleted only after activation.
+ * @param connected Whether Google is connected; when `false`, the migration is local only and makes no Drive calls.
+ * @throws Whatever a Drive call throws; the device then stays inactive and the next run resumes.
  */
 export const migrateToV2 = async (connected: boolean) => {
   if (!isV2Activated()) {
