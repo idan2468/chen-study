@@ -6,8 +6,18 @@ import {
   StorageKeys,
 } from "@/utils/sync/legacy/legacyStorage"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
+import {
+  readSyncDocumentV2,
+  SYNC_DOCUMENT_V2_KEY,
+} from "@/utils/sync/syncDocumentStorage"
 import { makeStore } from "./store"
-import { markCard, nextCard, selectModule } from "./slices/modulesSlice"
+import { selectSyncDocumentV2 } from "./syncDocument"
+import {
+  markCard,
+  nextCard,
+  selectModule,
+  toggleFilterMissed,
+} from "./slices/modulesSlice"
 import {
   answerQuestion,
   markFlashcard,
@@ -42,6 +52,9 @@ const preloaded = () => ({
   },
 })
 
+const writtenLegacyKeys = () =>
+  Object.keys(localStorage).filter(key => key !== SYNC_DOCUMENT_V2_KEY)
+
 beforeEach(() => {
   localStorage.clear()
 })
@@ -50,7 +63,7 @@ test("marking a flashcard writes only that exercise's status key", () => {
   const store = makeStore(preloaded())
   store.dispatch(markFlashcard({ word: "Delicate", isKnown: true }))
 
-  const written = Object.keys(localStorage)
+  const written = writtenLegacyKeys()
   expect(written).toStrictEqual([
     flashcardStatusKey(defaultUnseenExercise.exerciseId),
   ])
@@ -73,7 +86,7 @@ test("highlighting a word writes only the marked-words key", () => {
   const store = makeStore(preloaded())
   store.dispatch(toggleMarkedWord("Maya"))
 
-  expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.markedWords])
+  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.markedWords])
   expect(localStorage.getItem(StorageKeys.markedWords)).toBe(
     JSON.stringify({ [defaultUnseenExercise.exerciseId]: ["Maya"] }),
   )
@@ -83,7 +96,7 @@ test("marking a module card writes only the module progress key", () => {
   const store = makeStore(preloaded())
   store.dispatch(markCard({ word: "HAT", isKnown: true }))
 
-  expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.modulesProgress])
+  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.modulesProgress])
   expect(localStorage.getItem(StorageKeys.modulesProgress)).toBe(
     JSON.stringify({ HAT: "known" }),
   )
@@ -100,9 +113,7 @@ test("the answer-shuffle preference is written to its syncable key", () => {
   const store = makeStore(preloaded())
   store.dispatch(toggleShuffleUnseenAnswers())
 
-  expect(Object.keys(localStorage)).toStrictEqual([
-    StorageKeys.shuffleUnseenAnswers,
-  ])
+  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.shuffleUnseenAnswers])
   expect(localStorage.getItem(StorageKeys.shuffleUnseenAnswers)).toBe("1")
 })
 
@@ -119,7 +130,7 @@ test("answering a question writes only the quiz-answers key", () => {
     answerQuestion({ questionId: "q1", selected: 0, correct: true }),
   )
 
-  expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.quizAnswers])
+  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.quizAnswers])
   expect(localStorage.getItem(StorageKeys.quizAnswers)).toBe(
     JSON.stringify({
       [defaultUnseenExercise.exerciseId]: {
@@ -153,7 +164,7 @@ test("advancing a flashcard writes only the flashcard-index key", () => {
   const store = makeStore(preloaded())
   store.dispatch(nextFlashcard(defaultUnseenExercise.flashcards.length))
 
-  expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.flashcardIndex])
+  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.flashcardIndex])
   expect(localStorage.getItem(StorageKeys.flashcardIndex)).toBe("1")
 })
 
@@ -161,7 +172,7 @@ test("advancing a module card writes only the module-card-index key", () => {
   const store = makeStore(preloaded())
   store.dispatch(nextCard(at(defaultModuleExercises, 0).cards.length))
 
-  expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.moduleCardIndex])
+  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.moduleCardIndex])
   expect(localStorage.getItem(StorageKeys.moduleCardIndex)).toBe("1")
 })
 
@@ -170,6 +181,24 @@ test("switching modules writes only the current-module-id key", () => {
   const secondModuleId = at(defaultModuleExercises, 1).id
   store.dispatch(selectModule(secondModuleId))
 
-  expect(Object.keys(localStorage)).toStrictEqual([StorageKeys.currentModuleId])
+  expect(writtenLegacyKeys()).toStrictEqual([StorageKeys.currentModuleId])
   expect(localStorage.getItem(StorageKeys.currentModuleId)).toBe(secondModuleId)
+})
+
+describe("v2 document", () => {
+  test("writes a valid v2 document that matches the store after a change", () => {
+    const store = makeStore(preloaded())
+    store.dispatch(markCard({ word: "HAT", isKnown: true }))
+
+    expect(readSyncDocumentV2()).toStrictEqual(
+      selectSyncDocumentV2(store.getState()),
+    )
+  })
+
+  test("skips the write when no versioned field changed", () => {
+    const store = makeStore(preloaded())
+    store.dispatch(toggleFilterMissed())
+
+    expect(localStorage.getItem(SYNC_DOCUMENT_V2_KEY)).toBeNull()
+  })
 })

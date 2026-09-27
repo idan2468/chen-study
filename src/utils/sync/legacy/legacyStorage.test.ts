@@ -17,6 +17,7 @@ import {
   toLegacyUnseenAnswers,
   toLegacyUnseenLibrary,
 } from "./legacyStorage"
+import { SYNC_DOCUMENT_V2_KEY } from "@/utils/sync/syncDocumentStorage"
 import {
   INITIAL_UPDATED_AT,
   markDeleted,
@@ -73,6 +74,16 @@ describe("applySyncPayload", () => {
     )
     expect(localStorage.getItem(StorageKeys.darkMode)).toBe("1")
   })
+})
+
+test("keeps the v2 document out of the legacy payload in both directions", () => {
+  localStorage.setItem(SYNC_DOCUMENT_V2_KEY, "{}")
+
+  expect(buildSyncPayload()).not.toHaveProperty(SYNC_DOCUMENT_V2_KEY)
+
+  localStorage.clear()
+  applySyncPayload({ [SYNC_DOCUMENT_V2_KEY]: "{}" })
+  expect(localStorage.getItem(SYNC_DOCUMENT_V2_KEY)).toBeNull()
 })
 
 describe("legacy Module progress", () => {

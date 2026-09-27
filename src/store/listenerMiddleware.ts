@@ -12,6 +12,8 @@ import {
   toLegacyUnseenLibrary,
 } from "@/utils/sync/legacy/legacyStorage"
 import { liveValues } from "@/utils/sync/versionedValue"
+import { writeSyncDocumentV2 } from "@/utils/sync/syncDocumentStorage"
+import { selectSyncDocumentV2 } from "./syncDocument"
 import type { SettingsState } from "./slices/settingsSlice"
 import {
   setDyslexiaFont,
@@ -278,5 +280,15 @@ startListening({
     if (previous.currentModuleId.value !== next.currentModuleId.value) {
       writeString(StorageKeys.currentModuleId, next.currentModuleId.value)
     }
+  },
+})
+
+/* ---------------------------- v2 document ---------------------------- */
+
+startListening({
+  predicate: (_action, current, previous) =>
+    selectSyncDocumentV2(current) !== selectSyncDocumentV2(previous),
+  effect: (_action, api) => {
+    writeSyncDocumentV2(selectSyncDocumentV2(api.getState()))
   },
 })
