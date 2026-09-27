@@ -1,5 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
+import { readLocalPersistedState } from "@/store/persistedState"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { hasWord, keepLastBy } from "@/utils/collections"
@@ -11,6 +12,7 @@ import {
   markDeleted,
   upsertValue,
   setValueIfChanged,
+  toVersionedValue,
 } from "@/utils/sync/versionedValue"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type {
@@ -27,11 +29,36 @@ export type UnseenState = {
   cardIndex: VersionedValue<number>
 }
 
-const loadFromStorage = (): UnseenState =>
-  readLegacyUnseenState(defaultUnseenExercise)
-
 const hasExerciseId = (exerciseId: string) => (exercise: UnseenExercise) =>
   exercise.exerciseId === exerciseId
+
+/** Seeds the built-in exercise unless it has an entry (live or tombstoned); a current ID pointing at a deleted exercise falls back, starting at the first card. */
+const resolveUnseenState = (stored: UnseenState): UnseenState => {
+  const exercises = stored.exercises.some(entry =>
+    hasExerciseId(defaultUnseenExercise.exerciseId)(entry.value),
+  )
+    ? stored.exercises
+    : [...stored.exercises, toVersionedValue(defaultUnseenExercise)]
+  const live = liveValues(exercises)
+  const currentId = live.some(hasExerciseId(stored.currentId.value))
+    ? stored.currentId.value
+    : ((live.find(hasExerciseId(defaultUnseenExercise.exerciseId)) ?? live[0])
+        ?.exerciseId ?? "")
+  return {
+    exercises,
+    currentId: toVersionedValue(currentId, stored.currentId.updatedAt),
+    cardIndex:
+      currentId === stored.currentId.value
+        ? stored.cardIndex
+        : toVersionedValue(0, stored.cardIndex.updatedAt),
+  }
+}
+
+const loadFromStorage = (): UnseenState =>
+  resolveUnseenState(
+    readLocalPersistedState()?.unseen ??
+      readLegacyUnseenState(defaultUnseenExercise),
+  )
 
 const findExercise = (state: UnseenState, exerciseId: string) =>
   findLiveValue(state.exercises, hasExerciseId(exerciseId))

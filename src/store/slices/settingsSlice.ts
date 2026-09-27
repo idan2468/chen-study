@@ -1,11 +1,15 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
-import { readFlag, readString } from "@/store/storage"
+import { readLocalPersistedState } from "@/store/persistedState"
+import { readString } from "@/store/storage"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { SpeechLang } from "@/types/speech"
 import type { VersionedValue } from "@/types/versionedValue"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import {
+  readLegacyPreferences,
+  StorageKeys,
+} from "@/utils/sync/legacy/legacyStorage"
 import {
   setValueIfChanged,
   toVersionedValue,
@@ -41,22 +45,23 @@ const clampRate = (value: number) => {
   return Math.min(MAX_SPEECH_RATE, Math.max(MIN_SPEECH_RATE, value))
 }
 
+const clampRateEntry = (entry: VersionedValue<number>) =>
+  toVersionedValue(clampRate(entry.value), entry.updatedAt)
+
 const loadFromStorage = (): SettingsState => {
+  const { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang } =
+    readLocalPersistedState()?.preferences ?? readLegacyPreferences()
   const storedSystemVoice = readString(StorageKeys.systemVoice, "")
   const storedSystemVoiceHe = readString(StorageKeys.systemVoiceHe, "")
 
   return {
-    dyslexiaFont: toVersionedValue(readFlag(StorageKeys.dyslexiaFont, false)),
-    shuffleUnseenAnswers: toVersionedValue(
-      readFlag(StorageKeys.shuffleUnseenAnswers, false),
-    ),
+    dyslexiaFont,
+    shuffleUnseenAnswers,
     speechRateByLang: {
-      [SpeechLang.English]: toVersionedValue(
-        clampRate(Number.parseFloat(readString(StorageKeys.speechRate, ""))),
+      [SpeechLang.English]: clampRateEntry(
+        speechRateByLang[SpeechLang.English],
       ),
-      [SpeechLang.Hebrew]: toVersionedValue(
-        clampRate(Number.parseFloat(readString(StorageKeys.speechRateHe, ""))),
-      ),
+      [SpeechLang.Hebrew]: clampRateEntry(speechRateByLang[SpeechLang.Hebrew]),
     },
     systemVoiceUriByLang: {
       [SpeechLang.English]: storedSystemVoice === "" ? null : storedSystemVoice,

@@ -1,6 +1,8 @@
 import { z } from "zod"
 import { PERSISTED_STATE_KEY } from "@/store/persistedState"
-import { listKeys, readJson, readString } from "@/store/storage"
+import { listKeys, readFlag, readJson, readString } from "@/store/storage"
+import type { PersistedState } from "@/types/schemas/persistedState"
+import { SpeechLang } from "@/types/speech"
 import { CardStatus } from "@/types/moduleExercise"
 import type {
   ModuleExercise,
@@ -143,6 +145,32 @@ export const readLegacyModuleProgress =
     Object.entries(
       readJson<Record<string, CardStatus>>(StorageKeys.modulesProgress, {}),
     ).map(([word, status]) => toVersionedValue({ word, status }))
+
+/** Before built-in seeding and index clamping, which the Modules slice applies to either source. */
+export const readLegacyModulesState = (): PersistedState["modules"] => ({
+  modules: readLegacyModules(),
+  progress: readLegacyModuleProgress(),
+  currentModuleId: toVersionedValue(
+    readString(StorageKeys.currentModuleId, ""),
+  ),
+  cardIndex: toVersionedValue(readJson<number>(StorageKeys.moduleCardIndex, 0)),
+})
+
+/** Rates may be `NaN` when unset; the settings slice clamps either source. */
+export const readLegacyPreferences = (): PersistedState["preferences"] => ({
+  dyslexiaFont: toVersionedValue(readFlag(StorageKeys.dyslexiaFont, false)),
+  shuffleUnseenAnswers: toVersionedValue(
+    readFlag(StorageKeys.shuffleUnseenAnswers, false),
+  ),
+  speechRateByLang: {
+    [SpeechLang.English]: toVersionedValue(
+      Number.parseFloat(readString(StorageKeys.speechRate, "")),
+    ),
+    [SpeechLang.Hebrew]: toVersionedValue(
+      Number.parseFloat(readString(StorageKeys.speechRateHe, "")),
+    ),
+  },
+})
 
 export const toLegacyModuleProgress = (
   progress: readonly VersionedValue<ModuleProgressRecord>[],

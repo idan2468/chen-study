@@ -9,7 +9,12 @@ import type {
   ModuleProgressRecord,
 } from "@/types/moduleExercise"
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import {
+  selectPersistedState,
+  writeLocalPersistedState,
+} from "@/store/persistedState"
 import { makeStore } from "@/store/store"
+import type { PersistedState } from "@/types/schemas/persistedState"
 import {
   INITIAL_UPDATED_AT,
   liveValues,
@@ -430,19 +435,83 @@ describe("reloadFromStorage", () => {
     localStorage.clear()
   })
 
-  test("discards in-memory changes and re-reads whatever is in storage now, e.g. after a Drive pull", () => {
+  test("discards in-memory changes and re-reads local v2, e.g. after a Drive merge", () => {
     const store = makeStore({ modules: baseState() })
     store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
 
-    localStorage.setItem(
-      StorageKeys.modulesProgress,
-      JSON.stringify({ [firstCard.en]: "unknown" }),
-    )
+    const persisted = selectPersistedState(store.getState())
+    writeLocalPersistedState({
+      ...persisted,
+      modules: {
+        ...persisted.modules,
+        progress: [
+          toVersionedValue({ word: firstCard.en, status: CardStatus.Unknown }),
+        ],
+      },
+    })
     store.dispatch(reloadFromStorage())
 
     expect(selectModulesProgress(store.getState())).toStrictEqual({
       [firstCard.en]: "unknown",
     })
+  })
+})
+
+describe("hydration from local v2", () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  const writeModules = (modules: Partial<PersistedState["modules"]>) => {
+    const persisted = selectPersistedState(makeStore().getState())
+    writeLocalPersistedState({
+      ...persisted,
+      modules: { ...persisted.modules, ...modules },
+    })
+  }
+
+  test("prefers local v2 over legacy keys", () => {
+    localStorage.setItem(
+      StorageKeys.modulesProgress,
+      JSON.stringify({ HAT: CardStatus.Known }),
+    )
+    writeModules({
+      progress: [toVersionedValue({ word: "FOX", status: CardStatus.Unknown })],
+    })
+
+    expect(selectModulesProgress(makeStore().getState())).toStrictEqual({
+      FOX: CardStatus.Unknown,
+    })
+  })
+
+  test("seeds built-ins missing from v2 but keeps their tombstones", () => {
+    const [first, second] = defaultModuleExercises
+    writeModules({
+      modules: [
+        markDeleted(toVersionedValue(at([first], 0)), INITIAL_UPDATED_AT),
+      ],
+    })
+
+    const ids = selectModules(makeStore().getState()).map(module => module.id)
+
+    expect(ids).not.toContain(first?.id)
+    expect(ids).toContain(second?.id)
+  })
+
+  test("repairs a current module that the merge left deleted, keeping its timestamp", () => {
+    const NOW = "2026-09-27T10:00:00.000+03:00"
+    const deleted = at(defaultModuleExercises, 1)
+    writeModules({
+      modules: [markDeleted(toVersionedValue(deleted), NOW)],
+      currentModuleId: toVersionedValue(deleted.id, NOW),
+      cardIndex: toVersionedValue(99, NOW),
+    })
+
+    const state = makeStore().getState()
+
+    expect(selectCurrentModuleId(state)).not.toBe(deleted.id)
+    expect(state.modules.currentModuleId.updatedAt).toBe(NOW)
+    expect(selectModuleCardIndex(state)).toBe(0)
   })
 })
 

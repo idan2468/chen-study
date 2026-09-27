@@ -4,8 +4,13 @@ import {
   flashcardStatusKey,
   StorageKeys,
 } from "@/utils/sync/legacy/legacyStorage"
+import {
+  selectPersistedState,
+  writeLocalPersistedState,
+} from "@/store/persistedState"
 import { makeStore } from "@/store/store"
-import { toVersionedValue } from "@/utils/sync/versionedValue"
+import type { PersistedState } from "@/types/schemas/persistedState"
+import { markDeleted, toVersionedValue } from "@/utils/sync/versionedValue"
 import type { UnseenState } from "./unseenSlice"
 import {
   addExercise,
@@ -564,30 +569,51 @@ describe("reloadFromStorage", () => {
     localStorage.clear()
   })
 
-  test("discards in-memory changes and re-reads whatever is in storage now, e.g. after a Drive pull", () => {
+  const writeUnseen = (unseen: Partial<PersistedState["unseen"]>) => {
+    const persisted = selectPersistedState(makeStore().getState())
+    writeLocalPersistedState({
+      ...persisted,
+      unseen: { ...persisted.unseen, ...unseen },
+    })
+  }
+
+  test("discards in-memory changes and re-reads local v2, e.g. after a Drive merge", () => {
     const store = makeStore({ unseen: baseState() })
     store.dispatch(markFlashcard({ word: "Delicate", isKnown: true }))
 
-    localStorage.setItem(
-      StorageKeys.exerciseLibrary,
-      JSON.stringify({ other_1: otherExercise }),
-    )
-    localStorage.setItem(StorageKeys.currentExerciseId, "other_1")
-    localStorage.setItem(
-      flashcardStatusKey(defaultUnseenExercise.exerciseId),
-      JSON.stringify({}),
-    )
+    writeUnseen({
+      exercises: [toVersionedValue(otherExercise)],
+      currentId: toVersionedValue("other_1"),
+    })
     store.dispatch(reloadFromStorage())
 
     const state = store.getState()
     expect(selectCurrentExerciseId(state)).toBe("other_1")
-    // The built-in default is always re-seeded if missing from storage -- see
-    // `loadFromStorage`'s "first run" comment.
+    // The built-in default is re-seeded when v2 has no entry for it at all.
     expect(selectLibrary(state)).toStrictEqual({
       other_1: otherExercise,
       [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
     })
     expect(selectCurrentProgress(state)).toStrictEqual({})
+  })
+
+  test("keeps a tombstoned default and repairs a current ID pointing at it", () => {
+    const NOW = "2026-09-27T10:00:00.000+03:00"
+    writeUnseen({
+      exercises: [
+        markDeleted(toVersionedValue(defaultUnseenExercise), NOW),
+        toVersionedValue(otherExercise),
+      ],
+      currentId: toVersionedValue(defaultUnseenExercise.exerciseId, NOW),
+      cardIndex: toVersionedValue(3, NOW),
+    })
+
+    const state = makeStore().getState()
+
+    expect(Object.keys(selectLibrary(state))).toStrictEqual(["other_1"])
+    expect(selectCurrentExerciseId(state)).toBe("other_1")
+    expect(state.unseen.currentId.updatedAt).toBe(NOW)
+    expect(state.unseen.cardIndex.value).toBe(0)
   })
 })
 

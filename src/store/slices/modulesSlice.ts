@@ -1,15 +1,11 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
-import { readJson, readString } from "@/store/storage"
+import { readLocalPersistedState } from "@/store/persistedState"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { hasWord, keepLastBy } from "@/utils/collections"
 import type { IsoTimestamp } from "@/utils/sync/timestamp"
-import {
-  readLegacyModuleProgress,
-  readLegacyModules,
-  StorageKeys,
-} from "@/utils/sync/legacy/legacyStorage"
+import { readLegacyModulesState } from "@/utils/sync/legacy/legacyStorage"
 import {
   tombstoneValue,
   findLiveValue,
@@ -28,6 +24,7 @@ import type {
   ModulesProgress,
 } from "@/types/moduleExercise"
 import { CardStatus } from "@/types/moduleExercise"
+import type { PersistedState } from "@/types/schemas/persistedState"
 import type { VersionedValue } from "@/types/versionedValue"
 
 export type ModulesState = {
@@ -101,33 +98,48 @@ const setModuleProgressStatus = (
   upsertValue(progress, hasWord(word), { word, status }, updatedAt)
 }
 
-const loadFromStorage = (): ModulesState => {
-  const moduleEntries = mergeModules(readLegacyModules())
+/** Seeds built-ins and repairs navigation the same way for local v2 and legacy storage. */
+const resolveModulesState = (
+  stored: PersistedState["modules"],
+): ModulesState => {
+  const moduleEntries = mergeModules(stored.modules)
   const modules = liveValues(moduleEntries)
   const currentModuleId = resolveCurrentId(
     modules,
-    readString(StorageKeys.currentModuleId, ""),
+    stored.currentModuleId.value,
   )
 
-  // Clamp in case the module's deck has shrunk since the index was saved.
+  // A repaired current module starts at its first card; otherwise clamp in
+  // case the deck has shrunk since the index was saved.
   const currentModule = modules.find(module => module.id === currentModuleId)
-  const storedCardIndex = readJson<number>(StorageKeys.moduleCardIndex, 0)
-  const cardIndex = currentModule
-    ? Math.min(
-        Math.max(storedCardIndex, 0),
-        Math.max(currentModule.cards.length - 1, 0),
-      )
-    : 0
+  const wasRepaired =
+    stored.currentModuleId.value !== "" &&
+    stored.currentModuleId.value !== currentModuleId
+  const cardIndex =
+    currentModule && !wasRepaired
+      ? Math.min(
+          Math.max(stored.cardIndex.value, 0),
+          Math.max(currentModule.cards.length - 1, 0),
+        )
+      : 0
 
   return {
     modules: moduleEntries,
-    currentModuleId: toVersionedValue(currentModuleId),
-    cardIndex: toVersionedValue(cardIndex),
+    currentModuleId: toVersionedValue(
+      currentModuleId,
+      stored.currentModuleId.updatedAt,
+    ),
+    cardIndex: toVersionedValue(cardIndex, stored.cardIndex.updatedAt),
     filterMissed: false,
     reviewingMissed: false,
-    progress: readLegacyModuleProgress(),
+    progress: stored.progress,
   }
 }
+
+const loadFromStorage = (): ModulesState =>
+  resolveModulesState(
+    readLocalPersistedState()?.modules ?? readLegacyModulesState(),
+  )
 
 const addOrReplaceModule = (
   state: ModulesState,

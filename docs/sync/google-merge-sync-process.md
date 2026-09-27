@@ -29,7 +29,7 @@
 
 ### Step 11 — activate v2 synchronization
 
-- Slices hydrate from local v2 whenever it is valid, otherwise from legacy keys, applying the legacy loader's repairs (seed new built-in modules and the default exercise unless tombstoned, fall back from a current ID that points at a deleted entity, clamp the module card index).
+- Slices hydrate from local v2 whenever it is valid, otherwise from legacy keys, applying the legacy loader's repairs (seed new built-in modules and the default exercise unless tombstoned, fall back from a current ID that points at a deleted entity, clamp the module card index). A repaired current ID keeps its `updatedAt` and resets its card index to 0, since a position belongs to its own exercise or module (Step 8's navigation pair); an empty stored module ID still reopens on the stored index, as the legacy loader did.
 - Boot without a token runs `migrateToV2(false)` in `main.tsx` before the store is created; boot with a token runs `migrateToV2(true)` inside the existing restore, behind the spinner.
 - Connect, boot, the visible 30-second timer, return-to-visible, and **Sync now** share one entry point: a not-yet-activated device runs `migrateToV2(true)` (resuming from its checkpoint); an activated one reads Drive v2, merges it with the live store's state, applies the result, then writes Drive (skipped when unchanged). Merge and apply run synchronously after the read, so edits made during the upload are kept and pushed next sync.
 - The page-hide `keepalive` push is removed; the existing 401 → one silent re-issue → retry and silent passive failures stay.

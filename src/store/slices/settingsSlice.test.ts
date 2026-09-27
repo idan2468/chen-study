@@ -1,4 +1,8 @@
 import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import {
+  selectPersistedState,
+  writeLocalPersistedState,
+} from "@/store/persistedState"
 import { makeStore } from "@/store/store"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
@@ -126,12 +130,22 @@ describe("reloadFromStorage", () => {
     localStorage.clear()
   })
 
-  test("discards in-memory changes and re-reads whatever is in storage now, e.g. after a Drive pull", () => {
+  test("discards in-memory changes and re-reads local v2 plus device voices", () => {
     const store = makeStore()
     store.dispatch(setSpeechRate({ lang: SpeechLang.English, rate: 0.9 }))
 
-    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-    localStorage.setItem(StorageKeys.speechRate, "0.3")
+    const persisted = selectPersistedState(store.getState())
+    writeLocalPersistedState({
+      ...persisted,
+      preferences: {
+        ...persisted.preferences,
+        dyslexiaFont: toVersionedValue(true),
+        speechRateByLang: {
+          ...persisted.preferences.speechRateByLang,
+          [SpeechLang.English]: toVersionedValue(0.3),
+        },
+      },
+    })
     localStorage.setItem(StorageKeys.systemVoice, "Google US English")
     localStorage.setItem(StorageKeys.systemVoiceHe, "Carmit")
     store.dispatch(reloadFromStorage())
@@ -143,6 +157,26 @@ describe("reloadFromStorage", () => {
       "Google US English",
     )
     expect(selectSystemVoiceUri(state, SpeechLang.Hebrew)).toBe("Carmit")
+  })
+
+  test("prefers local v2 over legacy keys and clamps its rates", () => {
+    const persisted = selectPersistedState(makeStore().getState())
+    writeLocalPersistedState({
+      ...persisted,
+      preferences: {
+        ...persisted.preferences,
+        speechRateByLang: {
+          ...persisted.preferences.speechRateByLang,
+          [SpeechLang.Hebrew]: toVersionedValue(5),
+        },
+      },
+    })
+    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+
+    const state = makeStore().getState()
+
+    expect(selectDyslexiaFont(state)).toBe(false)
+    expect(selectSpeechRate(state, SpeechLang.Hebrew)).toBe(1)
   })
 })
 
