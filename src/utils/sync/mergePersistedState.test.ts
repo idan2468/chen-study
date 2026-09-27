@@ -402,7 +402,7 @@ describe("preferences", () => {
 })
 
 test("merging a state with itself changes nothing", () => {
-  const document = state({
+  const persisted = state({
     unseen: {
       exercises: [toVersionedValue(exercise("u1"), T1)],
       currentId: toVersionedValue("u1", T1),
@@ -415,5 +415,5 @@ test("merging a state with itself changes nothing", () => {
     },
   })
 
-  expect(mergePersistedState(document, document)).toStrictEqual(document)
+  expect(mergePersistedState(persisted, persisted)).toStrictEqual(persisted)
 })
