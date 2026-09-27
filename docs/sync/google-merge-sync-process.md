@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–6 approved; Step 7 is next.**
+**Status: in progress on `google-merge-sync` — Steps 1–7 approved; Step 8 is next.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -14,21 +14,14 @@
 - [x] Step 5 — version/timestamp foundations (`a9c8cf3`, `5b65723`, `948b92c`, `413f263`, `01d514b`, `d067b9e`), 268 tests/full gate/review/manual approved; follow-ups `f9ac709`, `36defff`.
 - [x] Step 6 — versioned arrays, preferences, and navigation (`e21d999`, `e8f7d27`, `ba149dd`, `bc9c468`, `2aac946`, `3cc30b1`, `eeee890`, `b52b38d`), 291 tests/full gate/review/manual approved.
   - Decisions: legacy-loaded values get the epoch `updatedAt`; deleted entities are tombstones (replacing `deletedBuiltInIds`); versioned preferences are `dyslexiaFont`, `shuffleUnseenAnswers`, and both speech rates; system voice stays device-local; dark mode and locale stay with Mantine/i18n.
+- [x] Step 7 — canonical local v2 (`220a8c8`, `53b664f`, `70fa4d9`), 298 tests/full gate/review/manual approved.
+  - Decisions: envelope is `{ schemaVersion: 2, unseen: { exercises, currentId, cardIndex }, modules: { modules, progress, currentModuleId, cardIndex }, preferences: { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang } }`; `filterMissed`, `reviewingMissed`, and system voice stay out; app hydration keeps reading legacy keys until Step 11 while `english_progress_v2` is written through on every change (loader tested, not wired into startup); a missing, corrupt, or Zod-invalid v2 document falls back to legacy with a console warning on validation failure; `english_progress_v2` is excluded from the legacy Google payload; `SpeechLang` lives in `src/types/speech.ts` so schemas never import store slices; `src/utils/sync/` stays flat (v2 subfolder proposed, not accepted).
 
 ## Current review gate
 
-### Step 7 — canonical local v2
+### Step 8 — pure merge engine
 
-- Envelope mirrors versioned state: `{ schemaVersion: 2, unseen: { exercises, currentId, cardIndex }, modules: { modules, progress, currentModuleId, cardIndex }, preferences: { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang } }`; `filterMissed`, `reviewingMissed`, and system voice stay out.
-- App hydration keeps reading legacy keys until Step 11; `english_progress_v2` is written through on every change, and its loader is implemented and tested but not wired into startup yet.
-- A missing, corrupt, or Zod-invalid v2 document falls back to legacy (console warning on validation failure).
-- `english_progress_v2` is excluded from the legacy Google payload (no Drive v2 yet).
-- `SpeechLang` lives in `src/types/speech.ts` so schemas never import store slices.
-- `src/utils/sync/` keeps its flat layout for now; grouping the v2 files into a subfolder was proposed and not accepted.
-- Commits: `220a8c8`, `53b664f`; review `[QS]` commit: `70fa4d9`.
-- Validation: 298 tests, type-check, lint, changed-file format, build, and diff checks pass.
-- Review: import-cycle finding accepted and applied.
-- Awaiting manual approval.
+- In progress; scope decisions pending.
 
 ## Step definitions
 
