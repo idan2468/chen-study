@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { SYNC_DOCUMENT_V2_KEY } from "@/utils/sync/syncDocumentStorage"
+import { PERSISTED_STATE_KEY } from "@/store/persistedState"
 import { listKeys, readJson, readString } from "@/store/storage"
 import { CardStatus } from "@/types/moduleExercise"
 import type {
@@ -59,7 +59,7 @@ const DEVICE_LOCAL_KEYS = new Set<string>([
 
 export const isSyncableKey = (key: string) =>
   !DEVICE_LOCAL_KEYS.has(key) &&
-  key !== SYNC_DOCUMENT_V2_KEY &&
+  key !== PERSISTED_STATE_KEY &&
   (key.startsWith("flashcards_status_") ||
     key.startsWith("english_") ||
     key.startsWith("hebrew_") ||

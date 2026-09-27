@@ -49,10 +49,10 @@ const moduleExerciseSchema = z.object({
 
 const cardIndexSchema = versionedValueSchema(z.number().int().nonnegative())
 
-export const SYNC_DOCUMENT_VERSION = 2
+export const PERSISTED_STATE_VERSION = 2
 
-export const syncDocumentV2Schema = z.object({
-  schemaVersion: z.literal(SYNC_DOCUMENT_VERSION),
+export const persistedStateSchema = z.object({
+  schemaVersion: z.literal(PERSISTED_STATE_VERSION),
   unseen: z.object({
     exercises: z.array(versionedValueSchema(unseenExerciseSchema)),
     currentId: versionedValueSchema(z.string()),
@@ -78,4 +78,4 @@ export const syncDocumentV2Schema = z.object({
   }),
 })
 
-export type SyncDocumentV2 = z.infer<typeof syncDocumentV2Schema>
+export type PersistedState = z.infer<typeof persistedStateSchema>

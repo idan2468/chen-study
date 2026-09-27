@@ -1,9 +1,15 @@
 import { createSelector } from "@reduxjs/toolkit"
-import type { SyncDocumentV2 } from "@/types/schemas/syncDocument"
-import { SYNC_DOCUMENT_VERSION } from "@/types/schemas/syncDocument"
+import { readJson, writeJson } from "@/store/storage"
+import type { PersistedState } from "@/types/schemas/persistedState"
+import {
+  PERSISTED_STATE_VERSION,
+  persistedStateSchema,
+} from "@/types/schemas/persistedState"
 import type { RootState } from "./store"
 
-export const selectSyncDocumentV2 = createSelector(
+export const PERSISTED_STATE_KEY = "english_progress_v2"
+
+export const selectPersistedState = createSelector(
   [
     (state: RootState) => state.unseen.exercises,
     (state: RootState) => state.unseen.currentId,
@@ -27,8 +33,8 @@ export const selectSyncDocumentV2 = createSelector(
     dyslexiaFont,
     shuffleUnseenAnswers,
     speechRateByLang,
-  ): SyncDocumentV2 => ({
-    schemaVersion: SYNC_DOCUMENT_VERSION,
+  ): PersistedState => ({
+    schemaVersion: PERSISTED_STATE_VERSION,
     unseen: { exercises, currentId, cardIndex: unseenCardIndex },
     modules: {
       modules,
@@ -39,3 +45,21 @@ export const selectSyncDocumentV2 = createSelector(
     preferences: { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang },
   }),
 )
+
+/** `null` when missing or invalid, so the caller falls back to legacy storage. */
+export const readPersistedState = (): PersistedState | null => {
+  const stored = readJson<unknown>(PERSISTED_STATE_KEY, null)
+  if (stored === null) {
+    return null
+  }
+  const parsed = persistedStateSchema.safeParse(stored)
+  if (!parsed.success) {
+    console.warn(`Ignoring invalid "${PERSISTED_STATE_KEY}"`, parsed.error)
+    return null
+  }
+  return parsed.data
+}
+
+export const writePersistedState = (state: PersistedState) => {
+  writeJson(PERSISTED_STATE_KEY, state)
+}

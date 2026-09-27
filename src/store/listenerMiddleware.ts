@@ -12,8 +12,7 @@ import {
   toLegacyUnseenLibrary,
 } from "@/utils/sync/legacy/legacyStorage"
 import { liveValues } from "@/utils/sync/versionedValue"
-import { writeSyncDocumentV2 } from "@/utils/sync/syncDocumentStorage"
-import { selectSyncDocumentV2 } from "./syncDocument"
+import { selectPersistedState, writePersistedState } from "./persistedState"
 import type { SettingsState } from "./slices/settingsSlice"
 import {
   setDyslexiaFont,
@@ -283,12 +282,12 @@ startListening({
   },
 })
 
-/* ---------------------------- v2 document ---------------------------- */
+/* --------------------------- persisted state --------------------------- */
 
 startListening({
   predicate: (_action, current, previous) =>
-    selectSyncDocumentV2(current) !== selectSyncDocumentV2(previous),
+    selectPersistedState(current) !== selectPersistedState(previous),
   effect: (_action, api) => {
-    writeSyncDocumentV2(selectSyncDocumentV2(api.getState()))
+    writePersistedState(selectPersistedState(api.getState()))
   },
 })

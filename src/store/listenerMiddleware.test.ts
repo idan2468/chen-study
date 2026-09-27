@@ -7,11 +7,11 @@ import {
 } from "@/utils/sync/legacy/legacyStorage"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
-  readSyncDocumentV2,
-  SYNC_DOCUMENT_V2_KEY,
-} from "@/utils/sync/syncDocumentStorage"
+  PERSISTED_STATE_KEY,
+  readPersistedState,
+  selectPersistedState,
+} from "./persistedState"
 import { makeStore } from "./store"
-import { selectSyncDocumentV2 } from "./syncDocument"
 import {
   markCard,
   nextCard,
@@ -53,7 +53,7 @@ const preloaded = () => ({
 })
 
 const writtenLegacyKeys = () =>
-  Object.keys(localStorage).filter(key => key !== SYNC_DOCUMENT_V2_KEY)
+  Object.keys(localStorage).filter(key => key !== PERSISTED_STATE_KEY)
 
 beforeEach(() => {
   localStorage.clear()
@@ -185,13 +185,13 @@ test("switching modules writes only the current-module-id key", () => {
   expect(localStorage.getItem(StorageKeys.currentModuleId)).toBe(secondModuleId)
 })
 
-describe("v2 document", () => {
-  test("writes a valid v2 document that matches the store after a change", () => {
+describe("persisted state", () => {
+  test("writes valid persisted state that matches the store after a change", () => {
     const store = makeStore(preloaded())
     store.dispatch(markCard({ word: "HAT", isKnown: true }))
 
-    expect(readSyncDocumentV2()).toStrictEqual(
-      selectSyncDocumentV2(store.getState()),
+    expect(readPersistedState()).toStrictEqual(
+      selectPersistedState(store.getState()),
     )
   })
 
@@ -199,6 +199,6 @@ describe("v2 document", () => {
     const store = makeStore(preloaded())
     store.dispatch(toggleFilterMissed())
 
-    expect(localStorage.getItem(SYNC_DOCUMENT_V2_KEY)).toBeNull()
+    expect(localStorage.getItem(PERSISTED_STATE_KEY)).toBeNull()
   })
 })
