@@ -130,5 +130,6 @@ Each step's approved scope and review focus. Progress lives in [Completed](#comp
 
 - Apply KISS and extract focused helpers for repeated or multi-step logic.
 - Do not invent behavior, expand scope, or resolve an issue not covered by the approved plan. Stop and ask the user first.
+- Steps are checkpoints for manual verification only; nothing ships to production until Step 11 is complete.
 - No next step starts without manual approval.
 - Record every new decision in this doc as soon as it's made, and keep it under the step's Completed entry when the step is approved — never drop decisions when clearing a review gate.
