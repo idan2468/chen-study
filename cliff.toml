@@ -1,0 +1,57 @@
+# git-cliff config: https://git-cliff.org/docs/configuration
+# Keep a Changelog format (https://keepachangelog.com) generated from this
+# repo's commit style: plain imperative subjects, optionally prefixed with
+# "[Step N]" and "[QS]" (quality follow-ups) during the Google merge sync plan.
+
+[changelog]
+header = """
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+"""
+body = """
+{% if version -%}
+  ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else -%}
+  ## [Unreleased]
+{% endif -%}
+{% for group, commits in commits | group_by(attribute="group") %}
+  ### {{ group | striptags | trim | upper_first }}
+  {% for commit in commits %}
+    - {{ commit.message | split(pat="\n") | first | upper_first | trim }}\
+  {% endfor %}
+{% endfor %}
+"""
+trim = true
+footer = ""
+
+[git]
+conventional_commits = false
+filter_unconventional = false
+split_commits = false
+# "[Step 11] [QS] Group the hooks" -> "Group the hooks (Step 11)".
+commit_preprocessors = [
+  { pattern = '^\[Step ([0-9.]+)\] (?:\[QS\] )?([^\n]*)', replace = '${2} (Step ${1})' },
+  { pattern = '^\[QS\] ', replace = '' },
+]
+# The HTML comments only set the section order; `striptags` removes them.
+commit_parsers = [
+  { message = '^chore\(release\)', skip = true },
+  { message = '^Merge ', skip = true },
+  # Rollout bookkeeping in docs/sync/google-merge-sync-process.md.
+  { message = '^(Mark|Document|Update) Step', skip = true },
+  { message = '^Record .*(decision|results)', skip = true },
+  { message = '^Define Step', skip = true },
+  { message = '(?i)^(fix|correct|restore|repair)', group = '<!-- 3 -->Fixed' },
+  { message = '(?i)^(remove|delete|drop|retire)', group = '<!-- 2 -->Removed' },
+  { message = '(?i)^(add|test|support|introduce|create|enable|port|implement|allow|show)', group = '<!-- 0 -->Added' },
+  { message = '.*', group = '<!-- 1 -->Changed' },
+]
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9].*"
+topo_order = false
+sort_commits = "oldest"
