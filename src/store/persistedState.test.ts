@@ -14,6 +14,11 @@ beforeEach(() => {
   localStorage.clear()
 })
 
+/** Stores a document as-is, bypassing the typed writer, to test rejection. */
+const writeRaw = (document: unknown) => {
+  localStorage.setItem(PERSISTED_STATE_KEY, JSON.stringify(document))
+}
+
 const defaultState = () => selectPersistedState(makeStore().getState())
 
 test("round-trips the persisted default state", () => {
@@ -141,38 +146,33 @@ test("a deleted and re-imported module is saved as one valid entry", () => {
   expect(entries?.[0]?.deleted).toBe(false)
 })
 
-test.each([
-  ["exercise", "unseen", "exercises", "currentId", "exerciseId"],
-  ["module", "modules", "modules", "currentModuleId", "id"],
-] as const)(
-  "rejects a current %s that is deleted",
-  (_label, section, list, current, idKey) => {
+describe("a current ID that is deleted", () => {
+  beforeEach(() => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined)
+  })
+
+  test("rejects a deleted current exercise", () => {
     const state = defaultState()
-    const sectionState = state[section] as Record<string, unknown>
-    const entries = sectionState[list] as {
-      value: Record<string, unknown>
-      deleted: boolean
-    }[]
-    const target = entries.find(entry => !entry.deleted)
-    const invalid = {
-      ...state,
-      [section]: {
-        ...sectionState,
-        [list]: entries.map(entry =>
-          entry === target ? { ...entry, deleted: true } : entry,
-        ),
-        [current]: {
-          ...(sectionState[current] as object),
-          value: target?.value[idKey],
-        },
-      },
-    }
-    localStorage.setItem(PERSISTED_STATE_KEY, JSON.stringify(invalid))
+    const exercises = state.unseen.exercises.map(entry => ({
+      ...entry,
+      deleted: entry.value.exerciseId === state.unseen.currentId.value,
+    }))
+    writeRaw({ ...state, unseen: { ...state.unseen, exercises } })
 
     expect(readLocalPersistedState()).toBeNull()
-  },
-)
+  })
+
+  test("rejects a deleted current module", () => {
+    const state = defaultState()
+    const modules = state.modules.modules.map(entry => ({
+      ...entry,
+      deleted: entry.value.id === state.modules.currentModuleId.value,
+    }))
+    writeRaw({ ...state, modules: { ...state.modules, modules } })
+
+    expect(readLocalPersistedState()).toBeNull()
+  })
+})
 
 describe("a rejected local document", () => {
   beforeEach(() => {
