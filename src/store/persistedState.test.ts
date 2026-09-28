@@ -84,3 +84,40 @@ test("rejects stored content the import rules would reject", () => {
 
   expect(readLocalPersistedState()).toBeNull()
 })
+
+describe("identity rules", () => {
+  const withModuleProgress = (progress: unknown[]) => {
+    const state = defaultState()
+    return { ...state, modules: { ...state.modules, progress } }
+  }
+  const record = (word: string, status = "known") => ({
+    value: { word, status },
+    updatedAt: "2026-09-27T10:00:00.000+03:00",
+    deleted: false,
+  })
+
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined)
+  })
+
+  test.each([
+    ["two entries for one word", [record("HAT"), record("HAT", "unknown")]],
+    ["an empty word", [record("")]],
+  ])("rejects %s", (_label, progress) => {
+    localStorage.setItem(
+      PERSISTED_STATE_KEY,
+      JSON.stringify(withModuleProgress(progress)),
+    )
+
+    expect(readLocalPersistedState()).toBeNull()
+  })
+
+  test("accepts distinct words", () => {
+    localStorage.setItem(
+      PERSISTED_STATE_KEY,
+      JSON.stringify(withModuleProgress([record("HAT"), record("FOX")])),
+    )
+
+    expect(readLocalPersistedState()?.modules.progress).toHaveLength(2)
+  })
+})

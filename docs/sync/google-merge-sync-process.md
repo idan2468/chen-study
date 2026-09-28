@@ -103,7 +103,7 @@ Results for Step 12. Method: knip 6.38 (`npx knip --production`, so exports used
 - Schema rules: speech rates within 0.1–1 (the rate constants and clamp move out of the settings slice, so schemas don't import slices); non-empty `word` identities and a non-negative integer `selected`; unique IDs within every array; stored content reuses the import schemas' rules instead of looser copies (built-ins verified to pass).
 - Referential integrity: each section's current ID must be a live entity, or empty when none is live. Reducers already guarantee it; the merge now repairs a current ID the other device deleted (the other side's pair if its ID is live, otherwise the first live entity, at card 0), replacing the hydration repair.
 - Card indexes are not schema rules (their range depends on the unpersisted review/filter modes): selectors clamp the stored index to the active list when reading, replacing the hydration clamp.
-- Built-in module seeding stays at load (content versioning, not validation); default-exercise seeding and legacy navigation resolution stay only in the legacy fallback readers.
+- Built-ins are only the default for an empty state (user rule): when local v2 exists, loading uses it as stored, adding no built-in modules or exercises and not reordering them. A first run saves the defaults (with built-ins) immediately, so every new user starts from saved data. Built-ins added in a later release reach only new users. Seeding and reordering move into the legacy fallback readers, which Step 12 deletes.
 - A rejected local v2 is kept under a backup key before falling back, so a stricter rule can't silently erase progress.
 - Branch: `strict-persisted-schema`, created with `--no-track` from `origin/main`.
 

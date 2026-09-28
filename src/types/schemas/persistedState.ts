@@ -15,45 +15,69 @@ import { MAX_SPEECH_RATE, MIN_SPEECH_RATE } from "@/utils/speech/speechRate"
 
 const idSchema = z.string().min(1)
 
+/** One entry per identity: the merge and lookups pair entries by ID. */
+const versionedArraySchema = <T>(
+  valueSchema: z.ZodType<T>,
+  getId: (value: T) => string,
+) =>
+  z
+    .array(versionedValueSchema(valueSchema))
+    .refine(
+      entries =>
+        new Set(entries.map(entry => getId(entry.value))).size ===
+        entries.length,
+      { error: "Duplicate ID" },
+    )
+
 const answerRecordSchema = z.object({
   questionId: idSchema,
-  selected: z.number().int(),
+  selected: z.number().int().nonnegative(),
   correct: z.boolean(),
 }) satisfies z.ZodType<AnswerRecord>
 
 const highlightRecordSchema = z.object({
-  word: z.string(),
+  word: idSchema,
 }) satisfies z.ZodType<HighlightRecord>
 
 const flashcardProgressRecordSchema = z.object({
-  word: z.string(),
+  word: idSchema,
   isKnown: z.boolean(),
 }) satisfies z.ZodType<FlashcardProgressRecord>
 
 const unseenExerciseSchema = exerciseContentSchema.extend({
-  answers: z.array(versionedValueSchema(answerRecordSchema)),
-  highlights: z.array(versionedValueSchema(highlightRecordSchema)),
-  flashcardProgress: z.array(
-    versionedValueSchema(flashcardProgressRecordSchema),
+  answers: versionedArraySchema(
+    answerRecordSchema,
+    answer => answer.questionId,
+  ),
+  highlights: versionedArraySchema(highlightRecordSchema, ({ word }) => word),
+  flashcardProgress: versionedArraySchema(
+    flashcardProgressRecordSchema,
+    ({ word }) => word,
   ),
 }) satisfies z.ZodType<UnseenExercise>
 
 const moduleProgressRecordSchema = z.object({
-  word: z.string(),
+  word: idSchema,
   status: z.enum(CardStatus),
 }) satisfies z.ZodType<ModuleProgressRecord>
 
 const cardIndexSchema = versionedValueSchema(z.number().int().nonnegative())
 
 const unseenSchema = z.object({
-  exercises: z.array(versionedValueSchema(unseenExerciseSchema)),
+  exercises: versionedArraySchema(
+    unseenExerciseSchema,
+    exercise => exercise.exerciseId,
+  ),
   currentId: versionedValueSchema(z.string()),
   cardIndex: cardIndexSchema,
 })
 
 const modulesSchema = z.object({
-  modules: z.array(versionedValueSchema(moduleExerciseSchema)),
-  progress: z.array(versionedValueSchema(moduleProgressRecordSchema)),
+  modules: versionedArraySchema(moduleExerciseSchema, module => module.id),
+  progress: versionedArraySchema(
+    moduleProgressRecordSchema,
+    ({ word }) => word,
+  ),
   currentModuleId: versionedValueSchema(z.string()),
   cardIndex: cardIndexSchema,
 })
