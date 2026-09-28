@@ -8,15 +8,13 @@ import { readString } from "@/store/storage"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { SpeechLang } from "@/types/speech"
+import { clampSpeechRate } from "@/utils/speech/speechRate"
 import type { VersionedValue } from "@/types/versionedValue"
 import {
   readLegacyPreferences,
   StorageKeys,
 } from "@/utils/sync/legacy/legacyStorage"
-import {
-  setValueIfChanged,
-  toVersionedValue,
-} from "@/utils/sync/versionedValue"
+import { setValueIfChanged } from "@/utils/sync/versionedValue"
 
 /**
  * Cross-page user preferences.
@@ -37,20 +35,6 @@ export type SettingsState = {
   systemVoiceUriByLang: Record<SpeechLang, string | null>
 }
 
-export const MIN_SPEECH_RATE = 0.1
-export const MAX_SPEECH_RATE = 1
-export const DEFAULT_SPEECH_RATE = 0.5
-
-const clampRate = (value: number) => {
-  if (!Number.isFinite(value)) {
-    return DEFAULT_SPEECH_RATE
-  }
-  return Math.min(MAX_SPEECH_RATE, Math.max(MIN_SPEECH_RATE, value))
-}
-
-const clampRateEntry = (entry: VersionedValue<number>) =>
-  toVersionedValue(clampRate(entry.value), entry.updatedAt)
-
 const loadFromStorage = (): SettingsState => {
   const { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang } =
     readLocalPersistedState()?.preferences ?? readLegacyPreferences()
@@ -60,12 +44,7 @@ const loadFromStorage = (): SettingsState => {
   return {
     dyslexiaFont,
     shuffleUnseenAnswers,
-    speechRateByLang: {
-      [SpeechLang.English]: clampRateEntry(
-        speechRateByLang[SpeechLang.English],
-      ),
-      [SpeechLang.Hebrew]: clampRateEntry(speechRateByLang[SpeechLang.Hebrew]),
-    },
+    speechRateByLang,
     systemVoiceUriByLang: {
       [SpeechLang.English]: storedSystemVoice === "" ? null : storedSystemVoice,
       [SpeechLang.Hebrew]:
@@ -116,7 +95,7 @@ export const settingsSlice = createAppSlice({
       ) => {
         setValueIfChanged(
           state.speechRateByLang[action.payload.lang],
-          clampRate(action.payload.rate),
+          clampSpeechRate(action.payload.rate),
           action.meta.updatedAt,
         )
       },

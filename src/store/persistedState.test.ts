@@ -40,3 +40,24 @@ test("returns null and warns for a state that fails validation", () => {
   expect(readLocalPersistedState()).toBeNull()
   expect(warn).toHaveBeenCalledOnce()
 })
+
+test("rejects a speech rate outside the allowed range", () => {
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
+  const state = defaultState()
+  localStorage.setItem(
+    PERSISTED_STATE_KEY,
+    JSON.stringify({
+      ...state,
+      preferences: {
+        ...state.preferences,
+        speechRateByLang: {
+          ...state.preferences.speechRateByLang,
+          en: { ...state.preferences.speechRateByLang.en, value: 5 },
+        },
+      },
+    }),
+  )
+
+  expect(readLocalPersistedState()).toBeNull()
+  expect(warn).toHaveBeenCalledOnce()
+})

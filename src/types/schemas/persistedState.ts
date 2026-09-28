@@ -16,6 +16,7 @@ import type {
   UnseenExercise,
 } from "@/types/unseenExercise"
 import { versionedValueSchema } from "@/types/schemas/versionedValue"
+import { MAX_SPEECH_RATE, MIN_SPEECH_RATE } from "@/utils/speech/speechRate"
 
 const idSchema = z.string().min(1)
 
@@ -104,7 +105,7 @@ const preferencesSchema = z.object({
   shuffleUnseenAnswers: versionedValueSchema(z.boolean()),
   speechRateByLang: z.record(
     z.enum(SpeechLang),
-    versionedValueSchema(z.number()),
+    versionedValueSchema(z.number().min(MIN_SPEECH_RATE).max(MAX_SPEECH_RATE)),
   ),
 })
 

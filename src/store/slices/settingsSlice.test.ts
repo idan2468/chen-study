@@ -7,7 +7,6 @@ import {
 import { makeStore } from "@/store/store"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
-  DEFAULT_SPEECH_RATE,
   selectDyslexiaFont,
   selectShuffleUnseenAnswers,
   selectSpeechRate,
@@ -16,6 +15,7 @@ import {
   toggleDyslexiaFont,
 } from "./settingsSlice"
 import { SpeechLang } from "@/types/speech"
+import { DEFAULT_SPEECH_RATE } from "@/utils/speech/speechRate"
 
 describe("hydration", () => {
   beforeEach(() => {
@@ -159,7 +159,7 @@ describe("reloadFromStorage", () => {
     expect(selectSystemVoiceUri(state, SpeechLang.Hebrew)).toBe("Carmit")
   })
 
-  test("prefers local v2 over legacy keys and clamps its rates", () => {
+  test("prefers local v2 over legacy keys", () => {
     const persisted = selectPersistedState(makeStore().getState())
     writeLocalPersistedState({
       ...persisted,
@@ -167,7 +167,7 @@ describe("reloadFromStorage", () => {
         ...persisted.preferences,
         speechRateByLang: {
           ...persisted.preferences.speechRateByLang,
-          [SpeechLang.Hebrew]: toVersionedValue(5),
+          [SpeechLang.Hebrew]: toVersionedValue(0.3),
         },
       },
     })
@@ -176,7 +176,7 @@ describe("reloadFromStorage", () => {
     const state = makeStore().getState()
 
     expect(selectDyslexiaFont(state)).toBe(false)
-    expect(selectSpeechRate(state, SpeechLang.Hebrew)).toBe(1)
+    expect(selectSpeechRate(state, SpeechLang.Hebrew)).toBe(0.3)
   })
 })
 

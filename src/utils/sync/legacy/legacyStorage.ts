@@ -3,6 +3,7 @@ import { PERSISTED_STATE_KEY } from "@/store/persistedState"
 import { readFlag, readJson, readString } from "@/store/storage"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import { SpeechLang } from "@/types/speech"
+import { clampSpeechRate } from "@/utils/speech/speechRate"
 import { CardStatus } from "@/types/moduleExercise"
 import type {
   ModuleExercise,
@@ -146,19 +147,17 @@ export const readLegacyModulesState = (): PersistedState["modules"] => ({
   cardIndex: toVersionedValue(readJson<number>(StorageKeys.moduleCardIndex, 0)),
 })
 
-/** Rates may be `NaN` when unset; the settings slice clamps either source. */
+const readLegacyRate = (key: string) =>
+  toVersionedValue(clampSpeechRate(Number.parseFloat(readString(key, ""))))
+
 export const readLegacyPreferences = (): PersistedState["preferences"] => ({
   dyslexiaFont: toVersionedValue(readFlag(StorageKeys.dyslexiaFont, false)),
   shuffleUnseenAnswers: toVersionedValue(
     readFlag(StorageKeys.shuffleUnseenAnswers, false),
   ),
   speechRateByLang: {
-    [SpeechLang.English]: toVersionedValue(
-      Number.parseFloat(readString(StorageKeys.speechRate, "")),
-    ),
-    [SpeechLang.Hebrew]: toVersionedValue(
-      Number.parseFloat(readString(StorageKeys.speechRateHe, "")),
-    ),
+    [SpeechLang.English]: readLegacyRate(StorageKeys.speechRate),
+    [SpeechLang.Hebrew]: readLegacyRate(StorageKeys.speechRateHe),
   },
 })
 
