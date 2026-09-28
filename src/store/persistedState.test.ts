@@ -139,3 +139,36 @@ test("a deleted and re-imported module is saved as one valid entry", () => {
   expect(entries).toHaveLength(1)
   expect(entries?.[0]?.deleted).toBe(false)
 })
+
+test.each([
+  ["exercise", "unseen", "exercises", "currentId", "exerciseId"],
+  ["module", "modules", "modules", "currentModuleId", "id"],
+] as const)(
+  "rejects a current %s that is deleted",
+  (_label, section, list, current, idKey) => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined)
+    const state = defaultState()
+    const sectionState = state[section] as Record<string, unknown>
+    const entries = sectionState[list] as {
+      value: Record<string, unknown>
+      deleted: boolean
+    }[]
+    const target = entries.find(entry => !entry.deleted)
+    const invalid = {
+      ...state,
+      [section]: {
+        ...sectionState,
+        [list]: entries.map(entry =>
+          entry === target ? { ...entry, deleted: true } : entry,
+        ),
+        [current]: {
+          ...(sectionState[current] as object),
+          value: target?.value[idKey],
+        },
+      },
+    }
+    localStorage.setItem(PERSISTED_STATE_KEY, JSON.stringify(invalid))
+
+    expect(readLocalPersistedState()).toBeNull()
+  },
+)

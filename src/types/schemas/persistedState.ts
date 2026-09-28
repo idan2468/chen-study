@@ -11,6 +11,7 @@ import type {
 import { moduleExerciseSchema } from "@/types/schemas/moduleExercise"
 import { exerciseContentSchema } from "@/types/schemas/unseenExercise"
 import { versionedValueSchema } from "@/types/schemas/versionedValue"
+import type { VersionedValue } from "@/types/versionedValue"
 
 const idSchema = z.string().min(1)
 
@@ -60,6 +61,18 @@ const moduleProgressRecordSchema = z.object({
   status: z.enum(CardStatus),
 }) satisfies z.ZodType<ModuleProgressRecord>
 
+/** Reducers and the merge keep it on a live entity; it is empty only when none is live. */
+const isLiveCurrentId = <T>(
+  currentId: string,
+  entries: readonly VersionedValue<T>[],
+  getId: (value: T) => string,
+) => {
+  const liveIds = entries
+    .filter(entry => !entry.deleted)
+    .map(entry => getId(entry.value))
+  return liveIds.length === 0 ? currentId === "" : liveIds.includes(currentId)
+}
+
 export const speechRateSchema = z
   .number()
   .min(MIN_SPEECH_RATE)
@@ -67,24 +80,44 @@ export const speechRateSchema = z
 
 const cardIndexSchema = versionedValueSchema(z.number().int().nonnegative())
 
-const unseenSchema = z.object({
-  exercises: versionedArraySchema(
-    unseenExerciseSchema,
-    exercise => exercise.exerciseId,
-  ),
-  currentId: versionedValueSchema(z.string()),
-  cardIndex: cardIndexSchema,
-})
+const unseenSchema = z
+  .object({
+    exercises: versionedArraySchema(
+      unseenExerciseSchema,
+      exercise => exercise.exerciseId,
+    ),
+    currentId: versionedValueSchema(z.string()),
+    cardIndex: cardIndexSchema,
+  })
+  .refine(
+    unseen =>
+      isLiveCurrentId(
+        unseen.currentId.value,
+        unseen.exercises,
+        exercise => exercise.exerciseId,
+      ),
+    { error: "Current exercise is not live", path: ["currentId"] },
+  )
 
-const modulesSchema = z.object({
-  modules: versionedArraySchema(moduleExerciseSchema, module => module.id),
-  progress: versionedArraySchema(
-    moduleProgressRecordSchema,
-    ({ word }) => word,
-  ),
-  currentModuleId: versionedValueSchema(z.string()),
-  cardIndex: cardIndexSchema,
-})
+const modulesSchema = z
+  .object({
+    modules: versionedArraySchema(moduleExerciseSchema, module => module.id),
+    progress: versionedArraySchema(
+      moduleProgressRecordSchema,
+      ({ word }) => word,
+    ),
+    currentModuleId: versionedValueSchema(z.string()),
+    cardIndex: cardIndexSchema,
+  })
+  .refine(
+    modules =>
+      isLiveCurrentId(
+        modules.currentModuleId.value,
+        modules.modules,
+        module => module.id,
+      ),
+    { error: "Current module is not live", path: ["currentModuleId"] },
+  )
 
 const preferencesSchema = z.object({
   dyslexiaFont: versionedValueSchema(z.boolean()),

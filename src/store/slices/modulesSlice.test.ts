@@ -16,22 +16,19 @@ import {
 } from "@/store/persistedState"
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
-import {
-  INITIAL_UPDATED_AT,
-  liveValues,
-  markDeleted,
-  toVersionedValue,
-} from "@/utils/sync/versionedValue"
+import { toVersionedValue } from "@/utils/sync/versionedValue"
 import type { ModulesState } from "./modulesSlice"
 import {
   addModules,
   deleteModule,
   markCard,
-  mergeModules,
+  nextCard,
+  prevCard,
   resetCurrentModuleProgress,
   selectActiveCards,
   selectCurrentModuleId,
   selectModuleCardIndex,
+  selectModuleCardPosition,
   selectModuleOptions,
   selectMissedWordsAcrossModules,
   selectModuleStats,
@@ -98,44 +95,6 @@ const baseState = ({
 
 const moduleEntry = (store: ReturnType<typeof makeStore>, id: string) =>
   store.getState().modules.modules.find(entry => entry.value.id === id)
-
-const mergedIds = (stored: ModuleExercise[]) =>
-  mergeModules(stored.map(module => toVersionedValue(module))).map(
-    entry => entry.value.id,
-  )
-
-describe("mergeModules", () => {
-  test("seeds all built-ins on a first run", () => {
-    expect(mergedIds([])).toStrictEqual(builtInModuleIds)
-  })
-
-  test("re-seeds built-ins missing from stored data, fixing the original's bug", () => {
-    // The original replaced the built-in list wholesale with whatever was
-    // stored, so a user who had only the first built-in never saw the rest
-    // again.
-    const stored = [at(defaultModuleExercises, 0), customModule]
-
-    expect(mergedIds(stored)).toStrictEqual([...builtInModuleIds, "custom_1"])
-  })
-
-  test("a stored copy of a built-in wins, so user edits survive", () => {
-    const edited = { ...at(defaultModuleExercises, 0), tabName: "Edited" }
-    const merged = mergeModules([toVersionedValue(edited)])
-
-    expect(at(merged, 0).value.tabName).toBe("Edited")
-  })
-
-  test("keeps a deleted built-in's tombstone instead of re-seeding it", () => {
-    const tombstone = markDeleted(
-      toVersionedValue(at(defaultModuleExercises, 1)),
-      INITIAL_UPDATED_AT,
-    )
-    const merged = mergeModules([tombstone])
-
-    expect(liveValues(merged).map(m => m.id)).not.toContain(secondBuiltInId)
-    expect(at(merged, 1)).toStrictEqual(tombstone)
-  })
-})
 
 describe("version metadata", () => {
   const NOW = "2026-09-26T11:00:00.000+03:00"
@@ -360,17 +319,18 @@ describe("hydration", () => {
     expect(selectModuleCardIndex(store.getState())).toBe(3)
   })
 
-  test("clamps a stored index that no longer fits the module's deck", () => {
+  test("keeps a stored index past the deck, which the position selector clamps", () => {
     localStorage.setItem(StorageKeys.moduleCardIndex, "9999")
 
-    const store = makeStore()
-    const state = store.getState()
+    const state = makeStore().getState()
     const current = selectModules(state).find(
       module => module.id === selectCurrentModuleId(state),
     )
 
-    expect(current).toBeDefined()
-    expect(selectModuleCardIndex(state)).toBe((current?.cards.length ?? 1) - 1)
+    expect(selectModuleCardIndex(state)).toBe(9999)
+    expect(selectModuleCardPosition(state)).toBe(
+      (current?.cards.length ?? 1) - 1,
+    )
   })
 
   test("reopens with stored modules merged in alongside the built-ins", () => {
@@ -484,33 +444,16 @@ describe("hydration from local v2", () => {
     })
   })
 
-  test("seeds built-ins missing from v2 but keeps their tombstones", () => {
+  test("uses v2 modules as stored, without adding built-ins", () => {
     const first = at(defaultModuleExercises, 0)
-    const second = at(defaultModuleExercises, 1)
     writeModules({
-      modules: [markDeleted(toVersionedValue(first), INITIAL_UPDATED_AT)],
+      modules: [toVersionedValue(first)],
+      currentModuleId: toVersionedValue(first.id),
     })
 
     const ids = selectModules(makeStore().getState()).map(module => module.id)
 
-    expect(ids).not.toContain(first.id)
-    expect(ids).toContain(second.id)
-  })
-
-  test("repairs a current module that the merge left deleted, keeping its timestamp", () => {
-    const NOW = "2026-09-27T10:00:00.000+03:00"
-    const deleted = at(defaultModuleExercises, 1)
-    writeModules({
-      modules: [markDeleted(toVersionedValue(deleted), NOW)],
-      currentModuleId: toVersionedValue(deleted.id, NOW),
-      cardIndex: toVersionedValue(99, NOW),
-    })
-
-    const state = makeStore().getState()
-
-    expect(selectCurrentModuleId(state)).not.toBe(deleted.id)
-    expect(state.modules.currentModuleId.updatedAt).toBe(NOW)
-    expect(selectModuleCardIndex(state)).toBe(0)
+    expect(ids).toStrictEqual([first.id])
   })
 })
 
@@ -614,5 +557,27 @@ describe("deleteModule", () => {
     expect(
       selectModules(makeStore().getState()).map(module => module.id),
     ).toContain(secondBuiltInId)
+  })
+})
+
+describe("card navigation from a stale index", () => {
+  test("stepping back moves from the last visible card", () => {
+    const store = makeStore({
+      modules: baseState({ cardIndex: 99 }),
+    })
+    const length = selectActiveCards(store.getState()).length
+
+    store.dispatch(prevCard(length))
+
+    expect(selectModuleCardIndex(store.getState())).toBe(length - 2)
+  })
+
+  test("next and previous on an empty list stay at 0", () => {
+    const store = makeStore({ modules: baseState() })
+
+    store.dispatch(nextCard(0))
+    store.dispatch(prevCard(0))
+
+    expect(selectModuleCardIndex(store.getState())).toBe(0)
   })
 })

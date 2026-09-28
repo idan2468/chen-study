@@ -6,16 +6,15 @@ import {
 } from "@/store/persistedState"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
-import { hasWord, keepLastBy } from "@/utils/collections"
+import { clampIndex, hasWord, keepLastBy } from "@/utils/collections"
 import { readLegacyUnseenState } from "@/utils/sync/legacy/legacyStorage"
 import {
-  tombstoneValue,
   findLiveValue,
   liveValues,
   markDeleted,
-  upsertValue,
   setValueIfChanged,
-  toVersionedValue,
+  tombstoneValue,
+  upsertValue,
 } from "@/utils/sync/versionedValue"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type {
@@ -35,50 +34,10 @@ export type UnseenState = {
 const hasExerciseId = (exerciseId: string) => (exercise: UnseenExercise) =>
   exercise.exerciseId === exerciseId
 
-const isDefaultExercise = hasExerciseId(defaultUnseenExercise.exerciseId)
-
-/** A tombstone counts as an entry, so a deleted built-in stays deleted. */
-const withDefaultExercise = (
-  exercises: VersionedValue<UnseenExercise>[],
-): VersionedValue<UnseenExercise>[] =>
-  exercises.some(entry => isDefaultExercise(entry.value))
-    ? exercises
-    : [...exercises, toVersionedValue(defaultUnseenExercise)]
-
-/** Keeps a live stored ID; otherwise falls back to the built-in, then the first live exercise. */
-const resolveCurrentExerciseId = (
-  exercises: readonly UnseenExercise[],
-  storedId: string,
-) => {
-  if (exercises.some(hasExerciseId(storedId))) {
-    return storedId
-  }
-  const fallback = exercises.find(isDefaultExercise) ?? exercises[0]
-  return fallback?.exerciseId ?? ""
-}
-
-/** Applies the same repairs to local v2 and legacy storage; a repaired current ID starts at the first card. */
-const resolveUnseenState = (stored: UnseenState): UnseenState => {
-  const exercises = withDefaultExercise(stored.exercises)
-  const currentId = resolveCurrentExerciseId(
-    liveValues(exercises),
-    stored.currentId.value,
-  )
-  const wasRepaired = currentId !== stored.currentId.value
-  return {
-    exercises,
-    currentId: toVersionedValue(currentId, stored.currentId.updatedAt),
-    cardIndex: wasRepaired
-      ? toVersionedValue(0, stored.cardIndex.updatedAt)
-      : stored.cardIndex,
-  }
-}
-
+/** Loads local v2 as stored; built-ins are only the default for an empty state. */
 const loadFromStorage = (): UnseenState =>
-  resolveUnseenState(
-    readLocalPersistedState()?.unseen ??
-      readLegacyUnseenState(defaultUnseenExercise),
-  )
+  readLocalPersistedState()?.unseen ??
+  readLegacyUnseenState(defaultUnseenExercise)
 
 const findExercise = (state: UnseenState, exerciseId: string) =>
   findLiveValue(state.exercises, hasExerciseId(exerciseId))
@@ -269,23 +228,27 @@ export const unseenSlice = createAppSlice({
       },
     ),
 
+    /** Payload is the current exercise's flashcard count. */
     nextFlashcard: create.preparedReducer(
       withUpdatedAt<number>,
       (state, action: TimestampedAction<number>) => {
+        const length = action.payload
         setValueIfChanged(
           state.cardIndex,
-          Math.min(state.cardIndex.value + 1, action.payload - 1),
+          clampIndex(clampIndex(state.cardIndex.value, length) + 1, length),
           action.meta.updatedAt,
         )
       },
     ),
 
+    /** Payload is the current exercise's flashcard count. */
     prevFlashcard: create.preparedReducer(
-      withUpdatedAtOnly,
-      (state, action: TimestampedAction) => {
+      withUpdatedAt<number>,
+      (state, action: TimestampedAction<number>) => {
+        const length = action.payload
         setValueIfChanged(
           state.cardIndex,
-          Math.max(state.cardIndex.value - 1, 0),
+          clampIndex(clampIndex(state.cardIndex.value, length) - 1, length),
           action.meta.updatedAt,
         )
       },
@@ -411,9 +374,15 @@ export const selectCurrentMarkedWords = createSelector(
   exercise => liveValues(exercise?.highlights ?? []).map(({ word }) => word),
 )
 
-export const selectCurrentFlashcard = createSelector(
+/** The stored index clamped to the current deck, which a replaced exercise can shrink. */
+export const selectFlashcardPosition = createSelector(
   [selectCurrentExercise, selectFlashcardIndex],
-  (exercise, index) => exercise?.flashcards[index],
+  (exercise, index) => clampIndex(index, exercise?.flashcards.length ?? 0),
+)
+
+export const selectCurrentFlashcard = createSelector(
+  [selectCurrentExercise, selectFlashcardPosition],
+  (exercise, position) => exercise?.flashcards[position],
 )
 
 export const selectFlashcardStats = createSelector(
