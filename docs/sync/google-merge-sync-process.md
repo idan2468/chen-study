@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: in progress on `google-merge-sync` — Steps 1–11 approved; Step 11.5 is in review.**
+**Status: in progress on `google-merge-sync` — Steps 1–11 approved; Step 11.5 is in review; Step 11.6 is in progress.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -96,6 +96,16 @@ Results for Step 12. Method: knip 6.38 (`npx knip --production`, so exports used
 - Whether to add knip as a devDependency with an `npm run knip` script so Step 12 can re-run this check.
 
 - Awaiting manual approval.
+
+### Step 11.6 — strict persisted schema, repair-free hydration
+
+- Goal: `loadFromStorage` only parses local v2 or falls back, with no repairs; the schema guarantees what the slices rely on. No backward compatibility is needed: every v2 document so far was written from already-clamped store state.
+- Schema rules: speech rates within 0.1–1 (the rate constants and clamp move out of the settings slice, so schemas don't import slices); non-empty `word` identities and a non-negative integer `selected`; unique IDs within every array; stored content reuses the import schemas' rules instead of looser copies (built-ins verified to pass).
+- Referential integrity: each section's current ID must be a live entity, or empty when none is live. Reducers already guarantee it; the merge now repairs a current ID the other device deleted (the other side's pair if its ID is live, otherwise the first live entity, at card 0), replacing the hydration repair.
+- Card indexes are not schema rules (their range depends on the unpersisted review/filter modes): selectors clamp the stored index to the active list when reading, replacing the hydration clamp.
+- Built-in module seeding stays at load (content versioning, not validation); default-exercise seeding and legacy navigation resolution stay only in the legacy fallback readers.
+- A rejected local v2 is kept under a backup key before falling back, so a stricter rule can't silently erase progress.
+- Branch: `strict-persisted-schema`, created with `--no-track` from `origin/main`.
 
 ## Step definitions
 
