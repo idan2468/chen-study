@@ -1,4 +1,7 @@
 import { makeStore } from "./store"
+import { addModules, deleteModule } from "./slices/modulesSlice"
+import { defaultModuleExercises } from "@/data/defaultModuleExercises"
+import { at } from "@test/helpers"
 import {
   PERSISTED_STATE_KEY,
   readLocalPersistedState,
@@ -120,4 +123,19 @@ describe("identity rules", () => {
 
     expect(readLocalPersistedState()?.modules.progress).toHaveLength(2)
   })
+})
+
+test("a deleted and re-imported module is saved as one valid entry", () => {
+  const store = makeStore()
+  const module = at(defaultModuleExercises, 1)
+  store.dispatch(deleteModule(module.id))
+  store.dispatch(addModules([module]))
+
+  const saved = readLocalPersistedState()
+  const entries = saved?.modules.modules.filter(
+    entry => entry.value.id === module.id,
+  )
+
+  expect(entries).toHaveLength(1)
+  expect(entries?.[0]?.deleted).toBe(false)
 })
