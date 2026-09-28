@@ -58,7 +58,7 @@ Results for Step 12. Method: knip 6.38 (`npx knip --production`, so exports used
 
 - `src/utils/sync/legacy/legacyStorage.ts` (+ test) and `src/utils/sync/legacy/migrateToV2.ts` (+ test); the `legacy/` folder goes.
 - `src/utils/sync/google/driveStore.ts` (+ test): `readSnapshot` only served the migration's `progress.json` pull.
-- Hydration fallbacks: `readLegacyPreferences` (settings), `readLegacyUnseenState` (unseen), `readLegacyModulesState` (modules) are replaced by plain defaults; the slices' repair helpers still seed built-ins and the default exercise.
+- Hydration fallbacks: `readLegacyPreferences` (settings), `readLegacyUnseenState` (unseen), `readLegacyModulesState` (modules) are replaced by empty-state defaults. Since Step 11.6 local v2 loads as stored, so those defaults are the only place built-ins enter: all built-in modules in canonical order, the preferred default module (`mod3_short_i`) as current, and the default exercise as current. `withBuiltInModules`, `resolveCurrentModuleId`, and `PREFERRED_DEFAULT_MODULE_ID` (now in `legacyStorage.ts`) go with the legacy file.
 - Migration wiring: `runSync`'s unactivated branch and the `isV2Activated`/`migrateToV2` import in `driveSync.ts`; `migrateTokenlessDevice` and its imports in `main.tsx`.
 - Tests: `useGoogleConnect.test.tsx`'s migration test, the legacy half of `driveSync.integration.test.ts` (seeded `progress.json`, "migrating two legacy devices"), and `driveSync.test.ts`'s unactivated-device test.
 
@@ -70,14 +70,14 @@ Results for Step 12. Method: knip 6.38 (`npx knip --production`, so exports used
 
 - `readFlag`, `writeFlag`, `listKeys` in `src/store/storage.ts` (their only callers were legacy readers, the activation marker, and cleanup).
 - `useRehydrateFromStorage`'s locale and colour-scheme reload: only a legacy `progress.json` pull could change those device-local keys, so a sync reload needs just `dispatch(reloadFromStorage())`; the hook can fold into `useSyncWithDrive`.
-- Legacy-only comments: `persistedState.ts:57` ("falls back to legacy storage"), `versionedValue.ts:5` (`INITIAL_UPDATED_AT` "legacy storage"), `unseenSlice.ts:59` and `modulesSlice.ts:111` ("local v2 and legacy storage"). `theme.ts:112,127` and `voices.ts:80` use "legacy" for other meanings and stay.
+- Legacy-only comment: `versionedValue.ts:5` (`INITIAL_UPDATED_AT` "legacy storage"). `theme.ts:112,127` and `voices.ts:80` use "legacy" for other meanings and stay.
 - Exports only tests import after A (drop the `export`, or keep per G): `PERSISTED_STATE_KEY` (`persistedState.ts`), `INITIAL_UPDATED_AT` (`versionedValue.ts`).
 
 **D. Already unused before legacy removal (not caused by it)**
 
 - Dead code — no production caller: reducers/actions `setCardIndex` (modules), `setDyslexiaFont` (settings), `setFlashcardIndex` (unseen); `addExercise` (unseen, tests only); selectors `selectLibrary`, `selectAllMarkedWords`, `selectAllProgress` (tests only); type `AppThunk` (`store.ts`); file `src/store/records.ts` (`deleteEntry`); devDependency `eslint-plugin-prettier` (only `eslint-config-prettier` is imported).
 - Exported but used only inside their own file — drop `export`: `selectModuleEntries`, `selectModuleProgressEntries`, `selectExerciseEntries`, `selectExercises`, `moduleCardSchema`, `moduleExerciseSchema`, `flashcardSchema`, `cleanSpeechText`, `detectLang`, `locales`, the `i18next` re-export (`i18n/index.ts`), types `DeletableSelectItem`, `StatCount`, `SpeechState`.
-- Exported only for tests (function stays): `mergeModules`, `isoTimestampSchema`, `pickBestVoice`.
+- Exported only for tests (function stays): `isoTimestampSchema`, `pickBestVoice`.
 
 **E. Unused parameter**
 
@@ -106,6 +106,11 @@ Results for Step 12. Method: knip 6.38 (`npx knip --production`, so exports used
 - Built-ins are only the default for an empty state (user rule): when local v2 exists, loading uses it as stored, adding no built-in modules or exercises and not reordering them. A first run saves the defaults (with built-ins) immediately, so every new user starts from saved data. Built-ins added in a later release reach only new users. Seeding and reordering move into the legacy fallback readers, which Step 12 deletes.
 - A rejected local v2 is kept under a backup key before falling back, so a stricter rule can't silently erase progress.
 - Branch: `strict-persisted-schema`, created with `--no-track` from `origin/main`.
+- Commits: `b05e4cc`, `1f5b161`, `1793a8f`, `14cf3de`, `59f7241`, `9d4bc21`, `5cdf4e5`, `b8b9e94`.
+- `loadFromStorage` is now `readLocalPersistedState()?.<section> ?? <legacy reader>` in every slice (plus Modules' unpersisted view flags and settings' device-local voices).
+- The Step 11.5 audit above is updated for these changes.
+- Validation: 366 tests, type-check (including forced `tsc -b --force`), lint, changed-file format, build, and diff checks pass.
+- Review: pending.
 
 ## Step definitions
 
