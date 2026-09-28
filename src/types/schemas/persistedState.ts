@@ -1,110 +1,143 @@
 import { z } from "zod"
-import { SpeechLang } from "@/types/speech"
+import { MAX_SPEECH_RATE, MIN_SPEECH_RATE, SpeechLang } from "@/types/speech"
 import { CardStatus } from "@/types/moduleExercise"
-import type {
-  ModuleCard,
-  ModuleExercise,
-  ModuleProgressRecord,
-} from "@/types/moduleExercise"
+import type { ModuleProgressRecord } from "@/types/moduleExercise"
 import type {
   AnswerRecord,
-  Flashcard,
   FlashcardProgressRecord,
   HighlightRecord,
-  Question,
-  QuestionOption,
   UnseenExercise,
 } from "@/types/unseenExercise"
+import { moduleExerciseSchema } from "@/types/schemas/moduleExercise"
+import { exerciseContentSchema } from "@/types/schemas/unseenExercise"
 import { versionedValueSchema } from "@/types/schemas/versionedValue"
+import type { VersionedValue } from "@/types/versionedValue"
+import { liveIds } from "@/utils/sync/versionedValue"
 
 const idSchema = z.string().min(1)
 
-const questionOptionSchema = z.object({
-  text: z.string(),
-  isCorrect: z.boolean(),
-}) satisfies z.ZodType<QuestionOption>
-
-const questionSchema = z.object({
-  id: idSchema,
-  title: z.string(),
-  options: z.array(questionOptionSchema),
-}) satisfies z.ZodType<Question>
-
-const flashcardSchema = z.object({
-  en: z.string(),
-  he: z.string(),
-  trans: z.string(),
-}) satisfies z.ZodType<Flashcard>
+/** One entry per identity: the merge and lookups pair entries by ID. */
+const versionedArraySchema = <T>(
+  valueSchema: z.ZodType<T>,
+  getId: (value: T) => string,
+) =>
+  z
+    .array(versionedValueSchema(valueSchema))
+    .refine(
+      entries =>
+        new Set(entries.map(entry => getId(entry.value))).size ===
+        entries.length,
+      { error: "Duplicate ID" },
+    )
 
 const answerRecordSchema = z.object({
   questionId: idSchema,
-  selected: z.number().int(),
+  selected: z.number().int().nonnegative(),
   correct: z.boolean(),
 }) satisfies z.ZodType<AnswerRecord>
 
 const highlightRecordSchema = z.object({
-  word: z.string(),
+  word: idSchema,
 }) satisfies z.ZodType<HighlightRecord>
 
 const flashcardProgressRecordSchema = z.object({
-  word: z.string(),
+  word: idSchema,
   isKnown: z.boolean(),
 }) satisfies z.ZodType<FlashcardProgressRecord>
 
-const unseenExerciseSchema = z.object({
-  title: z.string(),
-  subtitle: z.string(),
-  exerciseId: idSchema,
-  paragraphs: z.array(z.string()),
-  questions: z.array(questionSchema),
-  flashcards: z.array(flashcardSchema),
-  answers: z.array(versionedValueSchema(answerRecordSchema)),
-  highlights: z.array(versionedValueSchema(highlightRecordSchema)),
-  flashcardProgress: z.array(
-    versionedValueSchema(flashcardProgressRecordSchema),
+const unseenExerciseSchema = exerciseContentSchema.extend({
+  answers: versionedArraySchema(
+    answerRecordSchema,
+    answer => answer.questionId,
+  ),
+  highlights: versionedArraySchema(highlightRecordSchema, ({ word }) => word),
+  flashcardProgress: versionedArraySchema(
+    flashcardProgressRecordSchema,
+    ({ word }) => word,
   ),
 }) satisfies z.ZodType<UnseenExercise>
 
-const moduleCardSchema = z.object({
-  en: z.string(),
-  he: z.string(),
-  meaning: z.string(),
-}) satisfies z.ZodType<ModuleCard>
-
-const moduleExerciseSchema = z.object({
-  id: idSchema,
-  tabName: z.string(),
-  title: z.string(),
-  rule: z.string(),
-  cards: z.array(moduleCardSchema),
-}) satisfies z.ZodType<ModuleExercise>
-
 const moduleProgressRecordSchema = z.object({
-  word: z.string(),
+  word: idSchema,
   status: z.enum(CardStatus),
 }) satisfies z.ZodType<ModuleProgressRecord>
 
+type Navigation = {
+  currentId: VersionedValue<string>
+  cardIndex: VersionedValue<number>
+}
+
+/**
+ * Points a current ID that isn't live (e.g. deleted on another device) at the
+ * first live entity, at its first card; empty when nothing is live.
+ */
+const withLiveCurrentId = <T>(
+  navigation: Navigation,
+  entries: readonly VersionedValue<T>[],
+  getId: (value: T) => string,
+): Navigation => {
+  const ids = liveIds(entries, getId)
+  const currentId = navigation.currentId.value
+  const isLive = ids.length === 0 ? currentId === "" : ids.includes(currentId)
+  if (isLive) {
+    return navigation
+  }
+  return {
+    currentId: { ...navigation.currentId, value: ids[0] ?? "" },
+    cardIndex: { ...navigation.cardIndex, value: 0 },
+  }
+}
+
+export const speechRateSchema = z
+  .number()
+  .min(MIN_SPEECH_RATE)
+  .max(MAX_SPEECH_RATE)
+
 const cardIndexSchema = versionedValueSchema(z.number().int().nonnegative())
 
-const unseenSchema = z.object({
-  exercises: z.array(versionedValueSchema(unseenExerciseSchema)),
-  currentId: versionedValueSchema(z.string()),
-  cardIndex: cardIndexSchema,
-})
+const unseenSchema = z
+  .object({
+    exercises: versionedArraySchema(
+      unseenExerciseSchema,
+      exercise => exercise.exerciseId,
+    ),
+    currentId: versionedValueSchema(z.string()),
+    cardIndex: cardIndexSchema,
+  })
+  .transform(unseen => ({
+    ...unseen,
+    ...withLiveCurrentId(
+      { currentId: unseen.currentId, cardIndex: unseen.cardIndex },
+      unseen.exercises,
+      exercise => exercise.exerciseId,
+    ),
+  }))
 
-const modulesSchema = z.object({
-  modules: z.array(versionedValueSchema(moduleExerciseSchema)),
-  progress: z.array(versionedValueSchema(moduleProgressRecordSchema)),
-  currentModuleId: versionedValueSchema(z.string()),
-  cardIndex: cardIndexSchema,
-})
+const modulesSchema = z
+  .object({
+    modules: versionedArraySchema(moduleExerciseSchema, module => module.id),
+    progress: versionedArraySchema(
+      moduleProgressRecordSchema,
+      ({ word }) => word,
+    ),
+    currentModuleId: versionedValueSchema(z.string()),
+    cardIndex: cardIndexSchema,
+  })
+  .transform(modules => {
+    const { currentId, cardIndex } = withLiveCurrentId(
+      { currentId: modules.currentModuleId, cardIndex: modules.cardIndex },
+      modules.modules,
+      module => module.id,
+    )
+    return { ...modules, currentModuleId: currentId, cardIndex }
+  })
 
 const preferencesSchema = z.object({
   dyslexiaFont: versionedValueSchema(z.boolean()),
   shuffleUnseenAnswers: versionedValueSchema(z.boolean()),
   speechRateByLang: z.record(
     z.enum(SpeechLang),
-    versionedValueSchema(z.number()),
+    versionedValueSchema(speechRateSchema),
   ),
 })
 

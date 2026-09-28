@@ -2,7 +2,8 @@ import { z } from "zod"
 import { PERSISTED_STATE_KEY } from "@/store/persistedState"
 import { readFlag, readJson, readString } from "@/store/storage"
 import type { PersistedState } from "@/types/schemas/persistedState"
-import { SpeechLang } from "@/types/speech"
+import { speechRateSchema } from "@/types/schemas/persistedState"
+import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
 import { CardStatus } from "@/types/moduleExercise"
 import type {
   ModuleExercise,
@@ -136,29 +137,86 @@ export const readLegacyModuleProgress =
       readJson<Record<string, CardStatus>>(StorageKeys.modulesProgress, {}),
     ).map(([word, status]) => toVersionedValue({ word, status }))
 
-/** Before built-in seeding and index clamping, which the Modules slice applies to either source. */
-export const readLegacyModulesState = (): PersistedState["modules"] => ({
-  modules: readLegacyModules(),
-  progress: readLegacyModuleProgress(),
-  currentModuleId: toVersionedValue(
-    readString(StorageKeys.currentModuleId, ""),
-  ),
-  cardIndex: toVersionedValue(readJson<number>(StorageKeys.moduleCardIndex, 0)),
-})
+/**
+ * The original app opened on the fourth module (`currentModuleIndex = 3`).
+ * Was stuck at the stale id `"mod3"` after `defaultModuleExercises.ts`
+ * renamed its ids to `mod3_short_i` etc, silently falling back to
+ * `modules[0]` always.
+ */
+const PREFERRED_DEFAULT_MODULE_ID = "mod3_short_i"
 
-/** Rates may be `NaN` when unset; the settings slice clamps either source. */
+/**
+ * Seeds built-ins the legacy list lacks, in their canonical order, keeping a
+ * stored copy (an edit or a deletion tombstone) over the built-in.
+ *
+ * Fixes a real bug in the original: once `english_reading_all_modules_v4` was
+ * written it *replaced* the built-in list wholesale
+ * (`Modules Practice.html:1091-1097`), so a returning user never saw modules
+ * added in a later release.
+ */
+export const withBuiltInModules = (
+  stored: readonly VersionedValue<ModuleExercise>[],
+): VersionedValue<ModuleExercise>[] => {
+  const storedById = new Map(stored.map(entry => [entry.value.id, entry]))
+  const builtIns = new Set(builtInModuleIds)
+
+  return [
+    ...defaultModuleExercises.map(
+      builtIn => storedById.get(builtIn.id) ?? toVersionedValue(builtIn),
+    ),
+    // User-added modules follow, in the order they were added.
+    ...stored.filter(entry => !builtIns.has(entry.value.id)),
+  ]
+}
+
+/** Prefers the stored module id; falls back to the preferred default, then
+ *  the first module, when nothing is stored or the id no longer exists. */
+const resolveCurrentModuleId = (
+  modules: readonly ModuleExercise[],
+  storedId: string,
+) => {
+  if (storedId && modules.some(module => module.id === storedId)) {
+    return storedId
+  }
+  const preferred = modules.find(
+    module => module.id === PREFERRED_DEFAULT_MODULE_ID,
+  )
+  return preferred?.id ?? modules[0]?.id ?? ""
+}
+
+/** A replaced current module starts at its first card; an empty stored ID was never saved, so it keeps the stored index. */
+export const readLegacyModulesState = (): PersistedState["modules"] => {
+  const modules = withBuiltInModules(readLegacyModules())
+  const storedId = readString(StorageKeys.currentModuleId, "")
+  const currentModuleId = resolveCurrentModuleId(liveValues(modules), storedId)
+  const wasReplaced = storedId !== "" && storedId !== currentModuleId
+  const storedIndex = Math.max(
+    readJson<number>(StorageKeys.moduleCardIndex, 0),
+    0,
+  )
+  return {
+    modules,
+    progress: readLegacyModuleProgress(),
+    currentModuleId: toVersionedValue(currentModuleId),
+    cardIndex: toVersionedValue(wasReplaced ? 0 : storedIndex),
+  }
+}
+
+const readLegacyRate = (key: string) =>
+  toVersionedValue(
+    speechRateSchema
+      .catch(DEFAULT_SPEECH_RATE)
+      .parse(Number.parseFloat(readString(key, ""))),
+  )
+
 export const readLegacyPreferences = (): PersistedState["preferences"] => ({
   dyslexiaFont: toVersionedValue(readFlag(StorageKeys.dyslexiaFont, false)),
   shuffleUnseenAnswers: toVersionedValue(
     readFlag(StorageKeys.shuffleUnseenAnswers, false),
   ),
   speechRateByLang: {
-    [SpeechLang.English]: toVersionedValue(
-      Number.parseFloat(readString(StorageKeys.speechRate, "")),
-    ),
-    [SpeechLang.Hebrew]: toVersionedValue(
-      Number.parseFloat(readString(StorageKeys.speechRateHe, "")),
-    ),
+    [SpeechLang.English]: readLegacyRate(StorageKeys.speechRate),
+    [SpeechLang.Hebrew]: readLegacyRate(StorageKeys.speechRateHe),
   },
 })
 
@@ -283,7 +341,7 @@ export const readLegacyUnseenState = (
     ),
     currentId: toVersionedValue(currentId),
     cardIndex: toVersionedValue(
-      readJson<number>(StorageKeys.flashcardIndex, 0),
+      Math.max(readJson<number>(StorageKeys.flashcardIndex, 0), 0),
     ),
   }
 }

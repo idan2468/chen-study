@@ -6,32 +6,26 @@ import {
 } from "@/store/persistedState"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
-import { hasWord, keepLastBy } from "@/utils/collections"
+import { clampIndex, hasWord, keepLastBy } from "@/utils/collections"
 import type { IsoTimestamp } from "@/utils/sync/timestamp"
 import { readLegacyModulesState } from "@/utils/sync/legacy/legacyStorage"
 import {
-  tombstoneValue,
   findLiveValue,
   liveValues,
-  upsertValue,
   setValueIfChanged,
-  toVersionedValue,
+  tombstoneValue,
+  upsertValue,
 } from "@/utils/sync/versionedValue"
-import {
-  builtInModuleIds,
-  defaultModuleExercises,
-} from "@/data/defaultModuleExercises"
 import type {
   ModuleCard,
   ModuleExercise,
   ModulesProgress,
 } from "@/types/moduleExercise"
 import { CardStatus } from "@/types/moduleExercise"
-import type { PersistedState } from "@/types/schemas/persistedState"
 import type { VersionedValue } from "@/types/versionedValue"
 
 export type ModulesState = {
-  /** Includes tombstones, so a deleted built-in is not re-seeded. */
+  /** Includes tombstones, so a deletion reaches your other devices. */
   modules: VersionedValue<ModuleExercise>[]
   currentModuleId: VersionedValue<string>
   cardIndex: VersionedValue<number>
@@ -40,53 +34,6 @@ export type ModulesState = {
   /** Reviewing missed words pooled from every module, instead of one module. */
   reviewingMissed: boolean
   progress: ModulesProgress
-}
-
-/**
- * The original app opened on the fourth module (`currentModuleIndex = 3`).
- * Was stuck at the stale id `"mod3"` after `defaultModuleExercises.ts`
- * renamed its ids to `mod3_short_i` etc, silently falling back to
- * `modules[0]` always.
- */
-const PREFERRED_DEFAULT_MODULE_ID = "mod3_short_i"
-
-/**
- * Merges stored modules with the built-ins.
- *
- * Fixes a real bug in the original: once `english_reading_all_modules_v4` was
- * written it *replaced* the built-in list wholesale
- * (`Modules Practice.html:1091-1097`), so a returning user never saw modules
- * added in a later release. Here built-ins are re-seeded by id unless stored
- * (as an edited copy or a deletion tombstone), in their canonical order.
- */
-export const mergeModules = (
-  stored: readonly VersionedValue<ModuleExercise>[],
-): VersionedValue<ModuleExercise>[] => {
-  const storedById = new Map(stored.map(entry => [entry.value.id, entry]))
-  const builtIns = new Set(builtInModuleIds)
-
-  return [
-    ...defaultModuleExercises.map(
-      builtIn => storedById.get(builtIn.id) ?? toVersionedValue(builtIn),
-    ),
-    // User-added modules follow, in the order they were added.
-    ...stored.filter(entry => !builtIns.has(entry.value.id)),
-  ]
-}
-
-/** Prefers the stored module id; falls back to the preferred default, then
- *  the first module, when nothing is stored or the id no longer exists. */
-const resolveCurrentId = (
-  modules: readonly ModuleExercise[],
-  storedId: string,
-) => {
-  if (storedId && modules.some(module => module.id === storedId)) {
-    return storedId
-  }
-  const preferred = modules.find(
-    module => module.id === PREFERRED_DEFAULT_MODULE_ID,
-  )
-  return preferred?.id ?? modules[0]?.id ?? ""
 }
 
 const hasModuleId = (moduleId: string) => (module: ModuleExercise) =>
@@ -101,49 +48,12 @@ const setModuleProgressStatus = (
   upsertValue(progress, hasWord(word), { word, status }, updatedAt)
 }
 
-/** Clamps in case the module's deck has shrunk since the index was saved. */
-const clampCardIndex = (index: number, module: ModuleExercise) =>
-  Math.min(Math.max(index, 0), Math.max(module.cards.length - 1, 0))
-
-/** An empty stored ID was never saved, so falling back from it is not a repair. */
-const isRepairedId = (storedId: string, resolvedId: string) =>
-  storedId !== "" && storedId !== resolvedId
-
-/** Seeds built-ins and repairs navigation the same way for local v2 and legacy storage; a repaired current module starts at its first card. */
-const resolveModulesState = (
-  stored: PersistedState["modules"],
-): ModulesState => {
-  const moduleEntries = mergeModules(stored.modules)
-  const modules = liveValues(moduleEntries)
-  const currentModuleId = resolveCurrentId(
-    modules,
-    stored.currentModuleId.value,
-  )
-
-  const currentModule = modules.find(module => module.id === currentModuleId)
-  const cardIndex =
-    currentModule &&
-    !isRepairedId(stored.currentModuleId.value, currentModuleId)
-      ? clampCardIndex(stored.cardIndex.value, currentModule)
-      : 0
-
-  return {
-    modules: moduleEntries,
-    currentModuleId: toVersionedValue(
-      currentModuleId,
-      stored.currentModuleId.updatedAt,
-    ),
-    cardIndex: toVersionedValue(cardIndex, stored.cardIndex.updatedAt),
-    filterMissed: false,
-    reviewingMissed: false,
-    progress: stored.progress,
-  }
-}
-
-const loadFromStorage = (): ModulesState =>
-  resolveModulesState(
-    readLocalPersistedState()?.modules ?? readLegacyModulesState(),
-  )
+/** Loads local v2 as stored; built-ins are only the default for an empty state. */
+const loadFromStorage = (): ModulesState => ({
+  ...(readLocalPersistedState()?.modules ?? readLegacyModulesState()),
+  filterMissed: false,
+  reviewingMissed: false,
+})
 
 const addOrReplaceModule = (
   state: ModulesState,
@@ -203,24 +113,27 @@ export const modulesSlice = createAppSlice({
       },
     ),
 
+    /** Payload is the active list's length; no wraparound, as in the original. */
     nextCard: create.preparedReducer(
       withUpdatedAt<number>,
       (state, action: TimestampedAction<number>) => {
-        // Payload is the active list length; no wraparound, as in the original.
+        const length = action.payload
         setValueIfChanged(
           state.cardIndex,
-          Math.min(state.cardIndex.value + 1, action.payload - 1),
+          clampIndex(clampIndex(state.cardIndex.value, length) + 1, length),
           action.meta.updatedAt,
         )
       },
     ),
 
+    /** Payload is the active list's length. */
     prevCard: create.preparedReducer(
-      withUpdatedAtOnly,
-      (state, action: TimestampedAction) => {
+      withUpdatedAt<number>,
+      (state, action: TimestampedAction<number>) => {
+        const length = action.payload
         setValueIfChanged(
           state.cardIndex,
-          Math.max(state.cardIndex.value - 1, 0),
+          clampIndex(clampIndex(state.cardIndex.value, length) - 1, length),
           action.meta.updatedAt,
         )
       },
@@ -444,9 +357,15 @@ export const selectActiveCards = createSelector(
   },
 )
 
-export const selectCurrentCard = createSelector(
+/** The stored index clamped to the active list, which a review mode or a replaced deck can shrink. */
+export const selectModuleCardPosition = createSelector(
   [selectActiveCards, selectModuleCardIndex],
-  (cards, index) => cards[index],
+  (cards, index) => clampIndex(index, cards.length),
+)
+
+export const selectCurrentCard = createSelector(
+  [selectActiveCards, selectModuleCardPosition],
+  (cards, position) => cards[position],
 )
 
 export const selectModuleStats = createSelector(

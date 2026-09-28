@@ -1,7 +1,11 @@
-import { defaultModuleExercises } from "@/data/defaultModuleExercises"
+import {
+  builtInModuleIds,
+  defaultModuleExercises,
+} from "@/data/defaultModuleExercises"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import { at } from "@test/helpers"
 import { CardStatus } from "@/types/moduleExercise"
+import type { ModuleExercise } from "@/types/moduleExercise"
 import {
   applySyncPayload,
   flashcardStatusKey,
@@ -16,10 +20,12 @@ import {
   toLegacyModuleProgress,
   toLegacyUnseenAnswers,
   toLegacyUnseenLibrary,
+  withBuiltInModules,
 } from "./legacyStorage"
 import { PERSISTED_STATE_KEY } from "@/store/persistedState"
 import {
   INITIAL_UPDATED_AT,
+  liveValues,
   markDeleted,
   toVersionedValue,
 } from "@/utils/sync/versionedValue"
@@ -203,5 +209,48 @@ describe("legacy Unseen state", () => {
     expect(toLegacyUnseenLibrary([exercise])[exerciseId]).not.toHaveProperty(
       "answers",
     )
+  })
+})
+
+describe("withBuiltInModules", () => {
+  const customModule: ModuleExercise = {
+    id: "custom_1",
+    tabName: "Mine",
+    title: "My module",
+    rule: "A rule",
+    cards: [{ en: "ZAP", he: "zap", meaning: "zap" }],
+  }
+  const mergedIds = (stored: ModuleExercise[]) =>
+    withBuiltInModules(stored.map(module => toVersionedValue(module))).map(
+      entry => entry.value.id,
+    )
+
+  test("seeds all built-ins on a first run", () => {
+    expect(mergedIds([])).toStrictEqual(builtInModuleIds)
+  })
+
+  test("re-seeds built-ins missing from stored data, fixing the original's bug", () => {
+    // The original replaced the built-in list wholesale with whatever was
+    // stored, so a user who had only the first built-in never saw the rest
+    // again.
+    const stored = [at(defaultModuleExercises, 0), customModule]
+
+    expect(mergedIds(stored)).toStrictEqual([...builtInModuleIds, "custom_1"])
+  })
+
+  test("a stored copy of a built-in wins, so user edits survive", () => {
+    const edited = { ...at(defaultModuleExercises, 0), tabName: "Edited" }
+    const merged = withBuiltInModules([toVersionedValue(edited)])
+
+    expect(at(merged, 0).value.tabName).toBe("Edited")
+  })
+
+  test("keeps a deleted built-in's tombstone instead of re-seeding it", () => {
+    const deleted = at(defaultModuleExercises, 1)
+    const tombstone = markDeleted(toVersionedValue(deleted), INITIAL_UPDATED_AT)
+    const merged = withBuiltInModules([tombstone])
+
+    expect(liveValues(merged).map(m => m.id)).not.toContain(deleted.id)
+    expect(at(merged, 1)).toStrictEqual(tombstone)
   })
 })

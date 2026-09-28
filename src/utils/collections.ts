@@ -14,3 +14,7 @@ export const keepLastBy = <T>(
 
 export const hasWord = (word: string) => (record: { word: string }) =>
   record.word === word
+
+/** Keeps a stored position inside a list that may have shrunk; 0 for an empty list. */
+export const clampIndex = (index: number, length: number) =>
+  Math.min(Math.max(index, 0), Math.max(length - 1, 0))

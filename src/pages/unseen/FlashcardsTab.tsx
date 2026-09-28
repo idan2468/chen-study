@@ -22,7 +22,7 @@ import {
   selectCurrentExercise,
   selectCurrentFlashcard,
   selectCurrentProgress,
-  selectFlashcardIndex,
+  selectFlashcardPosition,
   selectFlashcardStats,
 } from "@/store/slices/unseenSlice"
 import classes from "./FlashcardsTab.module.css"
@@ -33,7 +33,7 @@ export const FlashcardsTab = () => {
   const dispatch = useAppDispatch()
   const exercise = useAppSelector(selectCurrentExercise)
   const card = useAppSelector(selectCurrentFlashcard)
-  const index = useAppSelector(selectFlashcardIndex)
+  const index = useAppSelector(selectFlashcardPosition)
   const progress = useAppSelector(selectCurrentProgress)
   const stats = useAppSelector(selectFlashcardStats)
   const { speak, stop } = useSpeech()
@@ -92,7 +92,7 @@ export const FlashcardsTab = () => {
       setFlipped(current => !current)
     },
     onNext: () => dispatch(nextFlashcard(total)),
-    onPrev: () => dispatch(prevFlashcard()),
+    onPrev: () => dispatch(prevFlashcard(total)),
     onSpeak: () => {
       if (card) {
         speak(card.en, cardOwnerId, { lang: "en-US" })
@@ -190,7 +190,7 @@ export const FlashcardsTab = () => {
       <CardNavigation
         index={index}
         total={total}
-        onPrev={() => dispatch(prevFlashcard())}
+        onPrev={() => dispatch(prevFlashcard(total))}
         onNext={() => dispatch(nextFlashcard(total))}
       />
     </Stack>

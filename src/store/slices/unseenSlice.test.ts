@@ -11,7 +11,7 @@ import {
 } from "@/store/persistedState"
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
-import { markDeleted, toVersionedValue } from "@/utils/sync/versionedValue"
+import { toVersionedValue } from "@/utils/sync/versionedValue"
 import type { UnseenState } from "./unseenSlice"
 import {
   addExercise,
@@ -27,7 +27,9 @@ import {
   selectCurrentExerciseId,
   selectCurrentProgress,
   selectExerciseOptions,
+  selectCurrentFlashcard,
   selectFlashcardIndex,
+  selectFlashcardPosition,
   selectFlashcardStats,
   selectLibrary,
   selectVocabSet,
@@ -40,7 +42,16 @@ const otherExercise: UnseenExercise = {
   subtitle: "Second exercise",
   exerciseId: "other_1",
   paragraphs: ["A cat sat."],
-  questions: [],
+  questions: [
+    {
+      id: "q1",
+      title: "Question",
+      options: [
+        { text: "a) yes", isCorrect: true },
+        { text: "b) no", isCorrect: false },
+      ],
+    },
+  ],
   flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
   answers: [],
   highlights: [],
@@ -52,7 +63,16 @@ const thirdExercise: UnseenExercise = {
   subtitle: "Third exercise",
   exerciseId: "third_1",
   paragraphs: ["A dog ran."],
-  questions: [],
+  questions: [
+    {
+      id: "q1",
+      title: "Question",
+      options: [
+        { text: "a) yes", isCorrect: true },
+        { text: "b) no", isCorrect: false },
+      ],
+    },
+  ],
   flashcards: [{ en: "Dog", he: "dog", trans: "dog" }],
   answers: [],
   highlights: [],
@@ -589,31 +609,26 @@ describe("reloadFromStorage", () => {
 
     const state = store.getState()
     expect(selectCurrentExerciseId(state)).toBe("other_1")
-    // The built-in default is re-seeded when v2 has no entry for it at all.
-    expect(selectLibrary(state)).toStrictEqual({
-      other_1: otherExercise,
-      [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
-    })
+    // Built-ins are only the default for an empty state; v2 is used as stored.
+    expect(selectLibrary(state)).toStrictEqual({ other_1: otherExercise })
     expect(selectCurrentProgress(state)).toStrictEqual({})
   })
 
-  test("keeps a tombstoned default and repairs a current ID pointing at it", () => {
-    const NOW = "2026-09-27T10:00:00.000+03:00"
+  test("the position selector clamps an index past the current deck", () => {
     writeUnseen({
-      exercises: [
-        markDeleted(toVersionedValue(defaultUnseenExercise), NOW),
-        toVersionedValue(otherExercise),
-      ],
-      currentId: toVersionedValue(defaultUnseenExercise.exerciseId, NOW),
-      cardIndex: toVersionedValue(3, NOW),
+      exercises: [toVersionedValue(otherExercise)],
+      currentId: toVersionedValue("other_1"),
+      cardIndex: toVersionedValue(7),
     })
 
     const state = makeStore().getState()
 
-    expect(Object.keys(selectLibrary(state))).toStrictEqual(["other_1"])
-    expect(selectCurrentExerciseId(state)).toBe("other_1")
-    expect(state.unseen.currentId.updatedAt).toBe(NOW)
-    expect(state.unseen.cardIndex.value).toBe(0)
+    expect(selectFlashcardPosition(state)).toBe(
+      otherExercise.flashcards.length - 1,
+    )
+    expect(selectCurrentFlashcard(state)).toStrictEqual(
+      otherExercise.flashcards[otherExercise.flashcards.length - 1],
+    )
   })
 })
 

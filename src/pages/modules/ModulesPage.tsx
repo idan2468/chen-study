@@ -37,7 +37,7 @@ import {
   selectCurrentModuleId,
   selectFilterMissed,
   selectMissedWordsAcrossModules,
-  selectModuleCardIndex,
+  selectModuleCardPosition,
   selectModuleOptions,
   selectModules,
   selectModuleStats,
@@ -61,7 +61,7 @@ export const ModulesPage = () => {
   const currentModule = useAppSelector(selectCurrentModule)
   const activeCards = useAppSelector(selectActiveCards)
   const currentCard = useAppSelector(selectCurrentCard)
-  const cardIndex = useAppSelector(selectModuleCardIndex)
+  const cardIndex = useAppSelector(selectModuleCardPosition)
   const filterMissed = useAppSelector(selectFilterMissed)
   const reviewingMissed = useAppSelector(selectReviewingMissed)
   const missedWords = useAppSelector(selectMissedWordsAcrossModules)
@@ -287,7 +287,7 @@ export const ModulesPage = () => {
               dispatch(markCard({ word: currentCard.en, isKnown }))
             }}
             onNext={() => dispatch(nextCard(activeCards.length))}
-            onPrev={() => dispatch(prevCard())}
+            onPrev={() => dispatch(prevCard(activeCards.length))}
           />
         ) : (
           <Text ta="center" size="xl" fw={700} py="xl">

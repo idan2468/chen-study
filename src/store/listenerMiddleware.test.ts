@@ -27,7 +27,7 @@ import {
   toggleDyslexiaFont,
   toggleShuffleUnseenAnswers,
 } from "./slices/settingsSlice"
-import { SpeechLang } from "@/types/speech"
+import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
 
 const otherId = "other_1"
 
@@ -86,14 +86,15 @@ test.each([
   },
 )
 
-test("speech rate is clamped before being persisted", () => {
+test("an out-of-range speech rate falls back to the default before being persisted", () => {
   const store = makeStore(preloaded())
+  store.dispatch(setSpeechRate({ lang: SpeechLang.English, rate: 0.8 }))
   store.dispatch(setSpeechRate({ lang: SpeechLang.English, rate: 99 }))
 
   expect(
     readLocalPersistedState()?.preferences.speechRateByLang[SpeechLang.English]
       .value,
-  ).toBe(1)
+  ).toBe(DEFAULT_SPEECH_RATE)
 })
 
 test("a system voice is written to its device-local key only", () => {

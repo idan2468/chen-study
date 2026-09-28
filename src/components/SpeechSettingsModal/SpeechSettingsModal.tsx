@@ -7,15 +7,17 @@ import { ICON_SIZE } from "@/constants/icons"
 import { useSystemVoices } from "@/hooks/useSpeech"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
-  DEFAULT_SPEECH_RATE,
-  MAX_SPEECH_RATE,
-  MIN_SPEECH_RATE,
   selectSpeechRate,
   selectSystemVoiceUri,
   setSpeechRate,
   setSystemVoiceUri,
 } from "@/store/slices/settingsSlice"
-import { SpeechLang } from "@/types/speech"
+import {
+  DEFAULT_SPEECH_RATE,
+  MAX_SPEECH_RATE,
+  MIN_SPEECH_RATE,
+  SpeechLang,
+} from "@/types/speech"
 import { voicesForLanguage } from "@/utils/speech/voices"
 
 export type SpeechSettingsModalProps = {
