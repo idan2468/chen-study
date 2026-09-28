@@ -2,6 +2,9 @@ import { makeStore } from "./store"
 import { addModules, deleteModule } from "./slices/modulesSlice"
 import { defaultModuleExercises } from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
+import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
+import type { UnseenExercise } from "@/types/unseenExercise"
+import { markDeleted, toVersionedValue } from "@/utils/sync/versionedValue"
 import {
   PERSISTED_STATE_KEY,
   readLocalPersistedState,
@@ -18,6 +21,12 @@ beforeEach(() => {
 const writeRaw = (document: unknown) => {
   localStorage.setItem(PERSISTED_STATE_KEY, JSON.stringify(document))
 }
+
+/** A valid exercise with the given ID, built from the default content. */
+const exercise = (exerciseId: string): UnseenExercise => ({
+  ...defaultUnseenExercise,
+  exerciseId,
+})
 
 const defaultState = () => selectPersistedState(makeStore().getState())
 
@@ -146,31 +155,61 @@ test("a deleted and re-imported module is saved as one valid entry", () => {
   expect(entries?.[0]?.deleted).toBe(false)
 })
 
-describe("a current ID that is deleted", () => {
-  beforeEach(() => {
-    vi.spyOn(console, "warn").mockImplementation(() => undefined)
+describe("a current ID that isn't live", () => {
+  const NOW = "2026-09-27T10:00:00.000+03:00"
+
+  test("a deleted current exercise becomes the first live one, at card 0", () => {
+    const state = defaultState()
+    const exercises = [
+      markDeleted(toVersionedValue(exercise("gone")), NOW),
+      toVersionedValue(exercise("kept")),
+    ]
+    writeRaw({
+      ...state,
+      unseen: {
+        exercises,
+        currentId: toVersionedValue("gone", NOW),
+        cardIndex: toVersionedValue(3, NOW),
+      },
+    })
+
+    const unseen = readLocalPersistedState()?.unseen
+
+    expect(unseen?.currentId).toStrictEqual(toVersionedValue("kept", NOW))
+    expect(unseen?.cardIndex).toStrictEqual(toVersionedValue(0, NOW))
   })
 
-  test("rejects a deleted current exercise", () => {
+  test("a deleted current module becomes the first live one, at card 0", () => {
     const state = defaultState()
-    const exercises = state.unseen.exercises.map(entry => ({
-      ...entry,
-      deleted: entry.value.exerciseId === state.unseen.currentId.value,
-    }))
-    writeRaw({ ...state, unseen: { ...state.unseen, exercises } })
+    const [deleted, ...rest] = state.modules.modules
+    writeRaw({
+      ...state,
+      modules: {
+        ...state.modules,
+        modules: [deleted && markDeleted(deleted, NOW), ...rest],
+        currentModuleId: toVersionedValue(deleted?.value.id ?? "", NOW),
+        cardIndex: toVersionedValue(5, NOW),
+      },
+    })
 
-    expect(readLocalPersistedState()).toBeNull()
+    const modules = readLocalPersistedState()?.modules
+
+    expect(modules?.currentModuleId.value).toBe(rest[0]?.value.id)
+    expect(modules?.cardIndex.value).toBe(0)
   })
 
-  test("rejects a deleted current module", () => {
+  test("is empty when nothing is live", () => {
     const state = defaultState()
-    const modules = state.modules.modules.map(entry => ({
-      ...entry,
-      deleted: entry.value.id === state.modules.currentModuleId.value,
-    }))
-    writeRaw({ ...state, modules: { ...state.modules, modules } })
+    writeRaw({
+      ...state,
+      unseen: {
+        exercises: [markDeleted(toVersionedValue(exercise("gone")), NOW)],
+        currentId: toVersionedValue("gone", NOW),
+        cardIndex: toVersionedValue(2, NOW),
+      },
+    })
 
-    expect(readLocalPersistedState()).toBeNull()
+    expect(readLocalPersistedState()?.unseen.currentId.value).toBe("")
   })
 })
 

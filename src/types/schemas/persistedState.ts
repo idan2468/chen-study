@@ -62,14 +62,30 @@ const moduleProgressRecordSchema = z.object({
   status: z.enum(CardStatus),
 }) satisfies z.ZodType<ModuleProgressRecord>
 
-/** Reducers and the merge keep it on a live entity; it is empty only when none is live. */
-const isLiveCurrentId = <T>(
-  currentId: string,
+type Navigation = {
+  currentId: VersionedValue<string>
+  cardIndex: VersionedValue<number>
+}
+
+/**
+ * Points a current ID that isn't live (e.g. deleted on another device) at the
+ * first live entity, at its first card; empty when nothing is live.
+ */
+const withLiveCurrentId = <T>(
+  navigation: Navigation,
   entries: readonly VersionedValue<T>[],
   getId: (value: T) => string,
-) => {
+): Navigation => {
   const ids = liveIds(entries, getId)
-  return ids.length === 0 ? currentId === "" : ids.includes(currentId)
+  const currentId = navigation.currentId.value
+  const isLive = ids.length === 0 ? currentId === "" : ids.includes(currentId)
+  if (isLive) {
+    return navigation
+  }
+  return {
+    currentId: { ...navigation.currentId, value: ids[0] ?? "" },
+    cardIndex: { ...navigation.cardIndex, value: 0 },
+  }
 }
 
 export const speechRateSchema = z
@@ -88,15 +104,14 @@ const unseenSchema = z
     currentId: versionedValueSchema(z.string()),
     cardIndex: cardIndexSchema,
   })
-  .refine(
-    unseen =>
-      isLiveCurrentId(
-        unseen.currentId.value,
-        unseen.exercises,
-        exercise => exercise.exerciseId,
-      ),
-    { error: "Current exercise is not live", path: ["currentId"] },
-  )
+  .transform(unseen => ({
+    ...unseen,
+    ...withLiveCurrentId(
+      { currentId: unseen.currentId, cardIndex: unseen.cardIndex },
+      unseen.exercises,
+      exercise => exercise.exerciseId,
+    ),
+  }))
 
 const modulesSchema = z
   .object({
@@ -108,15 +123,14 @@ const modulesSchema = z
     currentModuleId: versionedValueSchema(z.string()),
     cardIndex: cardIndexSchema,
   })
-  .refine(
-    modules =>
-      isLiveCurrentId(
-        modules.currentModuleId.value,
-        modules.modules,
-        module => module.id,
-      ),
-    { error: "Current module is not live", path: ["currentModuleId"] },
-  )
+  .transform(modules => {
+    const { currentId, cardIndex } = withLiveCurrentId(
+      { currentId: modules.currentModuleId, cardIndex: modules.cardIndex },
+      modules.modules,
+      module => module.id,
+    )
+    return { ...modules, currentModuleId: currentId, cardIndex }
+  })
 
 const preferencesSchema = z.object({
   dyslexiaFont: versionedValueSchema(z.boolean()),
