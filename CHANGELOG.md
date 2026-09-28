@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Your exercises and modules load exactly as you saved them: built-in ones are only added when you start fresh, and are no longer re-added or moved back to their original order.
+- If the exercise or module you had open was deleted on another device, the first one still available opens instead, at its first card.
+- A saved speech rate that's out of range resets to the default instead of the nearest limit.
+
+### Added
+
+- If this device's saved progress can't be read, it's kept as a backup instead of being overwritten.
+
+### Fixed
+
+- Filtering to missed words no longer says "Well done! No cards left to show." while missed words remain; you land on the last remaining card.
+- A vocabulary deck that got shorter, for example after importing a new version of the exercise, no longer shows "This exercise has no vocabulary cards."
+
 ## [2.0.0] - 2026-09-27
 
 ### Added
