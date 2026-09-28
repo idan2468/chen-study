@@ -110,7 +110,8 @@ Results for Step 12. Method: knip 6.38 (`npx knip --production`, so exports used
 - `loadFromStorage` is now `readLocalPersistedState()?.<section> ?? <legacy reader>` in every slice (plus Modules' unpersisted view flags and settings' device-local voices).
 - The Step 11.5 audit above is updated for these changes.
 - Validation: 366 tests, type-check (including forced `tsc -b --force`), lint, changed-file format, build, and diff checks pass.
-- Review: pending.
+- Review: both findings accepted and applied (`294b6ab` one `liveIds` helper shared by the schema and the merge; `6bcdfe0` one plain test per section instead of a cast-heavy `test.each`).
+- Awaiting manual approval.
 
 ## Step definitions
 
