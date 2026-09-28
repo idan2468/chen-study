@@ -61,3 +61,26 @@ test("rejects a speech rate outside the allowed range", () => {
   expect(readLocalPersistedState()).toBeNull()
   expect(warn).toHaveBeenCalledOnce()
 })
+
+test("rejects stored content the import rules would reject", () => {
+  vi.spyOn(console, "warn").mockImplementation(() => undefined)
+  const state = defaultState()
+  const [exercise] = state.unseen.exercises
+  localStorage.setItem(
+    PERSISTED_STATE_KEY,
+    JSON.stringify({
+      ...state,
+      unseen: {
+        ...state.unseen,
+        exercises: [
+          exercise && {
+            ...exercise,
+            value: { ...exercise.value, flashcards: [] },
+          },
+        ],
+      },
+    }),
+  )
+
+  expect(readLocalPersistedState()).toBeNull()
+})

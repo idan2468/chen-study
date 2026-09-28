@@ -1,41 +1,19 @@
 import { z } from "zod"
 import { SpeechLang } from "@/types/speech"
 import { CardStatus } from "@/types/moduleExercise"
-import type {
-  ModuleCard,
-  ModuleExercise,
-  ModuleProgressRecord,
-} from "@/types/moduleExercise"
+import type { ModuleProgressRecord } from "@/types/moduleExercise"
 import type {
   AnswerRecord,
-  Flashcard,
   FlashcardProgressRecord,
   HighlightRecord,
-  Question,
-  QuestionOption,
   UnseenExercise,
 } from "@/types/unseenExercise"
+import { moduleExerciseSchema } from "@/types/schemas/moduleExercise"
+import { exerciseContentSchema } from "@/types/schemas/unseenExercise"
 import { versionedValueSchema } from "@/types/schemas/versionedValue"
 import { MAX_SPEECH_RATE, MIN_SPEECH_RATE } from "@/utils/speech/speechRate"
 
 const idSchema = z.string().min(1)
-
-const questionOptionSchema = z.object({
-  text: z.string(),
-  isCorrect: z.boolean(),
-}) satisfies z.ZodType<QuestionOption>
-
-const questionSchema = z.object({
-  id: idSchema,
-  title: z.string(),
-  options: z.array(questionOptionSchema),
-}) satisfies z.ZodType<Question>
-
-const flashcardSchema = z.object({
-  en: z.string(),
-  he: z.string(),
-  trans: z.string(),
-}) satisfies z.ZodType<Flashcard>
 
 const answerRecordSchema = z.object({
   questionId: idSchema,
@@ -52,33 +30,13 @@ const flashcardProgressRecordSchema = z.object({
   isKnown: z.boolean(),
 }) satisfies z.ZodType<FlashcardProgressRecord>
 
-const unseenExerciseSchema = z.object({
-  title: z.string(),
-  subtitle: z.string(),
-  exerciseId: idSchema,
-  paragraphs: z.array(z.string()),
-  questions: z.array(questionSchema),
-  flashcards: z.array(flashcardSchema),
+const unseenExerciseSchema = exerciseContentSchema.extend({
   answers: z.array(versionedValueSchema(answerRecordSchema)),
   highlights: z.array(versionedValueSchema(highlightRecordSchema)),
   flashcardProgress: z.array(
     versionedValueSchema(flashcardProgressRecordSchema),
   ),
 }) satisfies z.ZodType<UnseenExercise>
-
-const moduleCardSchema = z.object({
-  en: z.string(),
-  he: z.string(),
-  meaning: z.string(),
-}) satisfies z.ZodType<ModuleCard>
-
-const moduleExerciseSchema = z.object({
-  id: idSchema,
-  tabName: z.string(),
-  title: z.string(),
-  rule: z.string(),
-  cards: z.array(moduleCardSchema),
-}) satisfies z.ZodType<ModuleExercise>
 
 const moduleProgressRecordSchema = z.object({
   word: z.string(),

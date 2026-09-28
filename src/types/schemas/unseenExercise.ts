@@ -6,42 +6,68 @@ import type {
   UnseenExercise,
 } from "@/types/unseenExercise"
 
-const rawQuestionOptionSchema = z.object({
+type ExerciseContent = Omit<
+  UnseenExercise,
+  "answers" | "highlights" | "flashcardProgress"
+>
+
+const hasCorrectOption = (question: { options: { isCorrect?: boolean }[] }) =>
+  question.options.some(option => option.isCorrect === true)
+
+const CORRECT_OPTION_ISSUE = {
+  error: "At least one option must be marked correct",
+  path: ["options"],
+}
+
+const questionOptionSchema = z.object({
   text: z.string().min(1),
-  isCorrect: z.boolean().optional(),
-})
+  isCorrect: z.boolean(),
+}) satisfies z.ZodType<QuestionOption>
 
-const rawQuestionSchema = z
-  .object({
-    id: z.string().trim().min(1),
-    title: z.string().min(1),
-    options: z.array(rawQuestionOptionSchema).min(1),
-  })
-  .refine(
-    question => question.options.some(option => option.isCorrect === true),
-    { error: "At least one option must be marked correct", path: ["options"] },
-  )
+const questionFields = {
+  id: z.string().trim().min(1),
+  title: z.string().min(1),
+}
 
-export const flashcardSchema = z.object({
+const questionSchema = z
+  .object({ ...questionFields, options: z.array(questionOptionSchema).min(1) })
+  .refine(hasCorrectOption, CORRECT_OPTION_ISSUE) satisfies z.ZodType<Question>
+
+const flashcardSchema = z.object({
   en: z.string().min(1),
   he: z.string().min(1),
   trans: z.string().min(1),
 }) satisfies z.ZodType<Flashcard>
 
-const rawExerciseSchema = z.object({
+const exerciseFields = {
   title: z.string().min(1),
-  subtitle: z.string().optional(),
   exerciseId: z.string().trim().min(1),
   paragraphs: z.array(z.string()).min(1),
-  questions: z.array(rawQuestionSchema).min(1),
   flashcards: z.array(flashcardSchema).min(1),
-})
+}
 
-const normalizeOption = (
-  option: z.infer<typeof rawQuestionOptionSchema>,
-): QuestionOption => ({
-  text: option.text,
-  isCorrect: option.isCorrect === true,
+/** Exercise content as the app stores it, after import normalization. */
+export const exerciseContentSchema = z.object({
+  ...exerciseFields,
+  subtitle: z.string(),
+  questions: z.array(questionSchema).min(1),
+}) satisfies z.ZodType<ExerciseContent>
+
+/* ------------------- import format (normalized below) ------------------- */
+
+const rawQuestionSchema = z
+  .object({
+    ...questionFields,
+    options: z
+      .array(questionOptionSchema.extend({ isCorrect: z.boolean().optional() }))
+      .min(1),
+  })
+  .refine(hasCorrectOption, CORRECT_OPTION_ISSUE)
+
+const rawExerciseSchema = z.object({
+  ...exerciseFields,
+  subtitle: z.string().optional(),
+  questions: z.array(rawQuestionSchema).min(1),
 })
 
 const normalizeQuestion = (
@@ -49,7 +75,10 @@ const normalizeQuestion = (
 ): Question => ({
   id: question.id,
   title: question.title,
-  options: question.options.map(normalizeOption),
+  options: question.options.map(option => ({
+    text: option.text,
+    isCorrect: option.isCorrect === true,
+  })),
 })
 
 export const unseenExercisesSchema = z

@@ -40,7 +40,16 @@ const otherExercise: UnseenExercise = {
   subtitle: "Second exercise",
   exerciseId: "other_1",
   paragraphs: ["A cat sat."],
-  questions: [],
+  questions: [
+    {
+      id: "q1",
+      title: "Question",
+      options: [
+        { text: "a) yes", isCorrect: true },
+        { text: "b) no", isCorrect: false },
+      ],
+    },
+  ],
   flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
   answers: [],
   highlights: [],
@@ -52,7 +61,16 @@ const thirdExercise: UnseenExercise = {
   subtitle: "Third exercise",
   exerciseId: "third_1",
   paragraphs: ["A dog ran."],
-  questions: [],
+  questions: [
+    {
+      id: "q1",
+      title: "Question",
+      options: [
+        { text: "a) yes", isCorrect: true },
+        { text: "b) no", isCorrect: false },
+      ],
+    },
+  ],
   flashcards: [{ en: "Dog", he: "dog", trans: "dog" }],
   answers: [],
   highlights: [],
