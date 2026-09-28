@@ -1,5 +1,5 @@
 import { createAction, createSelector } from "@reduxjs/toolkit"
-import { readJson, writeJson } from "@/store/storage"
+import { readString, writeJson, writeString } from "@/store/storage"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import {
   PERSISTED_STATE_VERSION,
@@ -54,15 +54,27 @@ export const selectPersistedState = createSelector(
   }),
 )
 
-/** `null` when missing or invalid, so the caller falls back to legacy storage. */
+/** Keeps the last rejected document, since falling back means the next write replaces it. */
+export const REJECTED_PERSISTED_STATE_KEY = "english_progress_v2_rejected"
+
+const parseStored = (raw: string) => {
+  try {
+    return persistedStateSchema.safeParse(JSON.parse(raw))
+  } catch (error) {
+    return { success: false as const, error }
+  }
+}
+
+/** `null` when missing or invalid, so the caller falls back; an invalid document is backed up first. */
 export const readLocalPersistedState = (): PersistedState | null => {
-  const stored = readJson<unknown>(PERSISTED_STATE_KEY, null)
-  if (stored === null) {
+  const raw = readString(PERSISTED_STATE_KEY)
+  if (raw === "") {
     return null
   }
-  const parsed = persistedStateSchema.safeParse(stored)
+  const parsed = parseStored(raw)
   if (!parsed.success) {
     console.warn(`Ignoring invalid "${PERSISTED_STATE_KEY}"`, parsed.error)
+    writeString(REJECTED_PERSISTED_STATE_KEY, raw)
     return null
   }
   return parsed.data

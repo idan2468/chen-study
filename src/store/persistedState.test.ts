@@ -5,6 +5,7 @@ import { at } from "@test/helpers"
 import {
   PERSISTED_STATE_KEY,
   readLocalPersistedState,
+  REJECTED_PERSISTED_STATE_KEY,
   selectPersistedState,
   writeLocalPersistedState,
 } from "./persistedState"
@@ -172,3 +173,29 @@ test.each([
     expect(readLocalPersistedState()).toBeNull()
   },
 )
+
+describe("a rejected local document", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined)
+  })
+
+  test.each([
+    ["malformed JSON", "{not json"],
+    ["a schema failure", JSON.stringify({ schemaVersion: 1 })],
+  ])("is backed up before falling back (%s)", (_label, raw) => {
+    localStorage.setItem(PERSISTED_STATE_KEY, raw)
+
+    expect(readLocalPersistedState()).toBeNull()
+    expect(localStorage.getItem(REJECTED_PERSISTED_STATE_KEY)).toBe(raw)
+  })
+
+  test("survives the next write, which replaces the rejected document", () => {
+    localStorage.setItem(PERSISTED_STATE_KEY, "{not json")
+    const store = makeStore()
+
+    store.dispatch(addModules([at(defaultModuleExercises, 0)]))
+
+    expect(readLocalPersistedState()).not.toBeNull()
+    expect(localStorage.getItem(REJECTED_PERSISTED_STATE_KEY)).toBe("{not json")
+  })
+})
