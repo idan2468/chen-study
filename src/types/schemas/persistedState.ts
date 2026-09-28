@@ -12,6 +12,7 @@ import { moduleExerciseSchema } from "@/types/schemas/moduleExercise"
 import { exerciseContentSchema } from "@/types/schemas/unseenExercise"
 import { versionedValueSchema } from "@/types/schemas/versionedValue"
 import type { VersionedValue } from "@/types/versionedValue"
+import { liveIds } from "@/utils/sync/versionedValue"
 
 const idSchema = z.string().min(1)
 
@@ -67,10 +68,8 @@ const isLiveCurrentId = <T>(
   entries: readonly VersionedValue<T>[],
   getId: (value: T) => string,
 ) => {
-  const liveIds = entries
-    .filter(entry => !entry.deleted)
-    .map(entry => getId(entry.value))
-  return liveIds.length === 0 ? currentId === "" : liveIds.includes(currentId)
+  const ids = liveIds(entries, getId)
+  return ids.length === 0 ? currentId === "" : ids.includes(currentId)
 }
 
 export const speechRateSchema = z

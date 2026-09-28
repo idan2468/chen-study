@@ -6,7 +6,7 @@ import type { VersionedValue } from "@/types/versionedValue"
 import { compareTimestamps } from "@/utils/sync/timestamp"
 import {
   isNewer,
-  liveValues,
+  liveIds,
   mergeVersionedArrays,
   pickNewer,
 } from "@/utils/sync/versionedValue"
@@ -96,11 +96,6 @@ const keepNavigationLive = (
   }
 }
 
-const liveIdsOf = <T>(
-  entries: readonly VersionedValue<T>[],
-  getId: (value: T) => string,
-) => liveValues(entries).map(getId)
-
 const mergeUnseenSection = (
   local: PersistedState["unseen"],
   remote: PersistedState["unseen"],
@@ -121,7 +116,7 @@ const mergeUnseenSection = (
     ...keepNavigationLive(
       mergeNavigation(localSide, remoteSide),
       [localSide, remoteSide],
-      liveIdsOf(exercises, exercise => exercise.exerciseId),
+      liveIds(exercises, exercise => exercise.exerciseId),
     ),
   }
 }
@@ -146,7 +141,7 @@ const mergeModulesSection = (
   const navigation = keepNavigationLive(
     mergeNavigation(localSide, remoteSide),
     [localSide, remoteSide],
-    liveIdsOf(modules, module => module.id),
+    liveIds(modules, module => module.id),
   )
   return {
     modules,

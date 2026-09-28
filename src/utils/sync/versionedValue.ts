@@ -18,6 +18,12 @@ export const markDeleted = <T>(
 export const liveValues = <T>(entries: readonly VersionedValue<T>[]): T[] =>
   entries.filter(entry => !entry.deleted).map(entry => entry.value)
 
+/** IDs of the live entries, in list order. */
+export const liveIds = <T>(
+  entries: readonly VersionedValue<T>[],
+  getId: (value: T) => string,
+) => liveValues(entries).map(getId)
+
 export const findLiveValue = <T>(
   entries: readonly VersionedValue<T>[],
   matches: (value: T) => boolean,
