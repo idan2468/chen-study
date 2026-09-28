@@ -6,6 +6,7 @@ import type { VersionedValue } from "@/types/versionedValue"
 import { compareTimestamps } from "@/utils/sync/timestamp"
 import {
   isNewer,
+  liveValues,
   mergeVersionedArrays,
   pickNewer,
 } from "@/utils/sync/versionedValue"
@@ -73,36 +74,82 @@ const mergeNavigation = (local: Navigation, remote: Navigation): Navigation => {
   }
 }
 
+/**
+ * Keeps the merged current ID on a live entity, since the other device may have deleted it:
+ * falls back to either side's pair whose ID is still live, then to the first live entity at card 0.
+ * @param liveIds IDs of the merged section's live entities, in list order.
+ */
+const keepNavigationLive = (
+  merged: Navigation,
+  sides: readonly Navigation[],
+  liveIds: readonly string[],
+): Navigation => {
+  const isLive = (navigation: Navigation) =>
+    liveIds.includes(navigation.currentId.value)
+  const live = [merged, ...sides].find(isLive)
+  if (live) {
+    return live
+  }
+  return {
+    currentId: { ...merged.currentId, value: liveIds[0] ?? "" },
+    cardIndex: { ...merged.cardIndex, value: 0 },
+  }
+}
+
+const liveIdsOf = <T>(
+  entries: readonly VersionedValue<T>[],
+  getId: (value: T) => string,
+) => liveValues(entries).map(getId)
+
 const mergeUnseenSection = (
   local: PersistedState["unseen"],
   remote: PersistedState["unseen"],
-): PersistedState["unseen"] => ({
-  exercises: mergeVersionedArrays(
+): PersistedState["unseen"] => {
+  const exercises = mergeVersionedArrays(
     local.exercises,
     remote.exercises,
     exercise => exercise.exerciseId,
     mergeExercise,
-  ),
-  ...mergeNavigation(
-    { currentId: local.currentId, cardIndex: local.cardIndex },
-    { currentId: remote.currentId, cardIndex: remote.cardIndex },
-  ),
-})
+  )
+  const localSide = { currentId: local.currentId, cardIndex: local.cardIndex }
+  const remoteSide = {
+    currentId: remote.currentId,
+    cardIndex: remote.cardIndex,
+  }
+  return {
+    exercises,
+    ...keepNavigationLive(
+      mergeNavigation(localSide, remoteSide),
+      [localSide, remoteSide],
+      liveIdsOf(exercises, exercise => exercise.exerciseId),
+    ),
+  }
+}
 
 const mergeModulesSection = (
   local: PersistedState["modules"],
   remote: PersistedState["modules"],
 ): PersistedState["modules"] => {
-  const navigation = mergeNavigation(
-    { currentId: local.currentModuleId, cardIndex: local.cardIndex },
-    { currentId: remote.currentModuleId, cardIndex: remote.cardIndex },
+  const modules = mergeVersionedArrays(
+    local.modules,
+    remote.modules,
+    module => module.id,
+  )
+  const localSide = {
+    currentId: local.currentModuleId,
+    cardIndex: local.cardIndex,
+  }
+  const remoteSide = {
+    currentId: remote.currentModuleId,
+    cardIndex: remote.cardIndex,
+  }
+  const navigation = keepNavigationLive(
+    mergeNavigation(localSide, remoteSide),
+    [localSide, remoteSide],
+    liveIdsOf(modules, module => module.id),
   )
   return {
-    modules: mergeVersionedArrays(
-      local.modules,
-      remote.modules,
-      module => module.id,
-    ),
+    modules,
     progress: mergeVersionedArrays(
       local.progress,
       remote.progress,

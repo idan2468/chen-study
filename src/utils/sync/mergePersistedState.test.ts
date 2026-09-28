@@ -229,23 +229,32 @@ describe("Unseen exercises", () => {
 })
 
 describe("navigation", () => {
+  const liveExercises = ["a", "b", "u1", "u2"].map(id =>
+    toVersionedValue(exercise(id), T1),
+  )
+  const liveModules = ["m1", "m2"].map(id => toVersionedValue(module(id), T1))
+
   test("the side that switched more recently keeps its card index", () => {
     const local = state({
       unseen: {
+        exercises: liveExercises,
         currentId: toVersionedValue("a", T1),
         cardIndex: toVersionedValue(5, T3),
       },
       modules: {
+        modules: liveModules,
         currentModuleId: toVersionedValue("m2", T3),
         cardIndex: toVersionedValue(4, T3),
       },
     })
     const remote = state({
       unseen: {
+        exercises: liveExercises,
         currentId: toVersionedValue("b", T2),
         cardIndex: toVersionedValue(2, T2),
       },
       modules: {
+        modules: liveModules,
         currentModuleId: toVersionedValue("m1", T2),
         cardIndex: toVersionedValue(1, T2),
       },
@@ -264,12 +273,14 @@ describe("navigation", () => {
   test("on the same ID, each field is newest-wins", () => {
     const local = state({
       unseen: {
+        exercises: liveExercises,
         currentId: toVersionedValue("a", T1),
         cardIndex: toVersionedValue(5, T3),
       },
     })
     const remote = state({
       unseen: {
+        exercises: liveExercises,
         currentId: toVersionedValue("a", T2),
         cardIndex: toVersionedValue(2, T2),
       },
@@ -284,12 +295,14 @@ describe("navigation", () => {
   test("Drive wins a tie between different IDs", () => {
     const local = state({
       unseen: {
+        exercises: liveExercises,
         currentId: toVersionedValue("a", T2),
         cardIndex: toVersionedValue(5, T3),
       },
     })
     const remote = state({
       unseen: {
+        exercises: liveExercises,
         currentId: toVersionedValue("b", T2),
         cardIndex: toVersionedValue(2, T1),
       },
@@ -321,6 +334,83 @@ describe("navigation", () => {
       ["u2", "u1"],
     )
     expect(merged.currentId).toStrictEqual(toVersionedValue("u1", T3))
+  })
+})
+
+describe("a current ID the other device deleted", () => {
+  test("falls back to the other side's pair when its ID is still live", () => {
+    const local = state({
+      unseen: {
+        exercises: [
+          toVersionedValue(exercise("a"), T1),
+          toVersionedValue(exercise("b"), T1),
+        ],
+        currentId: toVersionedValue("a", T3),
+        cardIndex: toVersionedValue(4, T3),
+      },
+    })
+    const remote = state({
+      unseen: {
+        exercises: [
+          markDeleted(toVersionedValue(exercise("a"), T1), T2),
+          toVersionedValue(exercise("b"), T1),
+        ],
+        currentId: toVersionedValue("b", T2),
+        cardIndex: toVersionedValue(1, T2),
+      },
+    })
+
+    const merged = mergePersistedState(local, remote).unseen
+
+    expect(merged.currentId).toStrictEqual(toVersionedValue("b", T2))
+    expect(merged.cardIndex).toStrictEqual(toVersionedValue(1, T2))
+  })
+
+  test("falls back to the first live module at card 0 when neither side's ID is live", () => {
+    const local = state({
+      modules: {
+        modules: [
+          toVersionedValue(module("m1"), T1),
+          toVersionedValue(module("m2"), T1),
+          toVersionedValue(module("m3"), T1),
+        ],
+        currentModuleId: toVersionedValue("m1", T2),
+        cardIndex: toVersionedValue(5, T2),
+      },
+    })
+    const remote = state({
+      modules: {
+        modules: [
+          markDeleted(toVersionedValue(module("m1"), T1), T3),
+          markDeleted(toVersionedValue(module("m2"), T1), T3),
+          toVersionedValue(module("m3"), T1),
+        ],
+        currentModuleId: toVersionedValue("m2", T1),
+        cardIndex: toVersionedValue(2, T1),
+      },
+    })
+
+    const merged = mergePersistedState(local, remote).modules
+
+    expect(merged.currentModuleId).toStrictEqual(toVersionedValue("m3", T2))
+    expect(merged.cardIndex).toStrictEqual(toVersionedValue(0, T2))
+  })
+
+  test("is empty when nothing is live on either side", () => {
+    const local = state({
+      unseen: {
+        exercises: [markDeleted(toVersionedValue(exercise("a"), T1), T2)],
+        currentId: toVersionedValue("b", T1),
+      },
+    })
+    const remote = state({
+      unseen: {
+        exercises: [markDeleted(toVersionedValue(exercise("b"), T1), T2)],
+        currentId: toVersionedValue("a", T1),
+      },
+    })
+
+    expect(mergePersistedState(local, remote).unseen.currentId.value).toBe("")
   })
 })
 
@@ -431,6 +521,7 @@ test("merging a state with itself changes nothing", () => {
     },
     modules: {
       modules: [toVersionedValue(module("m1"), T1)],
+      currentModuleId: toVersionedValue("m1", T1),
       progress: [
         toVersionedValue({ word: "HAT", status: CardStatus.Known }, T2),
       ],
