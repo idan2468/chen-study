@@ -7,8 +7,8 @@ import {
 import { readString } from "@/store/storage"
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
-import { SpeechLang } from "@/types/speech"
-import { clampSpeechRate } from "@/utils/speech/speechRate"
+import { speechRateSchema } from "@/types/schemas/persistedState"
+import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
 import type { VersionedValue } from "@/types/versionedValue"
 import {
   readLegacyPreferences,
@@ -95,7 +95,9 @@ export const settingsSlice = createAppSlice({
       ) => {
         setValueIfChanged(
           state.speechRateByLang[action.payload.lang],
-          clampSpeechRate(action.payload.rate),
+          speechRateSchema
+            .catch(DEFAULT_SPEECH_RATE)
+            .parse(action.payload.rate),
           action.meta.updatedAt,
         )
       },

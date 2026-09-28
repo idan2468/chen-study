@@ -12,12 +12,12 @@ import {
   setSpeechRate,
   setSystemVoiceUri,
 } from "@/store/slices/settingsSlice"
-import { SpeechLang } from "@/types/speech"
 import {
   DEFAULT_SPEECH_RATE,
   MAX_SPEECH_RATE,
   MIN_SPEECH_RATE,
-} from "@/utils/speech/speechRate"
+  SpeechLang,
+} from "@/types/speech"
 import { voicesForLanguage } from "@/utils/speech/voices"
 
 export type SpeechSettingsModalProps = {

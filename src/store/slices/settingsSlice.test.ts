@@ -14,8 +14,7 @@ import {
   setSpeechRate,
   toggleDyslexiaFont,
 } from "./settingsSlice"
-import { SpeechLang } from "@/types/speech"
-import { DEFAULT_SPEECH_RATE } from "@/utils/speech/speechRate"
+import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
 
 describe("hydration", () => {
   beforeEach(() => {
@@ -70,21 +69,18 @@ describe("hydration", () => {
       expect(selectSpeechRate(store.getState(), SpeechLang.Hebrew)).toBe(0.3)
     })
 
-    test("clamps a stored rate above the maximum", () => {
-      localStorage.setItem(StorageKeys.speechRate, "5")
+    test.each(["5", "-2"])(
+      "falls back to the default for an out-of-range stored rate (%s)",
+      stored => {
+        localStorage.setItem(StorageKeys.speechRate, stored)
 
-      const store = makeStore()
+        const store = makeStore()
 
-      expect(selectSpeechRate(store.getState(), SpeechLang.English)).toBe(1)
-    })
-
-    test("clamps a stored rate below the minimum", () => {
-      localStorage.setItem(StorageKeys.speechRate, "-2")
-
-      const store = makeStore()
-
-      expect(selectSpeechRate(store.getState(), SpeechLang.English)).toBe(0.1)
-    })
+        expect(selectSpeechRate(store.getState(), SpeechLang.English)).toBe(
+          DEFAULT_SPEECH_RATE,
+        )
+      },
+    )
 
     test("falls back to the default for unparsable input", () => {
       localStorage.setItem(StorageKeys.speechRate, "not-a-number")

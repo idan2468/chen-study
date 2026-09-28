@@ -2,8 +2,8 @@ import { z } from "zod"
 import { PERSISTED_STATE_KEY } from "@/store/persistedState"
 import { readFlag, readJson, readString } from "@/store/storage"
 import type { PersistedState } from "@/types/schemas/persistedState"
-import { SpeechLang } from "@/types/speech"
-import { clampSpeechRate } from "@/utils/speech/speechRate"
+import { speechRateSchema } from "@/types/schemas/persistedState"
+import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
 import { CardStatus } from "@/types/moduleExercise"
 import type {
   ModuleExercise,
@@ -148,7 +148,11 @@ export const readLegacyModulesState = (): PersistedState["modules"] => ({
 })
 
 const readLegacyRate = (key: string) =>
-  toVersionedValue(clampSpeechRate(Number.parseFloat(readString(key, ""))))
+  toVersionedValue(
+    speechRateSchema
+      .catch(DEFAULT_SPEECH_RATE)
+      .parse(Number.parseFloat(readString(key, ""))),
+  )
 
 export const readLegacyPreferences = (): PersistedState["preferences"] => ({
   dyslexiaFont: toVersionedValue(readFlag(StorageKeys.dyslexiaFont, false)),

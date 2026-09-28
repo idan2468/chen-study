@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { SpeechLang } from "@/types/speech"
+import { MAX_SPEECH_RATE, MIN_SPEECH_RATE, SpeechLang } from "@/types/speech"
 import { CardStatus } from "@/types/moduleExercise"
 import type { ModuleProgressRecord } from "@/types/moduleExercise"
 import type {
@@ -11,7 +11,6 @@ import type {
 import { moduleExerciseSchema } from "@/types/schemas/moduleExercise"
 import { exerciseContentSchema } from "@/types/schemas/unseenExercise"
 import { versionedValueSchema } from "@/types/schemas/versionedValue"
-import { MAX_SPEECH_RATE, MIN_SPEECH_RATE } from "@/utils/speech/speechRate"
 
 const idSchema = z.string().min(1)
 
@@ -61,6 +60,11 @@ const moduleProgressRecordSchema = z.object({
   status: z.enum(CardStatus),
 }) satisfies z.ZodType<ModuleProgressRecord>
 
+export const speechRateSchema = z
+  .number()
+  .min(MIN_SPEECH_RATE)
+  .max(MAX_SPEECH_RATE)
+
 const cardIndexSchema = versionedValueSchema(z.number().int().nonnegative())
 
 const unseenSchema = z.object({
@@ -87,7 +91,7 @@ const preferencesSchema = z.object({
   shuffleUnseenAnswers: versionedValueSchema(z.boolean()),
   speechRateByLang: z.record(
     z.enum(SpeechLang),
-    versionedValueSchema(z.number().min(MIN_SPEECH_RATE).max(MAX_SPEECH_RATE)),
+    versionedValueSchema(speechRateSchema),
   ),
 })
 
