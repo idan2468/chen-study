@@ -31,9 +31,16 @@ export type ModulesState = {
   cardIndex: VersionedValue<number>
   /** "Show only the words I got wrong". */
   filterMissed: boolean
-  /** Reviewing missed words pooled from every module, instead of one module. */
-  reviewingMissed: boolean
+  /** Set while reviewing missed words pooled from every module. */
+  missedReview: MissedReview | null
   progress: ModulesProgress
+}
+
+export type MissedReview = {
+  /** The words that were unknown when the review started; fixed for the session. */
+  words: string[]
+  /** This session's marks, shown instead of the saved progress. */
+  sessionProgress: Record<string, CardStatus>
 }
 
 const hasModuleId = (moduleId: string) => (module: ModuleExercise) =>
@@ -52,8 +59,35 @@ const setModuleProgressStatus = (
 const loadFromStorage = (): ModulesState => ({
   ...(readLocalPersistedState()?.modules ?? readLegacyModulesState()),
   filterMissed: false,
-  reviewingMissed: false,
+  missedReview: null,
 })
+
+/**
+ * Every word marked "unknown" in any module, deduplicated by word (the same
+ * word can appear in several modules and shares one status across all of
+ * them -- see `modules.progress`).
+ */
+const collectMissedCards = (
+  modules: readonly ModuleExercise[],
+  progress: Record<string, CardStatus>,
+): ModuleCard[] => {
+  const seen = new Set<string>()
+  const missed: ModuleCard[] = []
+  for (const module of modules) {
+    for (const card of module.cards) {
+      if (progress[card.en] === CardStatus.Unknown && !seen.has(card.en)) {
+        seen.add(card.en)
+        missed.push(card)
+      }
+    }
+  }
+  return missed
+}
+
+const toStatusByWord = (progress: ModulesProgress) =>
+  Object.fromEntries(
+    liveValues(progress).map(({ word, status }) => [word, status]),
+  )
 
 const addOrReplaceModule = (
   state: ModulesState,
@@ -147,10 +181,26 @@ export const modulesSlice = createAppSlice({
       },
     ),
 
-    toggleMissedReview: create.preparedReducer(
+    /** Also restarts a running review with the words that are unknown now. */
+    startMissedReview: create.preparedReducer(
       withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
-        state.reviewingMissed = !state.reviewingMissed
+        const missed = collectMissedCards(
+          liveValues(state.modules),
+          toStatusByWord(state.progress),
+        )
+        state.missedReview = {
+          words: missed.map(card => card.en),
+          sessionProgress: {},
+        }
+        setValueIfChanged(state.cardIndex, 0, action.meta.updatedAt)
+      },
+    ),
+
+    endMissedReview: create.preparedReducer(
+      withUpdatedAtOnly,
+      (state, action: TimestampedAction) => {
+        state.missedReview = null
         setValueIfChanged(state.cardIndex, 0, action.meta.updatedAt)
       },
     ),
@@ -163,12 +213,16 @@ export const modulesSlice = createAppSlice({
         action: TimestampedAction<{ word: string; isKnown: boolean }>,
       ) => {
         const { word, isKnown } = action.payload
+        const status = isKnown ? CardStatus.Known : CardStatus.Unknown
         setModuleProgressStatus(
           state.progress,
           word,
-          isKnown ? CardStatus.Known : CardStatus.Unknown,
+          status,
           action.meta.updatedAt,
         )
+        if (state.missedReview?.words.includes(word)) {
+          state.missedReview.sessionProgress[word] = status
+        }
       },
     ),
 
@@ -238,14 +292,18 @@ export const modulesSlice = createAppSlice({
     ),
   }),
   extraReducers: builder => {
-    builder.addCase(reloadFromStorage, () => loadFromStorage())
+    // Keeps a running review alive through a Drive pull.
+    builder.addCase(reloadFromStorage, state => ({
+      ...loadFromStorage(),
+      missedReview: state.missedReview,
+    }))
   },
   selectors: {
     selectModuleEntries: state => state.modules,
     selectCurrentModuleId: state => state.currentModuleId.value,
     selectModuleCardIndex: state => state.cardIndex.value,
     selectFilterMissed: state => state.filterMissed,
-    selectReviewingMissed: state => state.reviewingMissed,
+    selectMissedReview: state => state.missedReview,
     selectModuleProgressEntries: state => state.progress,
   },
 })
@@ -256,7 +314,8 @@ export const {
   nextCard,
   prevCard,
   toggleFilterMissed,
-  toggleMissedReview,
+  startMissedReview,
+  endMissedReview,
   markCard,
   resetCurrentModuleProgress,
   addModules,
@@ -268,7 +327,7 @@ export const {
   selectCurrentModuleId,
   selectModuleCardIndex,
   selectFilterMissed,
-  selectReviewingMissed,
+  selectMissedReview,
   selectModuleProgressEntries,
 } = modulesSlice.selectors
 
@@ -281,10 +340,12 @@ export const selectModules = createSelector([selectModuleEntries], liveValues)
 
 export const selectModulesProgress = createSelector(
   [selectModuleProgressEntries],
-  progress =>
-    Object.fromEntries(
-      liveValues(progress).map(({ word, status }) => [word, status]),
-    ),
+  toStatusByWord,
+)
+
+export const selectReviewingMissed = createSelector(
+  [selectMissedReview],
+  review => review !== null,
 )
 
 export const selectCurrentModule = createSelector(
@@ -308,52 +369,55 @@ export const selectModuleOptions = createSelector(
     })),
 )
 
-/**
- * Every word marked "unknown" in any module, deduplicated by word (the same
- * word can appear in several modules and shares one status across all of
- * them -- see `modules.progress`). Powers "practice missed words" across the
- * whole library rather than one module at a time.
- */
+/** Live count behind the "practice missed words" button, unlike the review's fixed list. */
 export const selectMissedWordsAcrossModules = createSelector(
   [selectModules, selectModulesProgress],
-  (modules, progress): ModuleCard[] => {
-    const seen = new Set<string>()
-    const missed: ModuleCard[] = []
-    for (const module of modules) {
-      for (const card of module.cards) {
-        if (progress[card.en] === CardStatus.Unknown && !seen.has(card.en)) {
-          seen.add(card.en)
-          missed.push(card)
-        }
+  collectMissedCards,
+)
+
+/** The review's word list resolved to cards; empty outside a review. */
+export const selectMissedReviewCards = createSelector(
+  [selectModules, selectMissedReview],
+  (modules, review): ModuleCard[] => {
+    if (!review) {
+      return []
+    }
+    const cardsByWord = new Map<string, ModuleCard>()
+    for (const card of modules.flatMap(module => module.cards)) {
+      if (!cardsByWord.has(card.en)) {
+        cardsByWord.set(card.en, card)
       }
     }
-    return missed
+    return review.words.flatMap(word => cardsByWord.get(word) ?? [])
   },
+)
+
+/** The card statuses to show: this session's marks during a review, saved progress otherwise. */
+export const selectDisplayedProgress = createSelector(
+  [selectMissedReview, selectModulesProgress],
+  (review, progress): Record<string, CardStatus> =>
+    review ? review.sessionProgress : progress,
+)
+
+/** The whole deck being practised, before the "needs practice" filter. */
+const selectDeckCards = createSelector(
+  [selectMissedReview, selectMissedReviewCards, selectCurrentModule],
+  (review, reviewCards, module): ModuleCard[] =>
+    review ? reviewCards : (module?.cards ?? []),
 )
 
 export const selectActiveCards = createSelector(
   [
-    selectCurrentModule,
+    selectDeckCards,
+    selectReviewingMissed,
     selectFilterMissed,
     selectModulesProgress,
-    selectReviewingMissed,
-    selectMissedWordsAcrossModules,
   ],
-  (
-    module,
-    filterMissed,
-    progress,
-    reviewingMissed,
-    missedAcrossModules,
-  ): ModuleCard[] => {
-    if (reviewingMissed) {
-      return missedAcrossModules
+  (deck, reviewingMissed, filterMissed, progress): ModuleCard[] => {
+    if (reviewingMissed || !filterMissed) {
+      return deck
     }
-    const cards = module?.cards ?? []
-    if (!filterMissed) {
-      return cards
-    }
-    return cards.filter(card => progress[card.en] !== CardStatus.Known)
+    return deck.filter(card => progress[card.en] !== CardStatus.Known)
   },
 )
 
@@ -369,9 +433,8 @@ export const selectCurrentCard = createSelector(
 )
 
 export const selectModuleStats = createSelector(
-  [selectCurrentModule, selectModulesProgress],
-  (module, progress) => {
-    const cards = module?.cards ?? []
+  [selectDeckCards, selectDisplayedProgress],
+  (cards, progress) => {
     let known = 0
     let unknown = 0
     for (const card of cards) {

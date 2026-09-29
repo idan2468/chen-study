@@ -110,7 +110,11 @@ export const en: Messages = {
     jsonAdded: "Added {{count}} modules successfully.",
     missedReviewButton: "Practice missed words ({{count}})",
     missedReviewTitle: "Practice missed words",
-    missedReviewSubtitle: "{{count}} words left from every module",
+    missedReviewSubtitle: "{{count}} words from every module",
+    missedReviewAllKnown: "🎉 Every missed word is now known!",
+    missedReviewPartial:
+      "✅ You've gone through every missed word. {{count}} still need practice",
+    missedReviewAgain: "Practice again",
     backToModules: "Back to modules",
     moduleCompleteAllKnown: "🎉 Every word in this module is known!",
     moduleCompletePartial:

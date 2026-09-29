@@ -21,12 +21,14 @@ import type { ModulesState } from "./modulesSlice"
 import {
   addModules,
   deleteModule,
+  endMissedReview,
   markCard,
   nextCard,
   prevCard,
   resetCurrentModuleProgress,
   selectActiveCards,
   selectCurrentModuleId,
+  selectDisplayedProgress,
   selectModuleCardIndex,
   selectModuleCardPosition,
   selectModuleOptions,
@@ -34,8 +36,9 @@ import {
   selectModuleStats,
   selectModules,
   selectModulesProgress,
+  selectReviewingMissed,
+  startMissedReview,
   toggleFilterMissed,
-  toggleMissedReview,
 } from "./modulesSlice"
 
 const customModule: ModuleExercise = {
@@ -69,7 +72,7 @@ const thirdBuiltInId = at(builtInModuleIds, 2)
 const firstCard = at(at(defaultModuleExercises, 0).cards, 0)
 
 type TestStateOverrides = Partial<
-  Pick<ModulesState, "filterMissed" | "reviewingMissed">
+  Pick<ModulesState, "filterMissed" | "missedReview">
 > & {
   modules?: ModuleExercise[]
   progress?: ModuleProgressRecord[]
@@ -88,7 +91,7 @@ const baseState = ({
   currentModuleId: toVersionedValue(currentModuleId),
   cardIndex: toVersionedValue(cardIndex),
   filterMissed: false,
-  reviewingMissed: false,
+  missedReview: null,
   progress: progress.map(record => toVersionedValue(record)),
   ...overrides,
 })
@@ -263,29 +266,107 @@ describe("selectMissedWordsAcrossModules", () => {
   })
 })
 
-describe("toggleMissedReview", () => {
-  test("switches selectActiveCards to the cross-module missed pool and resets the index", () => {
-    const store = makeStore({
+describe("missed review", () => {
+  const reviewStore = () =>
+    makeStore({
       modules: baseState({
         currentModuleId: "custom_1",
-        modules: [customModule],
-        progress: [{ word: "ZAP", status: CardStatus.Unknown }],
+        modules: [customModule, otherCustomModule],
+        progress: [
+          { word: "ZAP", status: CardStatus.Unknown },
+          { word: "QUIZ", status: CardStatus.Unknown },
+        ],
         cardIndex: 1,
       }),
     })
-    store.dispatch(toggleMissedReview())
+
+  test("starts on the cross-module missed words and resets the index", () => {
+    const store = reviewStore()
+    store.dispatch(startMissedReview())
 
     const state = store.getState()
-    expect(selectActiveCards(state).map(card => card.en)).toStrictEqual(["ZAP"])
+    expect(selectReviewingMissed(state)).toBe(true)
+    expect(selectActiveCards(state).map(card => card.en)).toStrictEqual([
+      "ZAP",
+      "QUIZ",
+    ])
     expect(selectModuleCardIndex(state)).toBe(0)
-    expect(state.modules.reviewingMissed).toBe(true)
   })
 
-  test("toggles back off", () => {
-    const store = makeStore({ modules: baseState({ reviewingMissed: true }) })
-    store.dispatch(toggleMissedReview())
+  test("shows every word untouched, whatever its saved status", () => {
+    const store = reviewStore()
+    store.dispatch(startMissedReview())
 
-    expect(store.getState().modules.reviewingMissed).toBe(false)
+    const state = store.getState()
+    expect(selectDisplayedProgress(state)).toStrictEqual({})
+    expect(selectModuleStats(state)).toStrictEqual({
+      known: 0,
+      unknown: 0,
+      pending: 2,
+    })
+  })
+
+  test("keeps a word marked known in the list instead of filtering it out", () => {
+    const store = reviewStore()
+    store.dispatch(startMissedReview())
+    store.dispatch(markCard({ word: "ZAP", isKnown: true }))
+
+    const state = store.getState()
+    expect(selectActiveCards(state).map(card => card.en)).toStrictEqual([
+      "ZAP",
+      "QUIZ",
+    ])
+    expect(selectDisplayedProgress(state)).toStrictEqual({
+      ZAP: CardStatus.Known,
+    })
+    expect(selectModuleStats(state)).toStrictEqual({
+      known: 1,
+      unknown: 0,
+      pending: 1,
+    })
+  })
+
+  test("saves only the words marked in the session", () => {
+    const store = reviewStore()
+    store.dispatch(startMissedReview())
+    store.dispatch(markCard({ word: "ZAP", isKnown: true }))
+    store.dispatch(endMissedReview())
+
+    const state = store.getState()
+    expect(selectReviewingMissed(state)).toBe(false)
+    expect(selectModulesProgress(state)).toStrictEqual({
+      ZAP: CardStatus.Known,
+      QUIZ: CardStatus.Unknown,
+    })
+    expect(selectMissedWordsAcrossModules(state).map(card => card.en)).toEqual([
+      "QUIZ",
+    ])
+  })
+
+  test("starting again takes a fresh list of the words unknown now", () => {
+    const store = reviewStore()
+    store.dispatch(startMissedReview())
+    store.dispatch(markCard({ word: "ZAP", isKnown: true }))
+    store.dispatch(markCard({ word: "QUIZ", isKnown: false }))
+    store.dispatch(startMissedReview())
+
+    const state = store.getState()
+    expect(selectActiveCards(state).map(card => card.en)).toStrictEqual([
+      "QUIZ",
+    ])
+    expect(selectDisplayedProgress(state)).toStrictEqual({})
+  })
+
+  test("survives a reload from storage", () => {
+    const store = reviewStore()
+    store.dispatch(startMissedReview())
+    store.dispatch(markCard({ word: "ZAP", isKnown: true }))
+    store.dispatch(reloadFromStorage())
+
+    expect(store.getState().modules.missedReview).toStrictEqual({
+      words: ["ZAP", "QUIZ"],
+      sessionProgress: { ZAP: CardStatus.Known },
+    })
   })
 })
 

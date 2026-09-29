@@ -27,6 +27,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import {
   addModules,
   deleteModule,
+  endMissedReview,
   markCard,
   nextCard,
   prevCard,
@@ -35,17 +36,18 @@ import {
   selectCurrentCard,
   selectCurrentModule,
   selectCurrentModuleId,
+  selectDisplayedProgress,
   selectFilterMissed,
   selectMissedWordsAcrossModules,
+  selectMissedReviewCards,
   selectModuleCardPosition,
   selectModuleOptions,
   selectModules,
   selectModuleStats,
-  selectModulesProgress,
   selectModule as selectModuleAction,
   selectReviewingMissed,
+  startMissedReview,
   toggleFilterMissed,
-  toggleMissedReview,
 } from "@/store/slices/modulesSlice"
 import { sampleModuleExercise } from "@/data/defaultModuleExercises"
 import { ModuleFlashcard } from "./ModuleFlashcard"
@@ -65,9 +67,11 @@ export const ModulesPage = () => {
   const filterMissed = useAppSelector(selectFilterMissed)
   const reviewingMissed = useAppSelector(selectReviewingMissed)
   const missedWords = useAppSelector(selectMissedWordsAcrossModules)
-  const progress = useAppSelector(selectModulesProgress)
+  const missedReviewCards = useAppSelector(selectMissedReviewCards)
+  const progress = useAppSelector(selectDisplayedProgress)
   const stats = useAppSelector(selectModuleStats)
   const moduleOptions = useAppSelector(selectModuleOptions)
+  const deckComplete = stats.pending === 0 && stats.known + stats.unknown > 0
 
   const handleDeleteModule = () => {
     if (currentModule === undefined) {
@@ -136,14 +140,14 @@ export const ModulesPage = () => {
             </Title>
             <Text c="dimmed">
               {t("modules.missedReviewSubtitle", {
-                count: missedWords.length,
+                count: missedReviewCards.length,
               })}
             </Text>
             <Button
               size="xs"
               variant="default"
               leftSection={<IconArrowLeft size={ICON_SIZE} />}
-              onClick={() => dispatch(toggleMissedReview())}
+              onClick={() => dispatch(endMissedReview())}
             >
               {t("modules.backToModules")}
             </Button>
@@ -174,7 +178,7 @@ export const ModulesPage = () => {
               <Button
                 size="xs"
                 leftSection={<IconRepeat size={ICON_SIZE} />}
-                onClick={() => dispatch(toggleMissedReview())}
+                onClick={() => dispatch(startMissedReview())}
               >
                 {t("modules.missedReviewButton", {
                   count: missedWords.length,
@@ -201,80 +205,88 @@ export const ModulesPage = () => {
                 html={currentModule.rule}
               />
             ) : null}
-
-            <StatCounts
-              items={[
-                {
-                  label: t("modules.statKnown"),
-                  value: stats.known,
-                  color: "success",
-                },
-                {
-                  label: t("modules.statUnknown"),
-                  value: stats.unknown,
-                  color: "danger",
-                },
-                {
-                  label: t("modules.statPending"),
-                  value: stats.pending,
-                  color: "gray",
-                },
-              ]}
-              actions={
-                <>
-                  <Button
-                    size="xs"
-                    variant={filterMissed ? "filled" : "default"}
-                    onClick={() => dispatch(toggleFilterMissed())}
-                  >
-                    {filterMissed
-                      ? t("modules.filterOn")
-                      : t("modules.filterOff")}
-                  </Button>
-                  <Button
-                    size="xs"
-                    variant="default"
-                    onClick={handleResetProgress}
-                  >
-                    {t("modules.resetModule")}
-                  </Button>
-                </>
-              }
-            />
-
-            {currentModule &&
-            currentModule.cards.length > 0 &&
-            stats.known + stats.unknown === currentModule.cards.length ? (
-              <Alert
-                color={stats.unknown === 0 ? "success" : "brand"}
-                variant="light"
-                w="100%"
-              >
-                {stats.unknown === 0 ? (
-                  t("modules.moduleCompleteAllKnown")
-                ) : (
-                  <Group justify="space-between" wrap="wrap" gap="xs">
-                    <span>
-                      {t("modules.moduleCompletePartial", {
-                        count: stats.unknown,
-                      })}
-                    </span>
-                    <Button
-                      size="xs"
-                      variant="light"
-                      leftSection={<IconRepeat size={ICON_SIZE} />}
-                      onClick={() => dispatch(toggleMissedReview())}
-                    >
-                      {t("modules.missedReviewButton", {
-                        count: missedWords.length,
-                      })}
-                    </Button>
-                  </Group>
-                )}
-              </Alert>
-            ) : null}
           </>
         )}
+
+        <StatCounts
+          items={[
+            {
+              label: t("modules.statKnown"),
+              value: stats.known,
+              color: "success",
+            },
+            {
+              label: t("modules.statUnknown"),
+              value: stats.unknown,
+              color: "danger",
+            },
+            {
+              label: t("modules.statPending"),
+              value: stats.pending,
+              color: "gray",
+            },
+          ]}
+          actions={
+            reviewingMissed ? undefined : (
+              <>
+                <Button
+                  size="xs"
+                  variant={filterMissed ? "filled" : "default"}
+                  onClick={() => dispatch(toggleFilterMissed())}
+                >
+                  {filterMissed
+                    ? t("modules.filterOn")
+                    : t("modules.filterOff")}
+                </Button>
+                <Button
+                  size="xs"
+                  variant="default"
+                  onClick={handleResetProgress}
+                >
+                  {t("modules.resetModule")}
+                </Button>
+              </>
+            )
+          }
+        />
+
+        {deckComplete ? (
+          <Alert
+            color={stats.unknown === 0 ? "success" : "brand"}
+            variant="light"
+            w="100%"
+          >
+            {stats.unknown === 0 ? (
+              reviewingMissed ? (
+                t("modules.missedReviewAllKnown")
+              ) : (
+                t("modules.moduleCompleteAllKnown")
+              )
+            ) : (
+              <Group justify="space-between" wrap="wrap" gap="xs">
+                <span>
+                  {reviewingMissed
+                    ? t("modules.missedReviewPartial", { count: stats.unknown })
+                    : t("modules.moduleCompletePartial", {
+                        count: stats.unknown,
+                      })}
+                </span>
+                <Button
+                  size="xs"
+                  variant="light"
+                  leftSection={<IconRepeat size={ICON_SIZE} />}
+                  onClick={() => dispatch(startMissedReview())}
+                >
+                  {reviewingMissed
+                    ? t("modules.missedReviewAgain")
+                    : t("modules.missedReviewButton", {
+                        count: missedWords.length,
+                      })}
+                </Button>
+              </Group>
+            )}
+          </Alert>
+        ) : null}
 
         {currentCard ? (
           <ModuleFlashcard
