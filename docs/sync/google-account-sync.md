@@ -4,57 +4,58 @@ The app can optionally back up progress to the user's own Google Drive. It remai
 
 ## Storage
 
-The app stores one hidden `progress.json` file in Drive's `appDataFolder`. It contains the syncable `localStorage` key/value snapshot produced by `src/utils/sync/legacy/legacyStorage.ts`.
+Progress lives in one persisted-state document (`src/types/schemas/persistedState.ts`): Unseen exercises with their answers, highlights, and flashcard marks; Modules with their global word progress; the synced preferences (readable font, answer shuffling, speech rate per language); and where each page was left. Every entry carries an `updatedAt` timestamp, and deleted entities stay as tombstones.
 
-The file is not visible in the user's normal Drive UI. The `drive.appdata` scope limits the app to its own hidden data.
+- **On the device** it is stored under the `english_progress_v2` localStorage key, written on every change. A document that fails validation is kept under `english_progress_v2_rejected` before the app falls back to the defaults. A first run saves the defaults straight away.
+- **In Drive** it is the hidden `progress-v2.json` file in the app's `appDataFolder`. The `drive.appdata` scope limits the app to its own hidden data, which is not visible in the user's normal Drive UI.
+
+Some settings stay on the device and are never synced (`src/store/deviceStorageKeys.ts`): dark mode, interface language, the chosen system voice per language, and the Google access token.
 
 ## Authentication
 
 Google Identity Services issues a browser access token through `@react-oauth/google`. The app also requests `userinfo.email` so the connected account can be identified in the UI.
 
-The token is stored locally and never included in the Drive snapshot. It normally lasts about one hour. A saved token is silently reissued once after a `401`; if that fails, the UI asks the user to reconnect.
+The token is stored locally and never included in the Drive file. It normally lasts about one hour. A saved token is silently reissued once after a `401`; if that fails, the UI asks the user to reconnect. A failed connect shows an error with copyable debug details (never the token).
 
-## Current synchronization policy
+## Synchronization
 
-The current implementation uses whole-file last-write-wins:
+Every trigger runs the same sync (`src/utils/sync/google/driveSync.ts`):
 
-- **Connect** — read Drive and apply its snapshot when present; otherwise upload local state.
-- **Boot with a saved token** — run the same pull-or-push flow before showing the app.
-- **Every 30 seconds while visible** — upload only when the local snapshot differs from the last successful sync; hidden tabs skip interval ticks.
-- **Page hidden** — attempt a final dirty push with `keepalive`.
-- **Page visible again** — run an immediate silent dirty push.
-- **Sync now** — run the dirty push immediately and show success or failure.
+1. Read `progress-v2.json` from Drive.
+2. Merge it with the running app's state: for each entry, the newer `updatedAt` wins, and Drive wins ties. The full merge rules are in [google-merge-sync-plan.md](./google-merge-sync-plan.md).
+3. If the merge changed anything, save it locally and reload the store from it, without a page reload.
+4. Upload the merge, skipped when Drive already holds the same state.
 
-In the current legacy strategy, the timer and visibility paths are push-only; pulls happen only on connect and boot. After v2 activation, every approved trigger runs read → merge → write, and this document will be updated to describe only that strategy.
+The merge and local apply run right after the read, so edits made while the upload is in flight are kept and go out with the next sync. A sync started while another is running shares that run.
 
-## Dirty check
+Triggers:
 
-`src/utils/sync/google/driveSync.ts` hashes the current payload and compares it with the hash recorded after the last successful pull or push. An unchanged device does not upload, preventing an idle stale tab from repeatedly overwriting another device.
+- **Connect**, and **boot with a saved token**, behind a full-page spinner.
+- **Every 30 seconds while the tab is visible**; hidden tabs skip it.
+- **Returning to the tab.**
+- **Sync now**, which shows a success or failure message.
 
-This does not merge simultaneous edits made on two devices. The last dirty device to upload wins the whole file.
+Background syncs fail silently; after a failed silent reissue they stop until the user reconnects.
+
+Two devices syncing at the same moment can overwrite each other's upload. The overwritten device still has its edits locally, so its next sync merges them back in. This is the accepted limitation of a single shared file.
 
 ## Drive API calls
 
 Requests use `Authorization: Bearer <access token>`.
 
-| Purpose  | Request                                                           |
-| -------- | ----------------------------------------------------------------- |
-| Locate   | `GET /drive/v3/files?spaces=appDataFolder&q=name='progress.json'` |
-| Download | `GET /drive/v3/files/{id}?alt=media`                              |
-| Create   | `POST /upload/drive/v3/files?uploadType=multipart`                |
-| Update   | `PATCH /upload/drive/v3/files/{id}?uploadType=media`              |
+| Purpose  | Request                                                                    |
+| -------- | -------------------------------------------------------------------------- |
+| Locate   | `GET /drive/v3/files?spaces=appDataFolder&q=name='progress-v2.json'`       |
+| Download | `GET /drive/v3/files/{id}?alt=media`                                       |
+| Create   | `POST /upload/drive/v3/files?uploadType=multipart`                         |
+| Update   | `PATCH /upload/drive/v3/files/{id}?uploadType=media`                       |
+| Rename   | `PATCH /drive/v3/files/{id}` (metadata only, to set an invalid file aside) |
 
 If duplicate files exist, the file with the newest `modifiedTime` is used. Older duplicates are left unchanged.
 
-## Snapshot validation
+## Validation
 
-The Drive boundary accepts a string-to-string object. `applySyncPayload()` writes only keys accepted by `isSyncableKey()`, preventing a Drive file from replacing device-local values such as the Google access token or installed system voices.
-
-A malformed or unreadable Drive file is treated as missing, so the current local snapshot is uploaded.
-
-## Rehydration
-
-After a successful pull, `useRehydrateFromStorage()` reloads Redux state, locale, and colour scheme from local storage without refreshing the page.
+Both copies are validated with the same Zod schema. A Drive file that isn't valid JSON or fails the schema is never overwritten: it is renamed to `progress-v2.invalid-<timestamp>.json.bck`, and a fresh `progress-v2.json` is created from the local state.
 
 ## No-account behavior
 
@@ -74,14 +75,6 @@ No client secret is used by the browser application.
 
 ## Testing
 
-Unit and component tests mock Google Identity Services and `fetch`. They cover:
+Unit and component tests mock Google Identity Services and `fetch`. They cover connect and disconnect, boot restore and the one-time token reissue, each trigger, merging and uploading, skipped uploads, invalid-file backups, and reconnect and notification behavior.
 
-- connect/disconnect;
-- existing-file pull and missing-file upload;
-- boot restoration and one-time token reissue;
-- dirty push behavior;
-- timer, page-hide, and manual triggers;
-- reconnect and notification behavior;
-- device-local key exclusion.
-
-A real two-device check is still required for Google infrastructure and browser-session behavior.
+`src/utils/sync/google/driveSync.integration.test.ts` runs two devices through a fake Drive (`test/fakeDrive.ts`) with the real transport and merge. A real two-device check is still needed for Google infrastructure and browser-session behavior.

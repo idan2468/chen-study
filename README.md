@@ -52,6 +52,8 @@ npm run dev
 - `format` / `format:check` — Prettier
 - `dupes` — [jscpd](https://github.com/kucherenko/jscpd) duplicate-code check over
   `src/` (see `.jscpd.json`)
+- `knip` — [knip](https://knip.dev) check for unused files, exports, and
+  dependencies, in default and production mode (see `knip.json`)
 
 ## Testing
 
@@ -81,13 +83,15 @@ npm run test
 
 ## Google Drive sync
 
-An optional, opt-in cross-device backup. Connecting a Google account stores
-the app's syncable `localStorage` keys in a single `progress.json` file in the
-app's hidden Drive `appDataFolder` — never a user-visible file, and no backend
-or database of our own. A 30-second timer, a push on tab-hide, and a manual
-"Sync now" button keep it up to date, with a dirty check so an unchanged
-snapshot never re-uploads. See `docs/sync/google-account-sync.md` for the full
-design and Google Cloud setup.
+An optional, opt-in cross-device backup. Connecting a Google account keeps
+the app's progress in a single `progress-v2.json` file in the app's hidden
+Drive `appDataFolder` — never a user-visible file, and no backend or database
+of our own. Each sync reads that file, merges it with the device's progress
+(the most recent change to each answer, mark, or setting wins), and uploads
+the result only when something changed. It runs on connect and boot, every 30
+seconds while the tab is visible, on returning to the tab, and on "Sync now".
+See `docs/sync/google-account-sync.md` for the full design and Google Cloud
+setup.
 
 ## Deployment
 
@@ -104,7 +108,7 @@ sub-path, `vite.config.ts` sets `base: "/chen-study/"`, and the app uses
 - `docs/speech/kokoro-tts.md` / `docs/speech/remove-neural-tts.md` — the neural TTS experiment
   and why it was removed (the app now speaks only through
   `window.speechSynthesis`, with a voice-ranking layer on top)
-- `docs/sync/google-account-sync.md` — the Google Drive sync design and rollout plan
+- `docs/sync/google-account-sync.md` — the Google Drive sync design and Google Cloud setup
 - `docs/sync/google-merge-sync-plan.md` — the approved merge-sync design
 - `docs/sync/google-merge-sync-process.md` — rollout progress and agent handoff SOT
 - `docs/sync/persistence-gaps.md` — audit of persisted and intentionally transient state
