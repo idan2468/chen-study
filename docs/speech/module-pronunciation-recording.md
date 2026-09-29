@@ -1,7 +1,7 @@
 # Design: module pronunciation recording
 
 **Status: proposed design. Assumes the v2 merge-sync design
-([google-merge-sync-plan.md](./google-merge-sync-plan.md)) is already
+([google-merge-sync-plan.md](../sync/google-merge-sync-plan.md)) is already
 implemented and active** — canonical models wrap values in `VersionedValue<T>`,
 the shared Drive v2 document is live, and the legacy `progress.json` path is
 retired.
@@ -87,7 +87,7 @@ source of truth, so a cleared cache simply re-downloads.
 
 ## UI
 
-On the module flashcard back (`src/pages/modules/ModuleFlashcard.tsx`), beside
+On the module flashcard back (`../../src/pages/modules/ModuleFlashcard.tsx`), beside
 the existing `SpeakButton`:
 
 - A **record / stop** control — an `ActionIcon` mirroring `SpeakButton`'s
@@ -109,7 +109,7 @@ than hand-rolled controls.
   unsupported / permission-denied so the UI can hide or disable the control
   (mirroring how `SpeakButton` returns `null` when speech is unsupported).
 - Recording Drive helpers next to `driveStore.ts` (e.g. under
-  `src/utils/sync/google/`): `uploadRecording(blob) -> fileId`,
+  `../../src/utils/sync/google`): `uploadRecording(blob) -> fileId`,
   `downloadRecording(fileId) -> Blob`, `deleteRecording(fileId)`.
 - An IndexedDB blob cache keyed by word.
 - A `recordings` slice / selectors following the Module-progress pattern, exposed

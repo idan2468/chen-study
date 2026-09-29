@@ -115,5 +115,5 @@ sub-path, `vite.config.ts` sets `base: "/chen-study/"`, and the app uses
 - `docs/sync/google-merge-sync-plan.md` — the approved merge-sync design
 - `docs/sync/google-merge-sync-process.md` — rollout progress and agent handoff SOT
 - `docs/sync/persistence-gaps.md` — audit of persisted and intentionally transient state
-- `docs/sync/module-pronunciation-recording.md` — proposed post-v2 design for recording and
+- `docs/speech/module-pronunciation-recording.md` — proposed post-v2 design for recording and
   syncing the user's own pronunciation of a module word
