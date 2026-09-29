@@ -1,4 +1,3 @@
-import type { Action, ThunkAction } from "@reduxjs/toolkit"
 import { combineSlices, configureStore } from "@reduxjs/toolkit"
 import { listenerMiddleware } from "@/store/listenerMiddleware"
 import { modulesSlice } from "@/store/slices/modulesSlice"
@@ -29,9 +28,3 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
 
 export type AppStore = ReturnType<typeof makeStore>
 export type AppDispatch = AppStore["dispatch"]
-export type AppThunk<ThunkReturnType = void> = ThunkAction<
-  ThunkReturnType,
-  RootState,
-  unknown,
-  Action
->
