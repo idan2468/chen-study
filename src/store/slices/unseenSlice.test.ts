@@ -8,7 +8,11 @@ import {
 import type { RootState } from "@/store/store"
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
-import { liveValues, toVersionedValue } from "@/utils/sync/versionedValue"
+import {
+  findLiveValue,
+  liveValues,
+  toVersionedValue,
+} from "@/utils/sync/versionedValue"
 import type { UnseenState } from "@/store/slices/unseenSlice"
 import {
   addExercises,
@@ -115,7 +119,8 @@ const baseState = (overrides: TestStateOverrides = {}): UnseenState => {
 
 /** A live exercise by ID, for details no selector exposes outside the current one. */
 const liveExercise = (state: RootState, exerciseId: string) =>
-  liveValues(state.unseen.exercises).find(
+  findLiveValue(
+    state.unseen.exercises,
     exercise => exercise.exerciseId === exerciseId,
   )
 
