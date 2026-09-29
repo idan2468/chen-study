@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-09-29
+
+### Changed
+
+- The project's docs are reorganized; the app itself is unchanged.
+
 ## [3.0.0] - 2026-09-29
 
 ### Changed
@@ -62,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional Google Drive backup of all progress, plus link-based sync.
 - Mobile layout down to 360px, deployed on GitHub Pages.
 
+[3.0.1]: https://github.com/idan2468/chen-study/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/idan2468/chen-study/compare/v2.1.0...v3.0.0
 [2.1.0]: https://github.com/idan2468/chen-study/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/idan2468/chen-study/compare/v1.0.0...v2.0.0
