@@ -32,9 +32,13 @@ const DEBUG_NAME_PATTERNS = [
 ]
 
 const getStagedFiles = () =>
-  execFileSync("git", ["diff", "--cached", "--name-only", "--diff-filter=ACM"], {
-    encoding: "utf8",
-  })
+  execFileSync(
+    "git",
+    ["diff", "--cached", "--name-only", "--diff-filter=ACM"],
+    {
+      encoding: "utf8",
+    },
+  )
     .split("\n")
     .map(line => line.trim())
     .filter(Boolean)

@@ -15,17 +15,17 @@ the feature.
 
 So the cost/benefit collapses:
 
-| Cost | |
-|---|---|
-| Download | 156 MB (WebGPU) / 88 MB (WASM) per user |
-| Bundle | +2.2 MB lazy JS chunk, +21 MB WASM emitted into `dist/` |
-| Runtime | Third-party CDN (jsDelivr) in the speech path |
-| Code | 2 modules, ~400 lines, an engine branch through the speech queue, 11 translation keys × 2 locales |
-| Benefit | Audio quality the user judged unusable |
+| Cost     |                                                                                                   |
+| -------- | ------------------------------------------------------------------------------------------------- |
+| Download | 156 MB (WebGPU) / 88 MB (WASM) per user                                                           |
+| Bundle   | +2.2 MB lazy JS chunk, +21 MB WASM emitted into `dist/`                                           |
+| Runtime  | Third-party CDN (jsDelivr) in the speech path                                                     |
+| Code     | 2 modules, ~400 lines, an engine branch through the speech queue, 11 translation keys × 2 locales |
+| Benefit  | Audio quality the user judged unusable                                                            |
 
 Not worth carrying. Remove it.
 
-## What is *kept*
+## What is _kept_
 
 **The voice-selection work (Step 8a) stays.** It is independent of kokoro, needs no
 download, and fixed a real bug: `utterance.voice` was never set, so the browser
@@ -45,10 +45,10 @@ After this removal the app has exactly one speech engine — `window.speechSynth
 
 ## Step 1 — Delete
 
-| Path | Note |
-|---|---|
-| `src/utils/neuralSpeech.ts` | model loading, warm-up, cache, prefetch |
-| `src/hooks/useNeuralPreload.ts` | preload-on-mount hook |
+| Path                            | Note                                    |
+| ------------------------------- | --------------------------------------- |
+| `src/utils/neuralSpeech.ts`     | model loading, warm-up, cache, prefetch |
+| `src/hooks/useNeuralPreload.ts` | preload-on-mount hook                   |
 
 ```bash
 npm uninstall kokoro-js
@@ -62,12 +62,13 @@ its transitive deps. Confirm nothing else pulls them: `npm ls @huggingface/trans
 This is the only structurally interesting edit; the rest is deletion.
 
 Remove:
+
 - the `prefetchSynthesis` / `synthesize` imports and the `NeuralVoice` type import
 - `export type SpeechEngine`
 - `engine` and `neuralVoice` from `SpeakQueueOptions`
 - `speakWithNeural` (the whole function)
 - `playAudioUrl` (only the neural path used an `<audio>` element)
-- `isEnglish` — check first: currently used *only* by `speakWithNeural` (lines 181,
+- `isEnglish` — check first: currently used _only_ by `speakWithNeural` (lines 181,
   214). If nothing else references it after the edit, delete it too.
 - the `stopActive` hook in `cancelSpeech`, which existed to pause that `<audio>`
   element. `window.speechSynthesis.cancel()` alone is then sufficient.
@@ -83,6 +84,7 @@ solely to reconcile Kokoro's pacing with the `speechSynthesis` slider.
 ## Step 3 — Settings state
 
 `src/store/slices/settingsSlice.ts` (12 references — the heaviest file):
+
 - drop `ttsEngine` and `neuralVoice` from `SettingsState`, `readInitialState`, the
   reducers, and the selectors
 - drop the `isNeuralVoice` guard and the `NEURAL_VOICES` / `DEFAULT_NEURAL_VOICE`
@@ -103,6 +105,7 @@ so behaviour is correct with no migration — the app falls back to the only eng
 there is.
 
 Two loose ends worth a decision:
+
 - `isSyncableKey` matches `english_*`, so the dead keys still travel in sync links.
   Harmless (the receiving app ignores them), but a one-line cleanup in
   `readInitialState` (`removeKey(...)` for both) keeps storage tidy.
@@ -184,7 +187,7 @@ order of effort:
 
 1. **Free, and the most promising:** on macOS/iOS, download the Enhanced or Premium
    voices in System Settings → Accessibility → Spoken Content. They then appear in
-   `getVoices()` and the existing ranking in `utils/voices.ts` will *already* select
+   `getVoices()` and the existing ranking in `utils/voices.ts` will _already_ select
    them ahead of the legacy defaults — no code change needed. This is the first thing
    to try.
 2. **Cloud TTS** (Google / Azure / ElevenLabs) — genuinely better, and the only
@@ -194,7 +197,6 @@ order of effort:
    not the integration — which worked, met the latency budget, and is documented in
    the post-mortem if a better small model appears.
 
-
 ---
 
 ## Verification log
@@ -202,6 +204,7 @@ order of effort:
 Executed and verified against this exact plan.
 
 **Automated:**
+
 ```
 type-check   clean
 lint         clean
@@ -209,6 +212,7 @@ dupes        0 clones
 test         75 → 75 passed
 build        single 664 kB JS chunk, no kokoro-*.js, no .wasm
 ```
+
 `npm uninstall kokoro-js` removed 46 packages total, confirming
 `@huggingface/transformers` and `phonemizer` had no other consumer.
 
@@ -217,6 +221,7 @@ pointing at this document (in `speech.ts`, `SpeechSettingsModal.tsx`,
 `settingsSlice.ts`) — no code, no imports, no dead types.
 
 **Manual, in-browser:**
+
 - A simulated previously-opted-in user (`english_tts_engine=neural` seeded before
   load) came up with **zero console errors**, and the two dead keys
   (`english_tts_engine`, `english_neural_voice`) were gone from localStorage after

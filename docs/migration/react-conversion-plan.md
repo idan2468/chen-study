@@ -2,19 +2,19 @@
 
 > **Repo layout update:** the app described below as living under `my-app/` was
 > later moved to the repo root, and the 3 original HTML files moved into `old/`.
-> References to `my-app/` throughout this doc describe the structure *at the time
-> each step was written* and are left as-is for historical accuracy.
+> References to `my-app/` throughout this doc describe the structure _at the time
+> each step was written_ and are left as-is for historical accuracy.
 
 ## Context
 
 `chen-study` is currently three standalone, self-contained HTML files (Hebrew RTL English-learning
 practice apps for Chen):
 
-| File | Size | What it is |
-|---|---|---|
-| `index.html` | 169 lines | Hub page: two link cards to the other two apps |
-| `Unseen New.html` | 2,124 lines | Reading practice: passage reader (TTS), multiple-choice questions, flashcards, JSON exercise loader |
-| `Modules Practice.html` | 1,557 lines | Phonics flashcards by module: tab strip, rule box, known/unknown tracking, JSON module loader |
+| File                    | Size        | What it is                                                                                          |
+| ----------------------- | ----------- | --------------------------------------------------------------------------------------------------- |
+| `index.html`            | 169 lines   | Hub page: two link cards to the other two apps                                                      |
+| `Unseen New.html`       | 2,124 lines | Reading practice: passage reader (TTS), multiple-choice questions, flashcards, JSON exercise loader |
+| `Modules Practice.html` | 1,557 lines | Phonics flashcards by module: tab strip, rule box, known/unknown tracking, JSON module loader       |
 
 Every file inlines its own `<style>` and `<script>` with mutable globals and `onclick=` attributes. The
 two app pages **already duplicate a lot**: dyslexia-font toggle, the entire sync-URL/modal family, TTS
@@ -34,7 +34,7 @@ links keep working.
 - **Routing:** add `react-router-dom`, `HashRouter`, routes `/`, `/unseen`, `/modules`.
 - **Component library: Mantine.** The user's stated criteria were CSS Modules support and strong RTL
   support (critical) — Mantine is the only one of the candidates that satisfies both, verified against
-  the docs: CSS Modules is Mantine's *recommended* styling approach (theme values are exposed as CSS
+  the docs: CSS Modules is Mantine's _recommended_ styling approach (theme values are exposed as CSS
   variables such as `var(--mantine-color-dark-7)` / `var(--mantine-spacing-md)`), and RTL is
   first-class via `DirectionProvider` + `dir="rtl"` on `<html>`, with a `@mixin rtl` in
   `postcss-preset-mantine` for our own CSS Modules. MUI and Chakra were ruled out because their
@@ -96,11 +96,13 @@ line; **no semicolons**, `arrowParens: "avoid"`; Redux hooks only from `store/ho
 ## Step 1 — Strip the template (do this first, in one commit)
 
 Delete:
+
 - `src/features/counter/` (`Counter.tsx`, `Counter.module.css`, `counterSlice.ts`, `counterSlice.test.ts`, `counterAPI.ts`)
 - `src/features/quotes/` (`Quotes.tsx`, `Quotes.module.css`, `quotesApiSlice.ts`) — and the whole `src/features/` dir
 - `src/logo.svg`, `src/App.css`, `src/App.test.tsx`, `src/index.css`
 
 Rewrite / move:
+
 - `src/app/{store,hooks,createAppSlice}.ts` → `src/store/`; delete `src/app/`
 - `store.ts`: drop `counterSlice` + `quotesApiSlice` from `combineSlices`, and drop the RTK Query
   bits (`setupListeners`, `.concat(quotesApiSlice.middleware)`) — this app has no server, all data is
@@ -122,6 +124,7 @@ include list (it already has `allowJs`/`checkJs`).
 
 `src/theme.ts` — `createTheme({ ... })` is where every colour/radius/font from the three HTML files
 lands, exactly once:
+
 - Override the `dark` colour tuple so Mantine's dark surfaces are the originals' values
   (`#0f172a` page bg, `#1e293b` card bg, `#334155` borders) instead of Mantine's defaults.
 - `primaryColor`: a custom `brand` 10-shade scale seeded from `#38bdf8` / `#0284c7`; add
@@ -145,6 +148,7 @@ default `mantine-color-scheme` key — so returning users keep their preference 
 still apply. Add `<ColorSchemeScript defaultColorScheme="dark">` to avoid a flash on load.
 
 `styles/global.css` holds only what the theme cannot:
+
 1. `body.dyslexiaFont { --mantine-font-family: 'Lexend', …; letter-spacing; word-spacing; line-height }`
    — overriding the Mantine font variable in one rule replaces the entire duplicated
    `body.dyslexia-font` cascade in both files (`Unseen New.html:630-652`, `Modules Practice.html:561-577`).
@@ -163,41 +167,41 @@ exactly one place.
 
 ### From Mantine (deleted, not ported)
 
-| Original CSS/JS | Replaced by |
-|---|---|
-| `.audio-btn`, `.action-btn`, `.reset-btn`, `.icon-btn`, `.a11y-btn`, `.card-nav-btn`, `.nav-btn`, `.filter-btn`, `.json-action-btn`, `.load-btn`, `.modal-btn`, `.assess-btn` (~12 near-identical button rules across the two files) | `Button` variants + `ActionIcon` |
-| The repeated "surface" rule (card bg + 1px border + radius + shadow) — 6× in Unseen, 4× in Modules | `Card` / `Paper` |
-| `.container`, `header`, and the `max-width:1100px` block repeated on 6 elements in Modules | `Container` / `Stack` / `Group` |
-| `index.html`'s `.grid` (`repeat(auto-fit, minmax(320px,1fr))`) | `SimpleGrid` |
-| Unseen `.tab-nav`/`.tab-btn`/`.tab-content` | `Tabs` |
-| Both files' byte-for-byte-duplicated `.modal-overlay`/`.modal-card`/`.modal-title`/`.modal-desc`/`.modal-btn-group` | `Modal` |
-| The 8 native `confirm()`/`alert()` calls (delete module/exercise, reset stats, sync notice, copy fallback) | `@mantine/modals` `openConfirmModal` / `notifications` |
-| `.status-msg`/`.msg-success`/`.msg-error` **and** Unseen's second parallel copy `.feedback`/`.correct`/`.incorrect` | `Alert` |
-| `.status-badge`/`.badge-known`/`.badge-unknown` (Unseen) + `.card-status-badge`/`.badge-*` (Modules) | `Badge` |
-| `.slider-container`/`.slider-label`/`.speed-value` + `input[type=range]` | `Slider` (label formatter replaces `updateSpeedLabel`) |
-| `#exercise-select` + its dark overrides | `Select` |
-| `.json-textarea` / `textarea` rules | `Textarea` |
-| Modules' `<details>` JSON drawer | `Accordion` (or `Collapse` + `useDisclosure`) |
-| `.progress`, `.card-counter` | `Text` / `Progress` |
-| `copySyncURL` + `copyJSONInputText` clipboard-with-`execCommand`-fallback (duplicated) | `useClipboard` |
-| The advertised-but-never-implemented Space/←/→/S/1/2 shortcuts (`Modules Practice.html:782-784`) | `useHotkeys` |
-| `openSyncModal`/`closeSyncModal` open-state juggling, `<details>` state | `useDisclosure` |
-| `applyDarkMode`/`toggleDarkMode` + the ~35 `body.dark-mode .x` override rules (`Unseen New.html:747-881`) | `useMantineColorScheme` + theme (see Step 2) |
+| Original CSS/JS                                                                                                                                                                                                                      | Replaced by                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| `.audio-btn`, `.action-btn`, `.reset-btn`, `.icon-btn`, `.a11y-btn`, `.card-nav-btn`, `.nav-btn`, `.filter-btn`, `.json-action-btn`, `.load-btn`, `.modal-btn`, `.assess-btn` (~12 near-identical button rules across the two files) | `Button` variants + `ActionIcon`                       |
+| The repeated "surface" rule (card bg + 1px border + radius + shadow) — 6× in Unseen, 4× in Modules                                                                                                                                   | `Card` / `Paper`                                       |
+| `.container`, `header`, and the `max-width:1100px` block repeated on 6 elements in Modules                                                                                                                                           | `Container` / `Stack` / `Group`                        |
+| `index.html`'s `.grid` (`repeat(auto-fit, minmax(320px,1fr))`)                                                                                                                                                                       | `SimpleGrid`                                           |
+| Unseen `.tab-nav`/`.tab-btn`/`.tab-content`                                                                                                                                                                                          | `Tabs`                                                 |
+| Both files' byte-for-byte-duplicated `.modal-overlay`/`.modal-card`/`.modal-title`/`.modal-desc`/`.modal-btn-group`                                                                                                                  | `Modal`                                                |
+| The 8 native `confirm()`/`alert()` calls (delete module/exercise, reset stats, sync notice, copy fallback)                                                                                                                           | `@mantine/modals` `openConfirmModal` / `notifications` |
+| `.status-msg`/`.msg-success`/`.msg-error` **and** Unseen's second parallel copy `.feedback`/`.correct`/`.incorrect`                                                                                                                  | `Alert`                                                |
+| `.status-badge`/`.badge-known`/`.badge-unknown` (Unseen) + `.card-status-badge`/`.badge-*` (Modules)                                                                                                                                 | `Badge`                                                |
+| `.slider-container`/`.slider-label`/`.speed-value` + `input[type=range]`                                                                                                                                                             | `Slider` (label formatter replaces `updateSpeedLabel`) |
+| `#exercise-select` + its dark overrides                                                                                                                                                                                              | `Select`                                               |
+| `.json-textarea` / `textarea` rules                                                                                                                                                                                                  | `Textarea`                                             |
+| Modules' `<details>` JSON drawer                                                                                                                                                                                                     | `Accordion` (or `Collapse` + `useDisclosure`)          |
+| `.progress`, `.card-counter`                                                                                                                                                                                                         | `Text` / `Progress`                                    |
+| `copySyncURL` + `copyJSONInputText` clipboard-with-`execCommand`-fallback (duplicated)                                                                                                                                               | `useClipboard`                                         |
+| The advertised-but-never-implemented Space/←/→/S/1/2 shortcuts (`Modules Practice.html:782-784`)                                                                                                                                     | `useHotkeys`                                           |
+| `openSyncModal`/`closeSyncModal` open-state juggling, `<details>` state                                                                                                                                                              | `useDisclosure`                                        |
+| `applyDarkMode`/`toggleDarkMode` + the ~35 `body.dark-mode .x` override rules (`Unseen New.html:747-881`)                                                                                                                            | `useMantineColorScheme` + theme (see Step 2)           |
 
 ### Hand-built shared components in `src/components/`
 
-| Component | Replaces | Notes |
-|---|---|---|
-| `SpeakButton` | the 5 near-identical TTS buttons in Unseen (`.q-speech-btn`, `.option-speech-btn`, `.word-audio-btn`, `.para-play`, `#main-play-btn`) + Modules `.audio-btn` — each reimplements the same play/stop toggle and `.playing` state | thin `ActionIcon` wrapper taking `ownerId` + `text`; all state from `speechSlice`, so the button is dumb |
-| `FlipCard` | Modules' real 3D flip (`perspective`/`rotateY`/`backface`) and Unseen's `display`-swap fake flip — unify on the 3D version (Unseen already declares an inert `perspective: 1000px`) | `front`, `back`, `flipped`, `onToggle`; the only genuinely custom CSS Module of the set |
-| `JsonLoader` | Unseen's `#tab-json` card and Modules' `<details>` drawer: textarea + status + copy/template/load buttons | props: `onParse(text) => {ok, message}`, `sampleJson`, `instructions` |
-| `TopBar` | `.top-bar` + `.a11y-btn` group in both files | dyslexia toggle + colour-scheme toggle + sync button + `children` slot for page-specific controls |
-| `SyncModal` | `openSyncModal`/`closeSyncModal`/`copySyncURL` + markup, duplicated verbatim | consumes `utils/syncUrl.ts` |
-| `DeletableTabs` | Modules' `.tab-btn` + `.tab-delete-btn` strip built imperatively by `renderTabButtons()` (`:1121-1143`) | `Tabs` + a `CloseButton` in each `Tabs.Tab`; also used for Unseen's static tabs without `onDelete` |
-| `StatCounts` | Unseen `.stats-bar` known/unknown + Modules 3-stat bar | `Group` of `Badge`s, counts passed in from selectors |
-| `hooks/useSpeech` + `utils/speech.ts` | `stopSpeech`, `speakTextSnippet`, `speakText`, `speakFromParagraph`, `speakQuestionAndOptions`, `playAudio`, `stopCardAudio`, `getSelectedSpeechRate`, Hebrew/English `lang` detection, 🔊/▶ stripping | see Step 5 |
-| `utils/syncUrl.ts` | `getSyncPayload`, `generateSyncURL`, `checkURLSync` — duplicated in both files | see Step 6 |
-| `store/storage.ts` | `getLibrary`/`saveLibrary`/`saveProgressToStorage`/`saveModulesToStorage` + ~12 ad-hoc try/catch `JSON.parse(localStorage…)` sites | |
+| Component                             | Replaces                                                                                                                                                                                                                        | Notes                                                                                                    |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `SpeakButton`                         | the 5 near-identical TTS buttons in Unseen (`.q-speech-btn`, `.option-speech-btn`, `.word-audio-btn`, `.para-play`, `#main-play-btn`) + Modules `.audio-btn` — each reimplements the same play/stop toggle and `.playing` state | thin `ActionIcon` wrapper taking `ownerId` + `text`; all state from `speechSlice`, so the button is dumb |
+| `FlipCard`                            | Modules' real 3D flip (`perspective`/`rotateY`/`backface`) and Unseen's `display`-swap fake flip — unify on the 3D version (Unseen already declares an inert `perspective: 1000px`)                                             | `front`, `back`, `flipped`, `onToggle`; the only genuinely custom CSS Module of the set                  |
+| `JsonLoader`                          | Unseen's `#tab-json` card and Modules' `<details>` drawer: textarea + status + copy/template/load buttons                                                                                                                       | props: `onParse(text) => {ok, message}`, `sampleJson`, `instructions`                                    |
+| `TopBar`                              | `.top-bar` + `.a11y-btn` group in both files                                                                                                                                                                                    | dyslexia toggle + colour-scheme toggle + sync button + `children` slot for page-specific controls        |
+| `SyncModal`                           | `openSyncModal`/`closeSyncModal`/`copySyncURL` + markup, duplicated verbatim                                                                                                                                                    | consumes `utils/syncUrl.ts`                                                                              |
+| `DeletableTabs`                       | Modules' `.tab-btn` + `.tab-delete-btn` strip built imperatively by `renderTabButtons()` (`:1121-1143`)                                                                                                                         | `Tabs` + a `CloseButton` in each `Tabs.Tab`; also used for Unseen's static tabs without `onDelete`       |
+| `StatCounts`                          | Unseen `.stats-bar` known/unknown + Modules 3-stat bar                                                                                                                                                                          | `Group` of `Badge`s, counts passed in from selectors                                                     |
+| `hooks/useSpeech` + `utils/speech.ts` | `stopSpeech`, `speakTextSnippet`, `speakText`, `speakFromParagraph`, `speakQuestionAndOptions`, `playAudio`, `stopCardAudio`, `getSelectedSpeechRate`, Hebrew/English `lang` detection, 🔊/▶ stripping                          | see Step 5                                                                                               |
+| `utils/syncUrl.ts`                    | `getSyncPayload`, `generateSyncURL`, `checkURLSync` — duplicated in both files                                                                                                                                                  | see Step 6                                                                                               |
+| `store/storage.ts`                    | `getLibrary`/`saveLibrary`/`saveProgressToStorage`/`saveModulesToStorage` + ~12 ad-hoc try/catch `JSON.parse(localStorage…)` sites                                                                                              |                                                                                                          |
 
 ---
 
@@ -211,12 +215,12 @@ Four slices — one per page plus two cross-cutting ones. Progress lives **insid
 slice rather than in its own slice: the two localStorage keys are a persistence detail the listener
 middleware handles, not a reason to split state. Nothing outside a page reads that page's progress.
 
-| Slice | State | Persisted key (unchanged from today) |
-|---|---|---|
-| `settings` | `{ dyslexiaFont: boolean, speechRate: number }` — colour scheme is Mantine's, not here | `dyslexia_font_enabled` + `dyslexia_font_enabled_modules` (write both for back-compat) |
-| `speech` | `{ ownerId: string \| null, queueIndex: number }` | not persisted |
-| `unseen` | `{ library: Record<exId, Exercise>, currentId: string, cardIndex: number, answers: Record<qId, {selected: number; correct: boolean}>, markedWords: Record<exId, string[]>, progress: Record<exId, Record<word, boolean>> }` | `english_exercise_library`, `english_current_exercise_id`, `current_english_exercise_data`, and `flashcards_status_<exerciseId>` (one key per exercise, as today) |
-| `modules` | `{ modules: Module[], currentModuleId: string, cardIndex: number, filterMissed: boolean, progress: Record<word, "known" \| "unknown"> }` | `english_reading_all_modules_v4` + `english_reading_practice_progress_v3` |
+| Slice      | State                                                                                                                                                                                                                       | Persisted key (unchanged from today)                                                                                                                              |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `settings` | `{ dyslexiaFont: boolean, speechRate: number }` — colour scheme is Mantine's, not here                                                                                                                                      | `dyslexia_font_enabled` + `dyslexia_font_enabled_modules` (write both for back-compat)                                                                            |
+| `speech`   | `{ ownerId: string \| null, queueIndex: number }`                                                                                                                                                                           | not persisted                                                                                                                                                     |
+| `unseen`   | `{ library: Record<exId, Exercise>, currentId: string, cardIndex: number, answers: Record<qId, {selected: number; correct: boolean}>, markedWords: Record<exId, string[]>, progress: Record<exId, Record<word, boolean>> }` | `english_exercise_library`, `english_current_exercise_id`, `current_english_exercise_data`, and `flashcards_status_<exerciseId>` (one key per exercise, as today) |
+| `modules`  | `{ modules: Module[], currentModuleId: string, cardIndex: number, filterMissed: boolean, progress: Record<word, "known" \| "unknown"> }`                                                                                    | `english_reading_all_modules_v4` + `english_reading_practice_progress_v3`                                                                                         |
 
 `modules.progress` stays **keyed globally by word, not per module** — that's deliberate existing
 behaviour: `HAT` appears in `mod1`, `rev1_2` and `rev1_3` and shares one status across all three.
@@ -291,7 +295,7 @@ pages are built with Hebrew string literals inline, then a single extraction pas
 them behind a translation lookup. That pass touches every component file, which is the
 cost of doing it late rather than up front.
 
-**Scope boundary — chrome only.** The learning *content* is not translatable: module
+**Scope boundary — chrome only.** The learning _content_ is not translatable: module
 `rule` HTML, Hebrew nikud transliterations, Hebrew glosses, and the Hebrew question
 titles are the material being taught. Localization covers UI chrome only — buttons,
 labels, headings, tab names, status and validation messages, dialog copy (~120
@@ -300,6 +304,7 @@ strings).
 **Consequence for RTL, which needs care:** today `dir="rtl"` is global. With an
 English UI the chrome becomes LTR while the content stays Hebrew RTL, so direction
 can no longer be a single app-wide value:
+
 - Chrome direction follows the locale — set `<html dir>` and Mantine's
   `DirectionProvider` (`useDirection().setDirection`) from the selected language.
 - Hebrew content islands (`RuleBox`, card `he`/`meaning`, question titles) get an
@@ -319,6 +324,7 @@ also stop using a Hebrew default and fall back to the id — a name that gets st
 shouldn't be frozen in whichever language the UI happened to be in.
 
 Also in this step:
+
 - Locale persisted under `english_locale` (the `english_` prefix means it rides along
   with sync links, consistent with the other keys).
 - A language toggle in `TopBar`, next to the dyslexia and colour-scheme toggles.
@@ -344,7 +350,7 @@ every good free/offline neural TTS engine is **English-only**.
   Transformers.js. Free for personal use. No Hebrew.
 - **Piper** — no Hebrew either (its own issue notes the only open Hebrew model,
   `mms-tts-heb`, is poor quality), and the original repo was archived in Oct 2025.
-- **Cloud (Google / Azure / ElevenLabs)** — best quality *and* Hebrew, but an API key
+- **Cloud (Google / Azure / ElevenLabs)** — best quality _and_ Hebrew, but an API key
   cannot be safely embedded in a static client-side app, and "free" means a monthly
   quota. Rejected.
 
@@ -357,6 +363,7 @@ for question titles.
 There is a real gap in the current implementation: `useSpeech` sets `utterance.lang`
 but never sets `utterance.voice`, so the browser picks its default voice for the
 language, which is very often the worst one installed. Add a voice layer:
+
 - Enumerate `speechSynthesis.getVoices()` (async — it populates on the
   `voiceschanged` event, which must be handled or the first call returns `[]`).
   Because that is async, the resolver must also re-read `getVoices()` synchronously at
@@ -371,7 +378,7 @@ language, which is very often the worst one installed. Add a voice layer:
   **no** Enhanced/Premium/Google/Microsoft voice was installed at all and every English
   voice scored 0–1. Weight `voice.default` well above the no-signal case so the OS
   default wins there, since it is always a real, intelligible voice.
-- Set `utterance.lang` from the *resolved voice's* locale, not the detected text locale,
+- Set `utterance.lang` from the _resolved voice's_ locale, not the detected text locale,
   so choosing a British voice does not leave `lang` claiming `en-US`.
 - Honest expectation: on a machine with no enhanced voices installed this step changes
   nothing audible. Its value is (a) not picking a novelty voice, and (b) paying off as
@@ -388,11 +395,12 @@ seam, so no component changes.
 
 **GitHub Pages compatibility is a hard requirement (user-stated), and was verified
 before committing to this design:**
-- **WebGPU needs a secure context (HTTPS) but *not* cross-origin isolation.** Pages
+
+- **WebGPU needs a secure context (HTTPS) but _not_ cross-origin isolation.** Pages
   serves over HTTPS, so WebGPU is available there — this is the fast path.
 - **Multi-threaded WASM silently degrades to single-threaded** without `COOP`/`COEP`,
-  which Pages cannot set. It still runs, just slower. So the rule is: *never depend on
-  `SharedArrayBuffer` or threading.* Configure `device: "webgpu"` with a single-threaded
+  which Pages cannot set. It still runs, just slower. So the rule is: _never depend on
+  `SharedArrayBuffer` or threading._ Configure `device: "webgpu"` with a single-threaded
   `wasm` fallback.
 - There is a known service-worker trick to inject `COOP`/`COEP` on static hosts, but it
   is a workaround we do not need if WebGPU is preferred — not worth the complexity.
@@ -407,6 +415,7 @@ before committing to this design:**
   anything about Pages.
 
 **Measured during implementation** (all verified in-browser, not assumed):
+
 - `dtype: "q8"` on **both** device paths. The kokoro-js README suggests pairing WebGPU
   with `fp32`, but that weight file measured **326MB** (`content-length: 325532232`) and
   took 82s — four times what the UI promised the user. `q8` measured **88MB**
@@ -437,15 +446,15 @@ need changing.
 Concrete candidates already visible (to be re-surveyed at the time, not taken as a
 fixed list):
 
-| Location | Problem | Outcome |
-|---|---|---|
-| `pages/modules/moduleImport.ts`, `pages/unseen/exerciseImport.ts` | One long function doing parse + shape-check + per-item normalization + id generation, with nested loops and early returns interleaved | **Done.** `normalizeCard`/`resolveModuleId`/`resolveTabName` and `normalizeQuestion`/`normalizeFlashcard`/`resolveExerciseId` extracted symmetrically in both files; each top-level function is now parse → validate → map. All 25 import tests pass unchanged. |
-| `pages/modules/ModulesPage.tsx` | Three dialog handlers plus a large JSX tree in one component | **Skipped, on re-survey.** The code-quality pass's `confirmDanger`/`notifyCannotDelete` extraction already fixed the actual pain point — each handler is now 5-15 lines of "build a message, delegate." What remains is a page composing five already-extracted components; splitting further would relocate code without reducing what a reader holds in their head. |
-| `pages/unseen/ParagraphReader.tsx` | The token `map` computes ids, cleans words, derives four class flags and wires two handlers inline; `readingIndex` is a non-obvious IIFE | **Done**, with one naming correction: `resolveReadingIndex` is a plain function, not a hook (`useReadingIndex`) — it holds no state, just derives a value from two inputs, so calling it a hook would misdescribe it. `useWordTapHandlers()` (genuinely stateful — owns the click-timer ref) and `PassageWord` were extracted as planned. Verified in-browser: single-click-speaks vs double-click-marks discrimination, and the reading highlight following paragraph-by-paragraph, both confirmed via manual step control. |
-| `pages/unseen/FlashcardsTab.tsx` | Stats bar + card + assessment + navigation + hotkeys in one component | **Skipped, on re-survey.** Same reasoning as `ModulesPage.tsx`: `AssessmentButtons` and `CardNavigation` (both already extracted) are composed directly, unwrapped — exactly matching how the sibling `ModuleFlashcard.tsx` composes them. A `FlashcardControls` wrapper now would be a pass-through with no logic of its own. |
-| `store/listenerMiddleware.ts` | The `unseen` effect performs four unrelated writes in sequence | **Done** exactly as planned. The `settings` and `modules` effects were left alone — each of their writes is already a single `if` + one `writeX` line, with nothing to extract. All 6 persistence tests (which assert exact keys written) pass unchanged. |
-| `App.tsx` | Three `useEffect`s with three unrelated purposes | **Done** exactly as planned. **Incidentally found a genuine pre-existing bug while verifying:** the sync-import notification never actually renders — confirmed the effect fires with the correct `importedKeyCount` and calls `notifications.show()`, but no notification ever appears in the DOM (all 6 `Notifications` position containers stay empty). Verified this is **not** something the refactor introduced: reverted to the exact pre-refactor code side-by-side and reproduced the identical failure. Left alone, deliberately, since Step 9 is behaviour-preserving only — flagged for a separate fix. |
-| `store/slices/*` `readInitialState` | Hydration mixes reading, merging and defaulting | **Done for `unseenSlice.ts` only.** `resolveCurrentExerciseId` (matching the `resolveModuleId`/`resolveTabName`/`resolveCurrentId` naming already used elsewhere) and `readAllFlashcardProgress` extracted; the id-resolution's two-stage fallback (optimistic legacy-id use, then a final re-validation against the library) preserved exactly and re-verified with a targeted edge case (a legacy mirror pointing at an id no longer in the library correctly falls through to the built-in default). `settingsSlice.ts` and `modulesSlice.ts` were left untouched — the former is already a flat sequence with no merging to extract, the latter already fully delegates to `mergeModules`/`resolveCurrentId`, which is the state this row was asking the others to reach. |
+| Location                                                          | Problem                                                                                                                                  | Outcome                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages/modules/moduleImport.ts`, `pages/unseen/exerciseImport.ts` | One long function doing parse + shape-check + per-item normalization + id generation, with nested loops and early returns interleaved    | **Done.** `normalizeCard`/`resolveModuleId`/`resolveTabName` and `normalizeQuestion`/`normalizeFlashcard`/`resolveExerciseId` extracted symmetrically in both files; each top-level function is now parse → validate → map. All 25 import tests pass unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `pages/modules/ModulesPage.tsx`                                   | Three dialog handlers plus a large JSX tree in one component                                                                             | **Skipped, on re-survey.** The code-quality pass's `confirmDanger`/`notifyCannotDelete` extraction already fixed the actual pain point — each handler is now 5-15 lines of "build a message, delegate." What remains is a page composing five already-extracted components; splitting further would relocate code without reducing what a reader holds in their head.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `pages/unseen/ParagraphReader.tsx`                                | The token `map` computes ids, cleans words, derives four class flags and wires two handlers inline; `readingIndex` is a non-obvious IIFE | **Done**, with one naming correction: `resolveReadingIndex` is a plain function, not a hook (`useReadingIndex`) — it holds no state, just derives a value from two inputs, so calling it a hook would misdescribe it. `useWordTapHandlers()` (genuinely stateful — owns the click-timer ref) and `PassageWord` were extracted as planned. Verified in-browser: single-click-speaks vs double-click-marks discrimination, and the reading highlight following paragraph-by-paragraph, both confirmed via manual step control.                                                                                                                                                                                                                                                  |
+| `pages/unseen/FlashcardsTab.tsx`                                  | Stats bar + card + assessment + navigation + hotkeys in one component                                                                    | **Skipped, on re-survey.** Same reasoning as `ModulesPage.tsx`: `AssessmentButtons` and `CardNavigation` (both already extracted) are composed directly, unwrapped — exactly matching how the sibling `ModuleFlashcard.tsx` composes them. A `FlashcardControls` wrapper now would be a pass-through with no logic of its own.                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `store/listenerMiddleware.ts`                                     | The `unseen` effect performs four unrelated writes in sequence                                                                           | **Done** exactly as planned. The `settings` and `modules` effects were left alone — each of their writes is already a single `if` + one `writeX` line, with nothing to extract. All 6 persistence tests (which assert exact keys written) pass unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `App.tsx`                                                         | Three `useEffect`s with three unrelated purposes                                                                                         | **Done** exactly as planned. **Incidentally found a genuine pre-existing bug while verifying:** the sync-import notification never actually renders — confirmed the effect fires with the correct `importedKeyCount` and calls `notifications.show()`, but no notification ever appears in the DOM (all 6 `Notifications` position containers stay empty). Verified this is **not** something the refactor introduced: reverted to the exact pre-refactor code side-by-side and reproduced the identical failure. Left alone, deliberately, since Step 9 is behaviour-preserving only — flagged for a separate fix.                                                                                                                                                           |
+| `store/slices/*` `readInitialState`                               | Hydration mixes reading, merging and defaulting                                                                                          | **Done for `unseenSlice.ts` only.** `resolveCurrentExerciseId` (matching the `resolveModuleId`/`resolveTabName`/`resolveCurrentId` naming already used elsewhere) and `readAllFlashcardProgress` extracted; the id-resolution's two-stage fallback (optimistic legacy-id use, then a final re-validation against the library) preserved exactly and re-verified with a targeted edge case (a legacy mirror pointing at an id no longer in the library correctly falls through to the built-in default). `settingsSlice.ts` and `modulesSlice.ts` were left untouched — the former is already a flat sequence with no merging to extract, the latter already fully delegates to `mergeModules`/`resolveCurrentId`, which is the state this row was asking the others to reach. |
 
 Guard against over-correction: a long function that is a flat, readable sequence of
 steps (`theme.ts`'s colour tuples, the translation catalogues) is **not** a target.
@@ -472,12 +481,16 @@ Vite's own ambient types (`node_modules/vite/client.d.ts`):
 
 ```ts
 type CSSModuleClasses = { readonly [key: string]: string }
-declare module '*.module.css'  { const classes: CSSModuleClasses }
-declare module '*.module.scss' { const classes: CSSModuleClasses }
+declare module "*.module.css" {
+  const classes: CSSModuleClasses
+}
+declare module "*.module.scss" {
+  const classes: CSSModuleClasses
+}
 ```
 
 Both extensions resolve to the same index-signature type. `noUncheckedIndexedAccess`
-(deliberately enabled in `tsconfig.app.json`) makes *any* index-signature access
+(deliberately enabled in `tsconfig.app.json`) makes _any_ index-signature access
 `string | undefined`, regardless of file extension — that is what `cx` exists to
 absorb (see its doc comment in `utils/cx.ts`). Changing `.css` to `.scss` changes
 nothing here.
@@ -551,6 +564,7 @@ test -- that is a different, deliberate convention (organised by subject, not by
 "testness") and is not in scope here.
 
 **Mechanical follow-through:**
+
 - `vite.config.ts`: `test.setupFiles` path updates to `"./test/setup.ts"`.
 - `tsconfig.app.json`: `include: ["src"]` becomes `["src", "test"]` -- it is the
   config with JSX + DOM libs, which `test/render.tsx` needs; `tsconfig.node.json`
@@ -719,6 +733,7 @@ Build steps 7 and 8 (the two pages) are independent once 1–6 exist.
 ## Verification
 
 Automated (from the repo root):
+
 - `npm run type-check` — TS strict + `noUnusedLocals`/`noUnusedParameters` clean.
 - `npm run lint` — the flat config is `strictTypeChecked` + `stylisticTypeChecked`; expect it to be picky.
 - `npm run format:check` — Prettier is `{ semi: false, arrowParens: "avoid" }`.
@@ -730,7 +745,7 @@ Automated (from the repo root):
   `CardNavigation` component.
   Two exclusions, both deliberate — flagging either would be a false positive:
   - `src/data/**` — generated seed data, legitimately repetitive by nature.
-  - `src/i18n/{he,en}.ts` — the catalogues are structurally parallel *by design*; that
+  - `src/i18n/{he,en}.ts` — the catalogues are structurally parallel _by design_; that
     parallelism is what makes a missing translation a type error.
 - `npm run test` — vitest, `typecheck.enabled: true`. New tests follow the deleted `counterSlice.test.ts`
   pattern (dispatch against `makeStore({ … })`) and `utils/test-utils.tsx`'s `renderWithProviders`
@@ -745,6 +760,7 @@ Automated (from the repo root):
   - `JsonLoader`, `DeletableTabs`, `FlipCard` component tests via accessible queries.
 
 Manual, side-by-side against the originals (`open "Unseen New.html"` next to `npm run dev`):
+
 - Hub: both cards navigate; hover states match.
 - Unseen: all 3 tabs; play whole passage (paragraph highlight + auto-scroll + stop); per-paragraph
   play; single-click a word to hear it vs double-click to highlight; vocab chips highlighted; answer a

@@ -21,16 +21,16 @@ other synced state today.
 
 ## Decisions taken
 
-| Decision | Choice |
-| --- | --- |
-| Recordings kept per word | **One — latest overwrites.** No history. |
-| Identity key | The English word (`ModuleCard.en`), matching `ModuleProgressRecord.word`. |
-| Where audio bytes live | A per-word binary file in the Drive `appDataFolder`, **not** in the v2 document. |
-| What the v2 document holds | Only a pointer (`driveFileId`), wrapped in `VersionedValue<T>`. |
-| Overwrite semantics | Upload new blob → repoint record → delete the previous Drive file. One file per word, bounded storage. |
-| Conflict resolution | Inherited from v2: last-write-wins on `updatedAt`; a deleted record clears the pointer. |
-| Cross-device playback | Lazy download from Drive when the card opens on another device. |
-| Scoring / grading | Out of scope — requires a backend or external API. |
+| Decision                   | Choice                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Recordings kept per word   | **One — latest overwrites.** No history.                                                               |
+| Identity key               | The English word (`ModuleCard.en`), matching `ModuleProgressRecord.word`.                              |
+| Where audio bytes live     | A per-word binary file in the Drive `appDataFolder`, **not** in the v2 document.                       |
+| What the v2 document holds | Only a pointer (`driveFileId`), wrapped in `VersionedValue<T>`.                                        |
+| Overwrite semantics        | Upload new blob → repoint record → delete the previous Drive file. One file per word, bounded storage. |
+| Conflict resolution        | Inherited from v2: last-write-wins on `updatedAt`; a deleted record clears the pointer.                |
+| Cross-device playback      | Lazy download from Drive when the card opens on another device.                                        |
+| Scoring / grading          | Out of scope — requires a backend or external API.                                                     |
 
 ## Canonical model
 
@@ -144,8 +144,6 @@ optional layer on top, not part of the core feature.
 - **UX:** reuse the recorded blob; after playback, send it to Azure via the
   token broker and show the returned score alongside the play controls. No new
   sync data is required — a score is transient feedback, not persisted state.
-
-
 
 - **HTTPS only.** `getUserMedia` requires a secure origin. GitHub Pages (prod)
   and `localhost` (dev) both qualify.

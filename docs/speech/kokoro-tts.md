@@ -22,11 +22,11 @@ that were **measured** rather than assumed, because two of them changed the desi
 The app teaches English reading, so speech quality matters. The default
 `window.speechSynthesis` voice is often the oldest voice installed on the device.
 
-| Option | License / cost | Hebrew | Verdict |
-|---|---|---|---|
-| **kokoro-js** (Kokoro 82M via Transformers.js) | Apache-2.0, free, runs locally | ✗ | **Chosen** |
-| Piper | No Hebrew voice; its own issue notes the only open Hebrew model (`mms-tts-heb`) is poor quality. Original repo archived Oct 2025 | ✗ | Rejected |
-| Google / Azure / ElevenLabs | Best quality *and* Hebrew, but needs an API key — unsafe to embed in a static client app — and "free" means a monthly quota | ✓ | Rejected |
+| Option                                         | License / cost                                                                                                                   | Hebrew | Verdict    |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- |
+| **kokoro-js** (Kokoro 82M via Transformers.js) | Apache-2.0, free, runs locally                                                                                                   | ✗      | **Chosen** |
+| Piper                                          | No Hebrew voice; its own issue notes the only open Hebrew model (`mms-tts-heb`) is poor quality. Original repo archived Oct 2025 | ✗      | Rejected   |
+| Google / Azure / ElevenLabs                    | Best quality _and_ Hebrew, but needs an API key — unsafe to embed in a static client app — and "free" means a monthly quota      | ✓      | Rejected   |
 
 Hebrew was the sticking point until the user confirmed **English-only is fine**,
 which is what unblocked kokoro-js.
@@ -116,8 +116,8 @@ let runToken = 0
 let stopActive: (() => void) | null = null
 
 export const cancelSpeech = () => {
-  runToken += 1          // invalidates any in-flight queue
-  stopActive?.()         // stops the <audio> element, if the neural path is playing
+  runToken += 1 // invalidates any in-flight queue
+  stopActive?.() // stops the <audio> element, if the neural path is playing
   stopActive = null
   window.speechSynthesis.cancel()
 }
@@ -160,11 +160,11 @@ Math.max(0.5, Math.min(1.5, options.rate + 0.5))
 Pages support was a hard requirement, and it constrains the config. Both facts
 below were checked rather than assumed:
 
-- **WebGPU requires a secure context (HTTPS) but *not* cross-origin isolation.**
+- **WebGPU requires a secure context (HTTPS) but _not_ cross-origin isolation.**
   Pages serves HTTPS, so WebGPU is available there. This is the fast path.
 - **Pages cannot set `COOP`/`COEP`**, so `SharedArrayBuffer` is unavailable and
   multi-threaded WASM **silently degrades to single-threaded** — slower, but it
-  runs. The rule that follows: *nothing may depend on threading.* Hence
+  runs. The rule that follows: _nothing may depend on threading._ Hence
   `device: webgpu ? "webgpu" : "wasm"` with no thread configuration.
 
 There is a known service-worker trick to inject `COOP`/`COEP` on static hosts. It
@@ -185,12 +185,12 @@ Pages enforces a 100MB per-file hard limit, and the response carries
 Requirement: **under 1 second from clicking play to hearing audio.** Kokoro meets
 it, but only with all four of the following. Measured on an Apple GPU:
 
-| Action | Generate | Click → playable |
-|---|---|---|
-| Flashcard word (`delicate`) | 232 ms | **236 ms** |
-| Same word again (cached) | 0 ms | **3 ms** |
-| Full passage paragraph | 936 ms | **938 ms** |
-| Flashcard press, through the real UI | — | **350 ms** |
+| Action                               | Generate | Click → playable |
+| ------------------------------------ | -------- | ---------------- |
+| Flashcard word (`delicate`)          | 232 ms   | **236 ms**       |
+| Same word again (cached)             | 0 ms     | **3 ms**         |
+| Full passage paragraph               | 936 ms   | **938 ms**       |
+| Flashcard press, through the real UI | —        | **350 ms**       |
 
 **1. Warm-up.** The first inference on a freshly loaded model pays for shader
 compilation and graph setup: **2.1 s**, versus **0.21 s** for the identical call
@@ -199,14 +199,14 @@ throwaway `"ok"` utterance, so the user's first real click never pays it.
 
 **2. Preload on page load, not on opt-in.** Originally the model was only loaded
 when the user flipped the engine on — which meant it was warm for that session
-only. On the *next* page load nothing happened until the first play, so a play
+only. On the _next_ page load nothing happened until the first play, so a play
 button sat silent for seconds with no explanation. `hooks/useNeuralPreload.ts`
 now loads and warms it on mount whenever `neural` is the saved engine. Weights are
 already in the browser cache by then, so this measures **0.82 s** in the
 background.
 
 **3. Prefetch the next item during playback.** `speakWithNeural` starts generating
-item *n+1* while item *n* is still playing, so a multi-paragraph read has no gap
+item _n+1_ while item _n_ is still playing, so a multi-paragraph read has no gap
 between paragraphs — every paragraph after the first resolves from cache in ~3 ms.
 
 **4. Cache by `(voice, speed, text)`.** Flashcards replay the same word
@@ -222,15 +222,15 @@ the kokoro-js README's suggestion to pair WebGPU with `fp32` was only about
 download size. That was wrong, and the user reported the result as slow and
 unintelligible. Measured, same sentence and voice:
 
-| dtype | Size | Generate | Zero-crossings/s |
-|---|---|---|---|
-| `q8` | 88 MB | 8.7 s | 4094 |
-| **`fp16`** | 156 MB | **2.1 s** | **2935** |
+| dtype      | Size   | Generate  | Zero-crossings/s |
+| ---------- | ------ | --------- | ---------------- |
+| `q8`       | 88 MB  | 8.7 s     | 4094             |
+| **`fp16`** | 156 MB | **2.1 s** | **2935**         |
 
 `q8` was **both four times slower and measurably noisier** — a zero-crossing rate
 that high indicates noise rather than speech. The cause: **ONNX Runtime's WebGPU
 backend has poor int8 kernel coverage**, so quantized weights are emulated there —
-slow *and* lossy. The README's pairing was load-bearing advice, not a size hint.
+slow _and_ lossy. The README's pairing was load-bearing advice, not a size hint.
 
 The fix is device-dependent precision:
 
@@ -240,7 +240,7 @@ const dtypeFor = (webgpu: boolean): "fp16" | "q8" => (webgpu ? "fp16" : "q8")
 
 - **WebGPU → `fp16`** (156 MB). GPUs want fp16 natively; `fp32` is 310 MB for no
   meaningful gain.
-- **WASM → `q8`** (88 MB). CPU int8 kernels *are* well supported in ORT WASM, so
+- **WASM → `q8`** (88 MB). CPU int8 kernels _are_ well supported in ORT WASM, so
   this is a genuine saving with no quality cliff.
 
 `estimatedDownloadMb()` reports the right figure per device, and the UI
@@ -253,23 +253,23 @@ Zero-crossing rate turned out to be a cheap, automatable proxy for it.
 
 ### Available weights, for reference
 
-| File | Size |
-|---|---|
-| `model.onnx` (fp32) | 310.5 MB |
-| `model_fp16.onnx` | 155.7 MB |
-| `model_q4f16.onnx` | 147.4 MB |
-| `model_uint8f16.onnx` | 108.9 MB |
-| `model_quantized.onnx` (q8) | 88.1 MB |
-| `model_q8f16.onnx` | 82.0 MB |
+| File                        | Size     |
+| --------------------------- | -------- |
+| `model.onnx` (fp32)         | 310.5 MB |
+| `model_fp16.onnx`           | 155.7 MB |
+| `model_q4f16.onnx`          | 147.4 MB |
+| `model_uint8f16.onnx`       | 108.9 MB |
+| `model_quantized.onnx` (q8) | 88.1 MB  |
+| `model_q8f16.onnx`          | 82.0 MB  |
 
 ---
 
 ## Settings and persistence
 
-| Key | Value |
-|---|---|
-| `english_tts_engine` | `"system"` (default) or `"neural"` |
-| `english_neural_voice` | Kokoro voice id, e.g. `af_heart` |
+| Key                    | Value                                                        |
+| ---------------------- | ------------------------------------------------------------ |
+| `english_tts_engine`   | `"system"` (default) or `"neural"`                           |
+| `english_neural_voice` | Kokoro voice id, e.g. `af_heart`                             |
 | `english_system_voice` | `voiceURI` of the chosen system voice, `""` = best available |
 
 The `english_` prefix is not cosmetic — it is what makes these keys ride along
@@ -296,7 +296,7 @@ play button isn't a silent wait. If the download fails, the engine reverts to
 
 Worth checking specifically:
 
-- The `kokoro-js` chunk is requested only *after* opting in (Network tab).
+- The `kokoro-js` chunk is requested only _after_ opting in (Network tab).
 - A Hebrew question title on the Unseen page still speaks while the neural engine
   is active.
 - Pressing another play button mid-sentence stops the first one immediately.
@@ -308,6 +308,6 @@ Worth checking specifically:
 
 ### Known console noise
 
-ONNX Runtime logs two `VerifyEachNodeIsAssignedToAnEp` notices at *error* level on
+ONNX Runtime logs two `VerifyEachNodeIsAssignedToAnEp` notices at _error_ level on
 WebGPU ("Some nodes were not assigned to the preferred execution providers"). They
 are informational, come from the library rather than this app, and are expected.
