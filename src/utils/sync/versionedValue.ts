@@ -2,7 +2,7 @@ import type { VersionedValue } from "@/types/versionedValue"
 import type { IsoTimestamp } from "@/utils/sync/timestamp"
 import { compareTimestamps, toIsoTimestamp } from "@/utils/sync/timestamp"
 
-/** Older than any real edit, for values that predate versioning (built-ins, legacy storage). */
+/** Older than any real edit, for the defaults a new user starts from. */
 export const INITIAL_UPDATED_AT = toIsoTimestamp(new Date(0))
 
 export const toVersionedValue = <T>(

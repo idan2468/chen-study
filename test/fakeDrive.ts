@@ -149,7 +149,6 @@ export const createFakeDrive = ({
     fetch,
     files,
     requests,
-    addFile,
     fileNamed,
     /** Parses a JSON file's content, e.g. `progress-v2.json`. */
     readJson: (name: string): unknown => {

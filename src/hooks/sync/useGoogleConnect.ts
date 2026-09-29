@@ -28,9 +28,9 @@ type PendingLogin =
 
 /**
  * Connecting (by click, or silently at boot with a saved token) runs a full
- * `syncWithDrive`: merging with Drive and rehydrating the running app. A 401 at boot triggers one silent
- * GIS re-issue before falling back to signed-out. See
- * docs/sync/google-account-sync.md.
+ * `syncWithDrive`: merging with Drive and rehydrating the running app. A 401
+ * at boot triggers one silent GIS re-issue before falling back to signed-out.
+ * See docs/sync/google-account-sync.md.
  */
 export const useGoogleConnect = () => {
   const { t } = useTranslation()

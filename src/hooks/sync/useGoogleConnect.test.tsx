@@ -6,7 +6,6 @@ import type {
   UseGoogleLoginOptionsImplicitFlow,
 } from "@react-oauth/google"
 import i18next from "i18next"
-import { storeTestLocale } from "@test/helpers"
 import { renderWithProviders } from "@test/render"
 import { useAppSelector } from "@/store/hooks"
 import { selectDyslexiaFont } from "@/store/slices/settingsSlice"
@@ -109,7 +108,6 @@ const Host = () => {
 
 beforeEach(() => {
   localStorage.clear()
-  storeTestLocale()
   vi.mocked(useGoogleLogin).mockClear()
   latestLoginFn.mockClear()
   latestLoginOptions = undefined

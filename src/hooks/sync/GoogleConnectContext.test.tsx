@@ -1,6 +1,5 @@
 import { renderHook, screen, waitFor } from "@testing-library/react"
 import i18next from "i18next"
-import { storeTestLocale } from "@test/helpers"
 import { renderWithProviders } from "@test/render"
 import { setAccessToken } from "@/utils/sync/google/googleAuth"
 import {
@@ -40,7 +39,6 @@ const Consumer = () => {
 
 beforeEach(() => {
   localStorage.clear()
-  storeTestLocale()
   vi.stubGlobal("fetch", vi.fn())
 })
 
