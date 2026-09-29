@@ -11,7 +11,7 @@ import {
   reloadFromStorage,
   selectPersistedState,
 } from "@/store/persistedState"
-import { markCard, selectModulesProgress } from "@/store/slices/modulesSlice"
+import { markCard, selectDisplayedProgress } from "@/store/slices/modulesSlice"
 import type { AppStore } from "@/store/store"
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
@@ -60,7 +60,7 @@ const sync = (store: AppStore) =>
   )
 
 const progressOf = (device: Device) =>
-  onDevice(device, store => selectModulesProgress(store.getState()))
+  onDevice(device, store => selectDisplayedProgress(store.getState()))
 
 const driveState = () => drive.readJson(V2_FILE) as PersistedState | undefined
 

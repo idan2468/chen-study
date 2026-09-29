@@ -261,11 +261,9 @@ export const {
   prevFlashcard,
 } = unseenSlice.actions
 
-export const {
-  selectExerciseEntries,
-  selectCurrentExerciseId,
-  selectFlashcardIndex,
-} = unseenSlice.selectors
+export const { selectCurrentExerciseId } = unseenSlice.selectors
+
+const { selectExerciseEntries, selectFlashcardIndex } = unseenSlice.selectors
 
 /* ---------------------------------------------------------------- *
  * Derived state.
@@ -278,41 +276,12 @@ const toKnownByWord = (
     liveValues(progress).map(({ word, isKnown }) => [word, isKnown]),
   )
 
-export const selectExercises = createSelector(
-  [selectExerciseEntries],
-  liveValues,
-)
+const selectExercises = createSelector([selectExerciseEntries], liveValues)
 
 export const selectCurrentExercise = createSelector(
   [selectExercises, selectCurrentExerciseId],
   (exercises, currentId) =>
     exercises.find(exercise => exercise.exerciseId === currentId),
-)
-
-export const selectLibrary = createSelector([selectExercises], exercises =>
-  Object.fromEntries(
-    exercises.map(exercise => [exercise.exerciseId, exercise]),
-  ),
-)
-
-export const selectAllMarkedWords = createSelector(
-  [selectExercises],
-  exercises =>
-    Object.fromEntries(
-      exercises.map(exercise => [
-        exercise.exerciseId,
-        liveValues(exercise.highlights).map(({ word }) => word),
-      ]),
-    ),
-)
-
-export const selectAllProgress = createSelector([selectExercises], exercises =>
-  Object.fromEntries(
-    exercises.map(exercise => [
-      exercise.exerciseId,
-      toKnownByWord(exercise.flashcardProgress),
-    ]),
-  ),
 )
 
 export const selectAnswers = createSelector([selectCurrentExercise], exercise =>

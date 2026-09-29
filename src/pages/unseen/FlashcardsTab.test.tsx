@@ -2,10 +2,7 @@ import { screen, waitFor } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
 import type { UnseenExercise } from "@/types/unseenExercise"
 import type { RootState } from "@/store/store"
-import {
-  selectCurrentProgress,
-  selectFlashcardIndex,
-} from "@/store/slices/unseenSlice"
+import { selectCurrentProgress } from "@/store/slices/unseenSlice"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import { FlashcardsTab } from "@/pages/unseen/FlashcardsTab"
 
@@ -127,7 +124,7 @@ describe("FlashcardsTab", () => {
     // no-op: `nextFlashcard` already clamps at the last index, same as
     // clicking "Next" directly would.
     await new Promise(resolve => setTimeout(resolve, 300))
-    expect(selectFlashcardIndex(store.getState())).toBe(
+    expect(store.getState().unseen.cardIndex.value).toBe(
       exercise.flashcards.length - 1,
     )
   })

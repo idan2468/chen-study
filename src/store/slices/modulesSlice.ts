@@ -319,11 +319,12 @@ export const {
   deleteModule,
 } = modulesSlice.actions
 
-export const {
+export const { selectCurrentModuleId, selectFilterMissed } =
+  modulesSlice.selectors
+
+const {
   selectModuleEntries,
-  selectCurrentModuleId,
   selectModuleCardIndex,
-  selectFilterMissed,
   selectMissedReview,
   selectModuleProgressEntries,
 } = modulesSlice.selectors
@@ -335,7 +336,7 @@ export const {
 
 export const selectModules = createSelector([selectModuleEntries], liveValues)
 
-export const selectModulesProgress = createSelector(
+const selectModulesProgress = createSelector(
   [selectModuleProgressEntries],
   toStatusByWord,
 )

@@ -5,9 +5,10 @@ import {
   selectPersistedState,
   writeLocalPersistedState,
 } from "@/store/persistedState"
+import type { RootState } from "@/store/store"
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
-import { toVersionedValue } from "@/utils/sync/versionedValue"
+import { liveValues, toVersionedValue } from "@/utils/sync/versionedValue"
 import type { UnseenState } from "@/store/slices/unseenSlice"
 import {
   addExercises,
@@ -16,18 +17,14 @@ import {
   markFlashcard,
   nextFlashcard,
   resetFlashcardProgress,
-  selectAllMarkedWords,
-  selectAllProgress,
   selectAnswers,
   selectCurrentExerciseId,
   selectCurrentProgress,
   selectExerciseOptions,
   selectCurrentFlashcard,
   selectCurrentMarkedWords,
-  selectFlashcardIndex,
   selectFlashcardPosition,
   selectFlashcardStats,
-  selectLibrary,
   selectVocabSet,
   switchExercise,
   toggleMarkedWord,
@@ -116,6 +113,15 @@ const baseState = (overrides: TestStateOverrides = {}): UnseenState => {
   }
 }
 
+/** A live exercise by ID, for details no selector exposes outside the current one. */
+const liveExercise = (state: RootState, exerciseId: string) =>
+  liveValues(state.unseen.exercises).find(
+    exercise => exercise.exerciseId === exerciseId,
+  )
+
+const exerciseIds = (state: RootState) =>
+  selectExerciseOptions(state).map(option => option.value)
+
 describe("markFlashcard", () => {
   test("marks a word known", () => {
     const store = makeStore({ unseen: baseState() })
@@ -192,7 +198,9 @@ describe("markFlashcard", () => {
 
     const state = store.getState()
     expect(selectCurrentProgress(state)).toStrictEqual({})
-    expect(selectAllProgress(state).other_1).toStrictEqual({ Cat: true })
+    expect(liveExercise(state, "other_1")?.flashcardProgress).toStrictEqual([
+      toVersionedValue({ word: "Cat", isKnown: true }),
+    ])
   })
 })
 
@@ -201,14 +209,10 @@ describe("markedWords", () => {
     const store = makeStore({ unseen: baseState() })
 
     store.dispatch(toggleMarkedWord("Maya"))
-    expect(
-      selectAllMarkedWords(store.getState())[defaultUnseenExercise.exerciseId],
-    ).toStrictEqual(["Maya"])
+    expect(selectCurrentMarkedWords(store.getState())).toStrictEqual(["Maya"])
 
     store.dispatch(toggleMarkedWord("Maya"))
-    expect(
-      selectAllMarkedWords(store.getState())[defaultUnseenExercise.exerciseId],
-    ).toStrictEqual([])
+    expect(selectCurrentMarkedWords(store.getState())).toStrictEqual([])
   })
 })
 
@@ -226,9 +230,9 @@ describe("library", () => {
 
     const state = store.getState()
     expect(selectCurrentExerciseId(state)).toBe("other_1")
-    expect(selectFlashcardIndex(state)).toBe(0)
+    expect(state.unseen.cardIndex.value).toBe(0)
     expect(selectAnswers(state)).toStrictEqual({})
-    expect(selectLibrary(state)[defaultId]?.answers).toStrictEqual([
+    expect(liveExercise(state, defaultId)?.answers).toStrictEqual([
       toVersionedValue({ questionId: "q1", ...previousAnswers.q1 }),
     ])
   })
@@ -254,7 +258,7 @@ describe("library", () => {
     store.dispatch(addExercises([replacement]))
 
     expect(
-      selectLibrary(store.getState())[otherExercise.exerciseId],
+      liveExercise(store.getState(), otherExercise.exerciseId),
     ).toStrictEqual(replacement)
   })
 
@@ -272,16 +276,16 @@ describe("library", () => {
     store.dispatch(addExercises([otherExercise, thirdExercise]))
 
     const state = store.getState()
-    expect(Object.keys(selectLibrary(state))).toStrictEqual([
+    expect(exerciseIds(state)).toStrictEqual([
       defaultUnseenExercise.exerciseId,
       "other_1",
       "third_1",
     ])
     expect(selectCurrentExerciseId(state)).toBe("other_1")
-    expect(selectFlashcardIndex(state)).toBe(0)
+    expect(state.unseen.cardIndex.value).toBe(0)
     expect(selectAnswers(state)).toStrictEqual({})
     expect(
-      selectLibrary(state)[defaultUnseenExercise.exerciseId]?.answers,
+      liveExercise(state, defaultUnseenExercise.exerciseId)?.answers,
     ).toStrictEqual([
       toVersionedValue({ questionId: "q1", selected: 0, correct: true }),
     ])
@@ -294,10 +298,10 @@ describe("library", () => {
     store.dispatch(addExercises([otherExercise, thirdExercise, finalOther]))
 
     const state = store.getState()
-    expect(selectLibrary(state)[otherExercise.exerciseId]).toStrictEqual(
+    expect(liveExercise(state, otherExercise.exerciseId)).toStrictEqual(
       finalOther,
     )
-    expect(Object.keys(selectLibrary(state))).toStrictEqual([
+    expect(exerciseIds(state)).toStrictEqual([
       defaultUnseenExercise.exerciseId,
       otherExercise.exerciseId,
       thirdExercise.exerciseId,
@@ -309,7 +313,7 @@ describe("library", () => {
     const store = makeStore({ unseen: baseState() })
     store.dispatch(deleteExercise(defaultUnseenExercise.exerciseId))
 
-    expect(Object.keys(selectLibrary(store.getState()))).toHaveLength(1)
+    expect(exerciseIds(store.getState())).toHaveLength(1)
   })
 
   test("deleting the active exercise selects another and drops its data", () => {
@@ -331,9 +335,7 @@ describe("library", () => {
     expect(selectCurrentExerciseId(state)).toBe(
       defaultUnseenExercise.exerciseId,
     )
-    expect(selectAllProgress(state).other_1).toBeUndefined()
-    expect(selectAllMarkedWords(state).other_1).toBeUndefined()
-    expect(selectLibrary(state).other_1).toBeUndefined()
+    expect(liveExercise(state, "other_1")).toBeUndefined()
   })
 })
 
@@ -547,7 +549,7 @@ describe("reloadFromStorage", () => {
     const state = store.getState()
     expect(selectCurrentExerciseId(state)).toBe("other_1")
     // Built-ins are only the default for an empty state; v2 is used as stored.
-    expect(selectLibrary(state)).toStrictEqual({ other_1: otherExercise })
+    expect(liveValues(state.unseen.exercises)).toStrictEqual([otherExercise])
     expect(selectCurrentProgress(state)).toStrictEqual({})
   })
 

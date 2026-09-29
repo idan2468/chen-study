@@ -28,14 +28,12 @@ import {
   selectActiveCards,
   selectCurrentModuleId,
   selectDisplayedProgress,
-  selectModuleCardIndex,
   selectModuleCardPosition,
   selectModuleOptions,
   selectMissedWordsAcrossModules,
   selectModule,
   selectModuleStats,
   selectModules,
-  selectModulesProgress,
   selectReviewingMissed,
   startMissedReview,
   toggleFilterMissed,
@@ -126,7 +124,7 @@ describe("progress", () => {
     const store = makeStore({ modules: baseState() })
     store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
 
-    expect(selectModulesProgress(store.getState())).toStrictEqual({
+    expect(selectDisplayedProgress(store.getState())).toStrictEqual({
       [firstCard.en]: CardStatus.Known,
     })
   })
@@ -137,7 +135,7 @@ describe("progress", () => {
     store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
     store.dispatch(markCard({ word: firstCard.en, isKnown: true }))
 
-    expect(selectModulesProgress(store.getState())[firstCard.en]).toBe(
+    expect(selectDisplayedProgress(store.getState())[firstCard.en]).toBe(
       CardStatus.Known,
     )
   })
@@ -160,7 +158,7 @@ describe("progress", () => {
     )
 
     expect(sharing.length).toBeGreaterThan(1)
-    expect(selectModulesProgress(state).QUIZ).toBe(CardStatus.Known)
+    expect(selectDisplayedProgress(state).QUIZ).toBe(CardStatus.Known)
   })
 
   test("resetting clears only the current module's words", () => {
@@ -178,7 +176,7 @@ describe("progress", () => {
     store.dispatch(resetCurrentModuleProgress())
 
     // ZAP is in custom_1; the second built-in's word must survive.
-    expect(selectModulesProgress(store.getState())).toStrictEqual({
+    expect(selectDisplayedProgress(store.getState())).toStrictEqual({
       ZAP: CardStatus.None,
       QUIZ: CardStatus.None,
       [secondCard.en]: CardStatus.Unknown,
@@ -235,7 +233,7 @@ describe("filterMissed", () => {
     expect(selectActiveCards(state).map(card => card.en)).toStrictEqual([
       "QUIZ",
     ])
-    expect(selectModuleCardIndex(state)).toBe(0)
+    expect(state.modules.cardIndex.value).toBe(0)
   })
 })
 
@@ -290,7 +288,7 @@ describe("missed review", () => {
       "ZAP",
       "QUIZ",
     ])
-    expect(selectModuleCardIndex(state)).toBe(0)
+    expect(state.modules.cardIndex.value).toBe(0)
   })
 
   test("shows every word untouched, whatever its saved status", () => {
@@ -334,7 +332,7 @@ describe("missed review", () => {
 
     const state = store.getState()
     expect(selectReviewingMissed(state)).toBe(false)
-    expect(selectModulesProgress(state)).toStrictEqual({
+    expect(selectDisplayedProgress(state)).toStrictEqual({
       ZAP: CardStatus.Known,
       QUIZ: CardStatus.Unknown,
     })
@@ -436,7 +434,7 @@ describe("hydration", () => {
   test("reopens with the saved progress", () => {
     makeStore().dispatch(markCard({ word: firstCard.en, isKnown: true }))
 
-    expect(selectModulesProgress(makeStore().getState())).toStrictEqual({
+    expect(selectDisplayedProgress(makeStore().getState())).toStrictEqual({
       [firstCard.en]: "known",
     })
   })
@@ -500,7 +498,7 @@ describe("reloadFromStorage", () => {
     })
     store.dispatch(reloadFromStorage())
 
-    expect(selectModulesProgress(store.getState())).toStrictEqual({
+    expect(selectDisplayedProgress(store.getState())).toStrictEqual({
       [firstCard.en]: "unknown",
     })
   })
@@ -535,7 +533,7 @@ describe("addModules", () => {
       replacement,
       otherCustomModule,
     ])
-    expect(selectModulesProgress(store.getState())).toStrictEqual({
+    expect(selectDisplayedProgress(store.getState())).toStrictEqual({
       ZAP: CardStatus.None,
       QUIZ: CardStatus.None,
       NEW: CardStatus.None,
@@ -618,7 +616,7 @@ describe("card navigation from a stale index", () => {
 
     store.dispatch(prevCard(length))
 
-    expect(selectModuleCardIndex(store.getState())).toBe(length - 2)
+    expect(store.getState().modules.cardIndex.value).toBe(length - 2)
   })
 
   test("next and previous on an empty list stay at 0", () => {
@@ -627,6 +625,6 @@ describe("card navigation from a stale index", () => {
     store.dispatch(nextCard(0))
     store.dispatch(prevCard(0))
 
-    expect(selectModuleCardIndex(store.getState())).toBe(0)
+    expect(store.getState().modules.cardIndex.value).toBe(0)
   })
 })
