@@ -1,7 +1,7 @@
 # Design: module pronunciation recording
 
 **Status: proposed design. Assumes the v2 merge-sync design
-([google-merge-sync-plan.md](../sync/google-merge-sync-plan.md)) is already
+([google-merge-sync-plan.md](../completed/sync/google-merge-sync-plan.md)) is already
 implemented and active** — canonical models wrap values in `VersionedValue<T>`,
 the shared Drive v2 document is live, and the legacy `progress.json` path is
 retired.
@@ -63,7 +63,7 @@ Audio blobs are stored as individual binary files in the same hidden
 - **Upload:** on stop, `MediaRecorder` produces a `Blob` (WebM/Opus). Upload it
   via the multipart Drive upload endpoint (the same `DRIVE_UPLOAD_URL` +
   `authorizedFetch` already used for the v2 document in
-  `src/utils/sync/google/driveStore.ts`), then write `driveFileId` into the
+  `src/utils/sync/google/driveFiles.ts`), then write `driveFileId` into the
   record and let the normal sync trigger push the updated v2 document.
 - **Overwrite:** upload the new blob first, repoint the record, then delete the
   old file id. Doing it in that order means a mid-way failure never leaves a
@@ -108,7 +108,7 @@ than hand-rolled controls.
   `MediaRecorder`, exposes `start` / `stop` and the resulting `Blob`, and reports
   unsupported / permission-denied so the UI can hide or disable the control
   (mirroring how `SpeakButton` returns `null` when speech is unsupported).
-- Recording Drive helpers next to `driveStore.ts` (e.g. under
+- Recording Drive helpers next to `driveFiles.ts` (e.g. under
   `../../src/utils/sync/google`): `uploadRecording(blob) -> fileId`,
   `downloadRecording(fileId) -> Blob`, `deleteRecording(fileId)`.
 - An IndexedDB blob cache keyed by word.

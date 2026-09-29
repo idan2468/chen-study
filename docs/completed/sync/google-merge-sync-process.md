@@ -222,7 +222,7 @@ Each step's approved scope and review focus. Progress lives in [Completed](#comp
 ### Step 12 — Retire legacy migration and finalize docs
 
 - After known devices migrate and Step 11 is approved, delete legacy code/keys.
-- Update README and [google-account-sync.md](./google-account-sync.md).
+- Update README and [google-account-sync.md](../../sync/google-account-sync.md).
 - Review: no legacy imports remain; full CI and final manual smoke.
 
 ## Per-step gate

@@ -1,6 +1,6 @@
 /**
  * The one sync every trigger runs -- connect, boot, the visible-tab timer,
- * return-to-visible, and "Sync now" (see docs/sync/google-merge-sync-plan.md).
+ * return-to-visible, and "Sync now" (see docs/completed/sync/google-merge-sync-plan.md).
  */
 import objectHash from "object-hash"
 import { writeLocalPersistedState } from "@/store/persistedState"

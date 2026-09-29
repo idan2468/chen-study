@@ -1,6 +1,6 @@
 # Plan: merge Google Drive and local progress
 
-**Status: approved design. Implementation progress is tracked only in [google-merge-sync-process.md](./google-merge-sync-process.md).**
+**Status: completed.** Implemented and shipped across v2.0.0–v3.0.0; the rollout is recorded in [google-merge-sync-process.md](./google-merge-sync-process.md).
 
 ## Approved design
 

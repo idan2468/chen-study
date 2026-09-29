@@ -1,5 +1,7 @@
 # Component testing plan
 
+**Status: in progress.** Rollout step 1 (the test-infra gaps), Phase 1, Phase 2, and Phase 4's `TopBar` tests are done. Phase 3 (`ModulesPage`, `QuestionCard`, `JsonLoader`) and Phase 4's RTL/LTR smoke test are still open.
+
 ## Why
 
 Verifying UI behavior has so far meant manually driving a browser (chrome-devtools
@@ -177,4 +179,4 @@ much it costs to break silently.
    the suite grows large enough to want to run logic vs. component tests
    separately in CI.
 
-This is a plan only — no test files or infra changes have been made yet.
+See the status at the top for which phases are done.
