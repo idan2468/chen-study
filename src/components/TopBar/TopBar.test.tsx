@@ -49,6 +49,20 @@ const renderTopBar = () =>
     </GoogleConnectProvider>,
   )
 
+/** A saved sign-in whose boot sync finds no `progress-v2.json` and creates it: email, locate, create. */
+const stubConnectedBoot = () => {
+  setAccessToken("ya29.token")
+  vi.mocked(fetch)
+    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
+}
+
+const findConnectedButton = () =>
+  screen.findByRole("button", {
+    name: i18next.t("common.googleConnected", { email: "chen@example.com" }),
+  })
+
 const mockMobileViewport = () => {
   vi.stubGlobal(
     "matchMedia",
@@ -181,12 +195,7 @@ test("hides the Sync now button while signed out", () => {
 })
 
 test("shows a Sync now button once connected, which uploads the persisted state on click", async () => {
-  setAccessToken("ya29.token")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" })) // boot's email fetch
-    // Boot syncs: no progress-v2.json yet, so it's created.
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
+  stubConnectedBoot()
 
   const { user } = renderTopBar()
   const syncButton = await screen.findByRole("button", {
@@ -208,11 +217,7 @@ test("shows a Sync now button once connected, which uploads the persisted state 
 })
 
 test("marks the Sync now button aria-busy (spinning icon) while a sync is in flight", async () => {
-  setAccessToken("ya29.token")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
+  stubConnectedBoot()
 
   const { user } = renderTopBar()
   const syncButton = await screen.findByRole("button", {
@@ -241,11 +246,7 @@ test("marks the Sync now button aria-busy (spinning icon) while a sync is in fli
 })
 
 test("shows a success toast once the Sync now button completes a sync", async () => {
-  setAccessToken("ya29.token")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
+  stubConnectedBoot()
 
   const { user } = renderTopBar()
   const syncButton = await screen.findByRole("button", {
@@ -269,22 +270,10 @@ test("switches to tap-to-reconnect after a failed silent reissue, and tapping it
   // boot restore's `waitFor` polling and awaits below keep working), while
   // still letting us jump forward explicitly for the 30-second timer.
   vi.useFakeTimers({ shouldAdvanceTime: true })
-  setAccessToken("ya29.token")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
+  stubConnectedBoot()
 
   renderTopBar()
-  await waitFor(() => {
-    expect(
-      screen.getByRole("button", {
-        name: i18next.t("common.googleConnected", {
-          email: "chen@example.com",
-        }),
-      }),
-    ).toBeInTheDocument()
-  })
+  await findConnectedButton()
 
   vi.mocked(fetch)
     .mockResolvedValueOnce(filesResponse([]))
@@ -333,22 +322,10 @@ test("on mobile, shows a lost connection in the top row without opening the draw
   // still letting us jump forward explicitly for the 30-second timer.
   vi.useFakeTimers({ shouldAdvanceTime: true })
   mockMobileViewport()
-  setAccessToken("ya29.token")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
+  stubConnectedBoot()
 
   renderTopBar()
-  await waitFor(() => {
-    expect(
-      screen.getByRole("button", {
-        name: i18next.t("common.googleConnected", {
-          email: "chen@example.com",
-        }),
-      }),
-    ).toBeInTheDocument()
-  })
+  await findConnectedButton()
 
   vi.mocked(fetch)
     .mockResolvedValueOnce(filesResponse([]))
@@ -405,11 +382,7 @@ test("on mobile, opening the voice settings modal from the drawer closes the dra
 
 test("on mobile, connects Google from the top row and syncs, with Sync now still in the drawer", async () => {
   mockMobileViewport()
-  setAccessToken("ya29.token")
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-    .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(okResponse())
+  stubConnectedBoot()
 
   renderTopBar()
   await waitFor(() => {
