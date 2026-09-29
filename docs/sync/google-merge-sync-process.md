@@ -1,6 +1,6 @@
 # Implementation process: Google merge sync
 
-**Status: Steps 1–11.6 approved (released through v2.1.0); Step 12 is in progress on `retire-legacy-sync`.**
+**Status: complete. Steps 1–12 are approved; the last one shipped as v3.0.0.**
 
 **This file is the repository source of truth for rollout progress, commit IDs, validation results, review status, and the next step. Keep [google-merge-sync-plan.md](./google-merge-sync-plan.md) static as design documentation.**
 
@@ -49,7 +49,7 @@
     - Finding (resolved with a single-flight guard: a `syncWithDrive` call while one is running shares that run; two devices at once stays the reviewed limitation): overlapping syncs in one tab can each find Drive empty and both create `progress-v2.json`. Seen via React StrictMode's doubled boot effect in dev; in production it needs two overlapping syncs before Drive v2 exists. Duplicates resolve to the newest `modifiedTime` (the reviewed limitation), but the stale copy remains.
 
 - [x] Step 11.5 — audit what legacy removal leaves unused (docs only, no code), manually approved.
-  - Method: knip 6.38 in production mode (so exports used only by tests count as unused) on the tree, then again in a throwaway worktree with Step 12's removal simulated; every hit was checked by hand. Its list is Step 12's removal checklist below; its open decisions are resolved there.
+  - Method: knip 6.38 in production mode (so exports used only by tests count as unused) on the tree, then again in a throwaway worktree with Step 12's removal simulated; every hit was checked by hand. Its list is the removal checklist in Step 12's entry below; its open decisions are resolved there.
 - [x] Step 11.6 — strict persisted schema, repair-free hydration (`b05e4cc`, `1f5b161`, `1793a8f`, `14cf3de`, `59f7241`, `9d4bc21`, `5cdf4e5`, `b8b9e94`, `294b6ab`, `6bcdfe0`, `528bdc5`), 364 tests/full gate/review/manual approved; merged to `main` (`d0baf65`) and released as v2.1.0.
   - Decisions and results:
     - Goal: `loadFromStorage` only parses local v2 or falls back, with no repairs; the schema guarantees what the slices rely on. No backward compatibility is needed: every v2 document so far was written from already-clamped store state.
@@ -63,90 +63,74 @@
     - Validation: 364 tests, type-check (including forced `tsc -b --force`), lint, changed-file format, build, and diff checks pass.
     - Review: both findings accepted and applied (`294b6ab` one `liveIds` helper shared by the schema and the merge; `6bcdfe0` one plain test per section instead of a cast-heavy `test.each`).
     - Follow-up `528bdc5`: current IDs are repaired by the schema (see above); this supersedes `59f7241`'s merge-side repair, which is removed, and the schema no longer rejects a current ID that isn't live.
+- [x] Step 12 — retire legacy migration and finalize docs, 333 tests/full gate/review/manual approved; merged to `main` and released as v3.0.0.
+  - Branch: `retire-legacy-sync`, created with `--no-track` from `origin/main`.
+  - Decisions (2026-09-29, all by the user):
+    - Every device has migrated, so nothing reads the legacy keys or Drive's `progress.json` any more; a device still on legacy keys would start from the defaults.
+    - Drive's `progress.json` and each device's `sync_v2_activated` key are left in place: they're never read again, and no temporary cleanup code is added for them.
+    - The device-local keys move to `src/store/deviceStorageKeys.ts` as `DeviceStorageKeys`, with the same key strings.
+    - A first run still saves the defaults immediately (Step 11.6's rule, which the migration did until now): once the store is created, `main.tsx` writes its state when there's no valid local v2.
+    - A new user's empty state holds every built-in in canonical order, with the **first** module and the default exercise open at card 0. `PREFERRED_DEFAULT_MODULE_ID` (`mod3_short_i`) is dropped, a user-visible change noted in the changelog.
+    - `useRehydrateFromStorage` folds into `useSyncWithDrive` as `dispatch(reloadFromStorage())`; the locale and colour-scheme reload goes with the legacy pull that needed it.
+    - Pre-existing dead code (D below) is in scope, in its own commits.
+    - Exports: drop `export` on anything used only inside its own file. For exports used only by tests, drop it on functions (their tests go through the public API) and keep it on variables, Zod schemas included (e.g. `isoTimestampSchema`).
+    - knip becomes a devDependency with a config, used for repeated removal passes until nothing unneeded is left. `npm run knip` runs default and production mode; the variables kept exported for tests carry an `@internal` tag, which knip skips in production mode, so a new test-only function export fails the check.
+    - `builtInModuleIds` is deleted: a hand-written copy of the built-in IDs whose only purpose (telling built-ins from user modules) was the legacy readers'; tests derive the IDs from `defaultModuleExercises`.
+    - Tests of legacy behavior are deleted. Tests that only seeded state through legacy keys set it up through the store instead (real actions plus the write-through), not hand-written v2 JSON.
+    - Imports in `src/` and `test/` go through the `@/`, `@test/`, and `@resources/` aliases, never relative paths: every existing relative import is converted in one commit, and ESLint's `no-restricted-imports` rejects new ones there (config files at the root keep relative imports, which the aliases don't cover).
+    - Docs: rewrite `google-account-sync.md` for v2 only, update the README sync paragraph and this doc. `persistence-gaps.md`, the plan doc, and the "legacy" wording in `index.html`/`theme.ts` (the original apps' `'1'`/`'0'` format) stay as they are.
+    - `.prettierignore` skips `.env.example` (no parser) and `package-lock.json` (npm owns its format); the six files already unformatted on `main` are formatted instead of ignored, so `npm run format:check` passes for the whole repo.
+    - `toIsoTimestamp`'s `zone` parameter stays (Step 8 decision, E below), though only its test passes it.
+    - `test/fakeDrive.ts`'s `userinfo` route, `email`, and `token` options stay: the fake Drive also backs manual browser testing.
+    - Manual browser testing of sync always runs against the fake Drive, never a real Google account: `npm run fake-drive` (`scripts/fakeDriveServer.ts`) serves it, and the rule "Manual web testing with the fake Drive" (`CLAUDE.md`, `.cursor/rules`, `.kiro/steering`) gives the init script and steps (`ec25eb1`).
+  - Commits: `64abbbe`, `5a3aa82`, `fc2305c`, `d05f59b`, `2388911`, `9c8dbd5`, `ebc93c8`, `c2a42bc`, `3523abb`, `97640fb`, `aa30160`, `ca06412`, `50d1ddc`, `7406e1d`, `a56730a`, `a753221`, `d71b8e1`, `7ff0577`, `94cd7a5`, `c2acf96`, `d013ee5`, `56e23a3`, `ec25eb1`, `dd5ba41`, `da3d49d`, `f59dfb6`, `cb095d4`, `f13c8e6`.
+  - Removal passes: knip in default and production mode after each group of removals until both came back clean; greps for legacy terms, keys, and pull/push wording; a translation-key usage check; then an independent read-only review of the branch, whose confirmed findings were applied (`a56730a`, `a753221`), including a restore-spinner test that passed only because its legacy `{}` mock made an unmocked rename throw.
+  - Validation: 333 tests, type-check (including forced `tsc -b --force`), lint, whole-repo format check, build, `npm run knip`, and diff checks pass.
+  - Review (`review-code-quality`): F1 (reuse `findLiveValue` in a test helper) and F2 (one mark-and-sync helper in the integration test) accepted and applied (`c2acf96`, `d013ee5`).
+  - IDE inspection export (WebStorm, `.ts`/`.tsx` warnings; no `.ts` file had an error): three fixes applied (`da3d49d` redundant local in `speech.ts`, `f59dfb6` shared signed-in boot setup in the TopBar tests, `cb095d4` one `test.each` for the `reissueForSync` failures); duplicated test lines went from 186 to 130 on `npm run dupes`. The rest are IDE limitations (`fakeDriveServer.ts`'s relative import, which Node needs; the `ImportMetaEnv` augmentation; jsdom stub fields) or conflict with the documented-args-only-where-needed JSDoc convention. The IDE's TypeScript errors on `fakeDriveServer.ts` came from no tsconfig including `scripts/`; `tsconfig.node.json` now does (`f13c8e6`).
+  - Manual Chrome test (dev server, isolated contexts per device; Google faked by serving `test/fakeDrive.ts` from a local Node server and redirecting `googleapis.com` requests to it from an init script; the user's real Drive was never touched):
+    - A fresh device saves the defaults at boot (only `english_progress_v2`, epoch timestamps, all 33 built-ins, the first module and default exercise open); a marked card persists with real timestamps and survives a reload.
+    - That device connecting creates `progress-v2.json` from its state (one locate, one create despite StrictMode's doubled boot); a second device merges it in and uploads nothing.
+    - **Sync now** on the second device PATCHes the existing file; the first device shows the edit in its running UI after returning to the tab, and its syncs stay read-only.
+    - A device with leftover legacy keys and `sync_v2_activated` starts from the defaults and leaves those keys untouched; dark mode and locale are kept.
+    - Consoles are clean.
+  - Size (loc-diff vs `origin/main` at `f13c8e6`, moves detected, `package-lock.json` excluded; matches `git diff --shortstat`). Test cases: 26 added, 62 removed, net −36. The nine files deleted outright account for 1,232 of the deleted lines.
+
+    | Category       | Added | Deleted |    Net |
+    | -------------- | ----: | ------: | -----: |
+    | Business logic |   290 |     749 |   −459 |
+    | Blot           |   122 |     321 |   −199 |
+    | Tests          |   330 |   1,058 |   −728 |
+    | Docs           |   269 |     188 |    +81 |
+    | Refactor       |    54 |     103 |    −49 |
+    | **Total**      | 1,065 |   2,419 | −1,354 |
+
+  - Removal checklist (from the Step 11.5 audit), all done or resolved by the decisions above:
+    - A. Delete — legacy code:
+      - `src/utils/sync/legacy/legacyStorage.ts` (+ test) and `src/utils/sync/legacy/migrateToV2.ts` (+ test); the `legacy/` folder goes.
+      - `src/utils/sync/google/driveStore.ts` (+ test): `readSnapshot` only served the migration's `progress.json` pull.
+      - Hydration fallbacks: `readLegacyPreferences` (settings), `readLegacyUnseenState` (unseen), `readLegacyModulesState` (modules) are replaced by empty-state defaults. Since Step 11.6 local v2 loads as stored, so those defaults are the only place built-ins enter: all built-in modules in canonical order, the first module as current, and the default exercise as current. `withBuiltInModules`, `resolveCurrentModuleId`, and `PREFERRED_DEFAULT_MODULE_ID` (now in `legacyStorage.ts`) go with the legacy file.
+      - Migration wiring: `runSync`'s unactivated branch and the `isV2Activated`/`migrateToV2` import in `driveSync.ts`; `migrateTokenlessDevice` and its imports in `main.tsx`.
+      - Tests: `useGoogleConnect.test.tsx`'s migration test, the legacy half of `driveSync.integration.test.ts` (seeded `progress.json`, "migrating two legacy devices"), and `driveSync.test.ts`'s unactivated-device test.
+    - B. Keep, but move — permanent device keys:
+      - `StorageKeys.darkMode`, `locale`, `systemVoice`, `systemVoiceHe`, `googleAccessToken` (same key strings, so device settings survive) move out of `legacyStorage.ts`. Importers: `theme.ts`, `i18n/index.ts`, `i18n/useLocale.ts`, `googleAuth.ts`, `settingsSlice.ts`, `listenerMiddleware.ts`, `test/helpers.ts`, and 11 test files.
+    - C. Becomes unused once A is gone — delete:
+      - `readFlag`, `writeFlag`, `listKeys` in `src/store/storage.ts` (their only callers were legacy readers, the activation marker, and cleanup).
+      - `useRehydrateFromStorage`'s locale and colour-scheme reload: only a legacy `progress.json` pull could change those device-local keys, so a sync reload needs just `dispatch(reloadFromStorage())`; the hook can fold into `useSyncWithDrive`.
+      - Legacy-only comment: `versionedValue.ts:5` (`INITIAL_UPDATED_AT` "legacy storage"). `theme.ts:112,127` and `voices.ts:80` use "legacy" for other meanings and stay.
+      - Exports only tests import after A: `PERSISTED_STATE_KEY` (`persistedState.ts`), `INITIAL_UPDATED_AT` (`versionedValue.ts`). Both are variables, so they stay exported.
+    - D. Already unused before legacy removal (not caused by it):
+      - Dead code — no production caller: reducers/actions `setCardIndex` (modules), `setDyslexiaFont` (settings), `setFlashcardIndex` (unseen); `addExercise` (unseen, tests only); selectors `selectLibrary`, `selectAllMarkedWords`, `selectAllProgress`, and (since `missed-review-session`) `selectModuleCardIndex`, `selectMissedReview`, `selectModulesProgress`, `selectFlashcardIndex` (tests only); type `AppThunk` (`store.ts`); file `src/store/records.ts` (`deleteEntry`); devDependency `eslint-plugin-prettier` (only `eslint-config-prettier` is imported).
+      - Exported but used only inside their own file — drop `export`: `selectModuleEntries`, `selectModuleProgressEntries`, `selectExerciseEntries`, `selectExercises`, `moduleCardSchema`, `moduleExerciseSchema`, `flashcardSchema`, `cleanSpeechText`, `detectLang`, `locales`, the `i18next` re-export (`i18n/index.ts`), types `DeletableSelectItem`, `StatCount`, `SpeechState`.
+      - Exported only for tests: `pickBestVoice` (a function: drop `export`, test through `voices.ts`'s public API); `isoTimestampSchema` and `REJECTED_PERSISTED_STATE_KEY` (variables: stay exported).
+    - E. Unused parameter:
+      - `toIsoTimestamp`'s `zone`: no production caller passes it (only its test). It exists by the Step 8 decision (Israel as the default zone), so it stays unless that decision changes.
+    - F. knip false positives — keep:
+      - `scripts/check-no-debug-files.cjs` (run by `.husky/pre-commit`), the `vite` "unlisted binary" (a devDependency, hidden only in production mode), and `test/*` helpers (production mode skips tests).
 
 ## Current review gate
 
-### Step 12 — retire legacy migration and finalize docs
-
-- Branch: `retire-legacy-sync`, created with `--no-track` from `origin/main`.
-- Decisions (2026-09-29, all by the user):
-  - Every device has migrated, so nothing reads the legacy keys or Drive's `progress.json` any more; a device still on legacy keys would start from the defaults.
-  - Drive's `progress.json` and each device's `sync_v2_activated` key are left in place: they're never read again, and no temporary cleanup code is added for them.
-  - The device-local keys move to `src/store/deviceStorageKeys.ts` as `DeviceStorageKeys`, with the same key strings.
-  - A first run still saves the defaults immediately (Step 11.6's rule, which the migration did until now): once the store is created, `main.tsx` writes its state when there's no valid local v2.
-  - A new user's empty state holds every built-in in canonical order, with the **first** module and the default exercise open at card 0. `PREFERRED_DEFAULT_MODULE_ID` (`mod3_short_i`) is dropped, a user-visible change noted in the changelog.
-  - `useRehydrateFromStorage` folds into `useSyncWithDrive` as `dispatch(reloadFromStorage())`; the locale and colour-scheme reload goes with the legacy pull that needed it.
-  - Pre-existing dead code (D below) is in scope, in its own commits.
-  - Exports: drop `export` on anything used only inside its own file. For exports used only by tests, drop it on functions (their tests go through the public API) and keep it on variables, Zod schemas included (e.g. `isoTimestampSchema`).
-  - knip becomes a devDependency with a config, used for repeated removal passes until nothing unneeded is left. `npm run knip` runs default and production mode; the variables kept exported for tests carry an `@internal` tag, which knip skips in production mode, so a new test-only function export fails the check.
-  - `builtInModuleIds` is deleted: a hand-written copy of the built-in IDs whose only purpose (telling built-ins from user modules) was the legacy readers'; tests derive the IDs from `defaultModuleExercises`.
-  - Tests of legacy behavior are deleted. Tests that only seeded state through legacy keys set it up through the store instead (real actions plus the write-through), not hand-written v2 JSON.
-  - Imports in `src/` and `test/` go through the `@/`, `@test/`, and `@resources/` aliases, never relative paths: every existing relative import is converted in one commit, and ESLint's `no-restricted-imports` rejects new ones there (config files at the root keep relative imports, which the aliases don't cover).
-  - Docs: rewrite `google-account-sync.md` for v2 only, update the README sync paragraph and this doc. `persistence-gaps.md`, the plan doc, and the "legacy" wording in `index.html`/`theme.ts` (the original apps' `'1'`/`'0'` format) stay as they are.
-  - `.prettierignore` skips `.env.example` (no parser) and `package-lock.json` (npm owns its format); the six files already unformatted on `main` are formatted instead of ignored, so `npm run format:check` passes for the whole repo.
-  - `toIsoTimestamp`'s `zone` parameter stays (Step 8 decision, E below), though only its test passes it.
-  - `test/fakeDrive.ts`'s `userinfo` route, `email`, and `token` options stay: the fake Drive also backs manual browser testing.
-  - Manual browser testing of sync always runs against the fake Drive, never a real Google account: `npm run fake-drive` (`scripts/fakeDriveServer.ts`) serves it, and the rule "Manual web testing with the fake Drive" (`CLAUDE.md`, `.cursor/rules`, `.kiro/steering`) gives the init script and steps (`ec25eb1`).
-- Commits: `64abbbe`, `5a3aa82`, `fc2305c`, `d05f59b`, `2388911`, `9c8dbd5`, `ebc93c8`, `c2a42bc`, `3523abb`, `97640fb`, `aa30160`, `ca06412`, `50d1ddc`, `7406e1d`, `a56730a`, `a753221`, `d71b8e1`, `7ff0577`, `94cd7a5`, `c2acf96`, `d013ee5`, `56e23a3`, `ec25eb1`, `dd5ba41`, `da3d49d`, `f59dfb6`, `cb095d4`, `f13c8e6`.
-- Removal passes: knip in default and production mode after each group of removals until both came back clean; greps for legacy terms, keys, and pull/push wording; a translation-key usage check; then an independent read-only review of the branch, whose confirmed findings were applied (`a56730a`, `a753221`), including a restore-spinner test that passed only because its legacy `{}` mock made an unmocked rename throw.
-- Validation: 333 tests, type-check (including forced `tsc -b --force`), lint, whole-repo format check, build, `npm run knip`, and diff checks pass.
-- Review (`review-code-quality`): F1 (reuse `findLiveValue` in a test helper) and F2 (one mark-and-sync helper in the integration test) accepted and applied (`c2acf96`, `d013ee5`).
-- IDE inspection export (WebStorm, `.ts`/`.tsx` warnings; no `.ts` file had an error): three fixes applied (`da3d49d` redundant local in `speech.ts`, `f59dfb6` shared signed-in boot setup in the TopBar tests, `cb095d4` one `test.each` for the `reissueForSync` failures); duplicated test lines went from 186 to 130 on `npm run dupes`. The rest are IDE limitations (`fakeDriveServer.ts`'s relative import, which Node needs; the `ImportMetaEnv` augmentation; jsdom stub fields) or conflict with the documented-args-only-where-needed JSDoc convention. The IDE's TypeScript errors on `fakeDriveServer.ts` came from no tsconfig including `scripts/`; `tsconfig.node.json` now does (`f13c8e6`).
-- Manual Chrome test (dev server, isolated contexts per device; Google faked by serving `test/fakeDrive.ts` from a local Node server and redirecting `googleapis.com` requests to it from an init script; the user's real Drive was never touched):
-  - A fresh device saves the defaults at boot (only `english_progress_v2`, epoch timestamps, all 33 built-ins, the first module and default exercise open); a marked card persists with real timestamps and survives a reload.
-  - That device connecting creates `progress-v2.json` from its state (one locate, one create despite StrictMode's doubled boot); a second device merges it in and uploads nothing.
-  - **Sync now** on the second device PATCHes the existing file; the first device shows the edit in its running UI after returning to the tab, and its syncs stay read-only.
-  - A device with leftover legacy keys and `sync_v2_activated` starts from the defaults and leaves those keys untouched; dark mode and locale are kept.
-  - Consoles are clean.
-- Size (loc-diff vs `origin/main` at `f13c8e6`, moves detected, `package-lock.json` excluded; matches `git diff --shortstat`):
-
-  | Category       | Added | Deleted |    Net |
-  | -------------- | ----: | ------: | -----: |
-  | Business logic |   290 |     749 |   −459 |
-  | Blot           |   122 |     321 |   −199 |
-  | Tests          |   330 |   1,058 |   −728 |
-  | Docs           |   269 |     188 |    +81 |
-  | Refactor       |    54 |     103 |    −49 |
-  | **Total**      | 1,065 |   2,419 | −1,354 |
-
-  Test cases: 26 added, 62 removed, net −36. The nine files deleted outright account for 1,232 of the deleted lines.
-
-- Awaiting manual approval.
-
-#### Removal checklist (Step 11.5 audit)
-
-**A. Delete — legacy code**
-
-- `src/utils/sync/legacy/legacyStorage.ts` (+ test) and `src/utils/sync/legacy/migrateToV2.ts` (+ test); the `legacy/` folder goes.
-- `src/utils/sync/google/driveStore.ts` (+ test): `readSnapshot` only served the migration's `progress.json` pull.
-- Hydration fallbacks: `readLegacyPreferences` (settings), `readLegacyUnseenState` (unseen), `readLegacyModulesState` (modules) are replaced by empty-state defaults. Since Step 11.6 local v2 loads as stored, so those defaults are the only place built-ins enter: all built-in modules in canonical order, the first module as current, and the default exercise as current. `withBuiltInModules`, `resolveCurrentModuleId`, and `PREFERRED_DEFAULT_MODULE_ID` (now in `legacyStorage.ts`) go with the legacy file.
-- Migration wiring: `runSync`'s unactivated branch and the `isV2Activated`/`migrateToV2` import in `driveSync.ts`; `migrateTokenlessDevice` and its imports in `main.tsx`.
-- Tests: `useGoogleConnect.test.tsx`'s migration test, the legacy half of `driveSync.integration.test.ts` (seeded `progress.json`, "migrating two legacy devices"), and `driveSync.test.ts`'s unactivated-device test.
-
-**B. Keep, but move — permanent device keys**
-
-- `StorageKeys.darkMode`, `locale`, `systemVoice`, `systemVoiceHe`, `googleAccessToken` (same key strings, so device settings survive) move out of `legacyStorage.ts`. Importers: `theme.ts`, `i18n/index.ts`, `i18n/useLocale.ts`, `googleAuth.ts`, `settingsSlice.ts`, `listenerMiddleware.ts`, `test/helpers.ts`, and 11 test files.
-
-**C. Becomes unused once A is gone — delete**
-
-- `readFlag`, `writeFlag`, `listKeys` in `src/store/storage.ts` (their only callers were legacy readers, the activation marker, and cleanup).
-- `useRehydrateFromStorage`'s locale and colour-scheme reload: only a legacy `progress.json` pull could change those device-local keys, so a sync reload needs just `dispatch(reloadFromStorage())`; the hook can fold into `useSyncWithDrive`.
-- Legacy-only comment: `versionedValue.ts:5` (`INITIAL_UPDATED_AT` "legacy storage"). `theme.ts:112,127` and `voices.ts:80` use "legacy" for other meanings and stay.
-- Exports only tests import after A: `PERSISTED_STATE_KEY` (`persistedState.ts`), `INITIAL_UPDATED_AT` (`versionedValue.ts`). Both are variables, so they stay exported.
-
-**D. Already unused before legacy removal (not caused by it)**
-
-- Dead code — no production caller: reducers/actions `setCardIndex` (modules), `setDyslexiaFont` (settings), `setFlashcardIndex` (unseen); `addExercise` (unseen, tests only); selectors `selectLibrary`, `selectAllMarkedWords`, `selectAllProgress`, and (since `missed-review-session`) `selectModuleCardIndex`, `selectMissedReview`, `selectModulesProgress`, `selectFlashcardIndex` (tests only); type `AppThunk` (`store.ts`); file `src/store/records.ts` (`deleteEntry`); devDependency `eslint-plugin-prettier` (only `eslint-config-prettier` is imported).
-- Exported but used only inside their own file — drop `export`: `selectModuleEntries`, `selectModuleProgressEntries`, `selectExerciseEntries`, `selectExercises`, `moduleCardSchema`, `moduleExerciseSchema`, `flashcardSchema`, `cleanSpeechText`, `detectLang`, `locales`, the `i18next` re-export (`i18n/index.ts`), types `DeletableSelectItem`, `StatCount`, `SpeechState`.
-- Exported only for tests: `pickBestVoice` (a function: drop `export`, test through `voices.ts`'s public API); `isoTimestampSchema` and `REJECTED_PERSISTED_STATE_KEY` (variables: stay exported).
-
-**E. Unused parameter**
-
-- `toIsoTimestamp`'s `zone`: no production caller passes it (only its test). It exists by the Step 8 decision (Israel as the default zone), so it stays unless that decision changes.
-
-**F. knip false positives — keep**
-
-- `scripts/check-no-debug-files.cjs` (run by `.husky/pre-commit`), the `vite` "unlisted binary" (a devDependency, hidden only in production mode), and `test/*` helpers (production mode skips tests).
+None: the rollout is complete.
 
 ## Step definitions
 
