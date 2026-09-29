@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react"
-import { notifications } from "@mantine/notifications"
 import type { TokenResponse } from "@react-oauth/google"
 import { hasGrantedAllScopesGoogle, useGoogleLogin } from "@react-oauth/google"
 import { useTranslation } from "react-i18next"
 import { useLatest } from "@/hooks/useLatest"
 import { useSyncWithDrive } from "@/hooks/sync/useSyncWithDrive"
+import { notifyErrorWithDebugInfo } from "@/utils/notifyErrorWithDebugInfo"
+import type { ConnectFailureStage } from "@/utils/sync/google/connectDebugInfo"
+import { buildConnectDebugInfo } from "@/utils/sync/google/connectDebugInfo"
 import {
   fetchConnectedEmail,
   getAccessToken,
@@ -46,6 +48,14 @@ export const useGoogleConnect = () => {
     setRestoring(false)
   }
 
+  const notifyConnectFailure = (
+    stage: ConnectFailureStage,
+    detail: unknown,
+    message: string = t("common.googleConnectError"),
+  ) => {
+    notifyErrorWithDebugInfo(message, buildConnectDebugInfo(stage, detail))
+  }
+
   const connectWithToken = async (tokenResponse: ImplicitTokenResponse) => {
     // Granular consent lets the user grant only some scopes; without this
     // check a partial grant would look "connected" but can't write to Drive.
@@ -56,9 +66,8 @@ export const useGoogleConnect = () => {
         GOOGLE_EMAIL_SCOPE,
       )
     ) {
-      notifications.show({
-        color: "red",
-        message: t("common.googleConnectError"),
+      notifyConnectFailure("scopesNotGranted", {
+        grantedScopes: tokenResponse.scope,
       })
       return
     }
@@ -67,29 +76,27 @@ export const useGoogleConnect = () => {
     try {
       setConnectedEmail(await fetchConnectedEmail(tokenResponse.access_token))
       await syncNow()
-    } catch {
-      notifications.show({
-        color: "red",
-        message: t("common.googleConnectError"),
-      })
+    } catch (error) {
+      notifyConnectFailure("connect", error)
     } finally {
       settle()
     }
   }
 
-  const handleConnectResult = (tokenResponse: ImplicitTokenResponse | null) => {
+  const handleConnectResult = (
+    tokenResponse: ImplicitTokenResponse | null,
+    loginError: unknown,
+  ) => {
     if (tokenResponse) {
       void connectWithToken(tokenResponse)
     } else {
-      notifications.show({
-        color: "red",
-        message: t("common.googleConnectError"),
-      })
+      notifyConnectFailure("login", loginError)
     }
   }
 
   const handleBootReissueResult = (
     tokenResponse: ImplicitTokenResponse | null,
+    loginError: unknown,
   ) => {
     if (tokenResponse) {
       void connectWithToken(tokenResponse)
@@ -101,10 +108,11 @@ export const useGoogleConnect = () => {
       // button looks disconnected.
       setAccessToken(null)
       setConnectedEmail(null)
-      notifications.show({
-        color: "red",
-        message: t("common.googleReconnectNeeded"),
-      })
+      notifyConnectFailure(
+        "bootReissue",
+        loginError,
+        t("common.googleReconnectNeeded"),
+      )
       settle()
     }
   }
@@ -119,15 +127,19 @@ export const useGoogleConnect = () => {
     onSettled(Boolean(tokenResponse))
   }
 
-  const handleLoginResult = (tokenResponse: ImplicitTokenResponse | null) => {
+  /** @param loginError GIS's error response when there's no token, for the debug info. */
+  const handleLoginResult = (
+    tokenResponse: ImplicitTokenResponse | null,
+    loginError?: unknown,
+  ) => {
     const pending = pendingLoginRef.current
     pendingLoginRef.current = null
     if (pending?.kind === "syncReissue") {
       handleSyncReissueResult(tokenResponse, pending.onSettled)
     } else if (pending?.kind === "bootReissue") {
-      handleBootReissueResult(tokenResponse)
+      handleBootReissueResult(tokenResponse, loginError)
     } else {
-      handleConnectResult(tokenResponse)
+      handleConnectResult(tokenResponse, loginError)
     }
   }
 
@@ -136,13 +148,13 @@ export const useGoogleConnect = () => {
     onSuccess: tokenResponse => {
       handleLoginResult(tokenResponse)
     },
-    onError: () => {
-      handleLoginResult(null)
+    onError: errorResponse => {
+      handleLoginResult(null, errorResponse)
     },
     // GIS's popup can get blocked outright, firing neither onSuccess nor
     // onError -- without this, that hangs forever instead of failing.
-    onNonOAuthError: () => {
-      handleLoginResult(null)
+    onNonOAuthError: nonOAuthError => {
+      handleLoginResult(null, nonOAuthError)
     },
   })
 

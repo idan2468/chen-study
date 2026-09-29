@@ -45,6 +45,8 @@ export const en: Messages = {
     googleConnected: "{{email}} · Disconnect",
     googleConnectError: "Could not connect Google account. Try again.",
     googleReconnectNeeded: "Google connection lost. Reconnect to keep syncing.",
+    copied: "Copied",
+    copyDebugInfo: "Copy debug info",
     restoringSync: "Restoring your synced progress...",
     googleSyncError: "Could not sync your progress to Google Drive.",
     googleSyncSuccess: "Synced with Google Drive",
@@ -69,12 +71,10 @@ export const en: Messages = {
   json: {
     loadTemplate: "Load a sample template",
     copyContent: "Copy content",
-    copied: "Copied",
     contentLabel: "JSON content",
     loadAndAdd: "Load and add",
     viewDebugInfo: "View debug info",
     debugInfoTitle: "Debug info",
-    copyDebugInfo: "Copy debug info",
   },
 
   modules: {

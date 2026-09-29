@@ -87,7 +87,7 @@ export const JsonLoader = ({
               leftSection={copied ? <IconCheck size={ICON_SIZE} /> : undefined}
               onClick={copy}
             >
-              {copied ? t("json.copied") : t("json.copyContent")}
+              {copied ? t("common.copied") : t("json.copyContent")}
             </Button>
           )}
         </CopyButton>

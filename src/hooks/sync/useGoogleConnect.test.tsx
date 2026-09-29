@@ -423,3 +423,48 @@ test("reissueForSync reports failure without clearing an existing token", async 
   })
   expect(getAccessToken()).toBe("ya29.token")
 })
+
+describe("connect failure debug info", () => {
+  const copyDebugInfo = async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    })
+    const button = await screen.findByRole("button", {
+      name: i18next.t("common.copyDebugInfo"),
+    })
+    button.click()
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledTimes(1)
+    })
+    return String(writeText.mock.calls[0]?.[0])
+  }
+
+  test("a blocked popup offers the GIS error for copying", async () => {
+    renderWithProviders(<Host />)
+    triggerPopupBlocked()
+
+    const debugInfo = JSON.parse(await copyDebugInfo()) as Record<
+      string,
+      unknown
+    >
+    expect(debugInfo).toMatchObject({
+      stage: "login",
+      detail: { type: "popup_failed_to_open" },
+    })
+  })
+
+  test("a failed sync offers the thrown error, without the access token", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 500 }))
+    renderWithProviders(<Host />)
+    triggerLoginSuccess("ya29.secret")
+
+    const debugInfo = await copyDebugInfo()
+    expect(JSON.parse(debugInfo)).toMatchObject({
+      stage: "connect",
+      detail: { message: "Google API request failed: 500" },
+    })
+    expect(debugInfo).not.toContain("ya29.secret")
+  })
+})

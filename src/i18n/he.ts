@@ -40,6 +40,8 @@ export const he = {
     googleConnectError: "החיבור לחשבון Google נכשל. נסו שוב.",
     googleReconnectNeeded:
       "החיבור ל-Google התנתק. יש להתחבר מחדש להמשך הסנכרון.",
+    copied: "הועתק",
+    copyDebugInfo: "העתקת פרטי הדיבוג",
     restoringSync: "משחזר את ההתקדמות המסונכרנת...",
     googleSyncError: "הסנכרון עם Google Drive נכשל.",
     googleSyncSuccess: "הסנכרון עם Google Drive הושלם",
@@ -64,12 +66,10 @@ export const he = {
   json: {
     loadTemplate: "טעינת תבנית לדוגמה",
     copyContent: "העתקת התוכן",
-    copied: "הועתק",
     contentLabel: "תוכן JSON",
     loadAndAdd: "טעינה והוספה",
     viewDebugInfo: "צפייה בפרטי דיבוג",
     debugInfoTitle: "פרטי דיבוג",
-    copyDebugInfo: "העתקת פרטי הדיבוג",
   },
 
   modules: {

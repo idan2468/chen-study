@@ -1,8 +1,7 @@
-import { Button, CopyButton, Stack, Text } from "@mantine/core"
-import { IconCheck } from "@tabler/icons-react"
+import { Stack, Text } from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import { AppModal } from "@/components/AppModal/AppModal"
-import { ICON_SIZE } from "@/constants/icons"
+import { CopyDebugInfoButton } from "@/components/CopyDebugInfoButton/CopyDebugInfoButton"
 
 export type ImportDebugModalProps = {
   opened: boolean
@@ -45,18 +44,7 @@ export const ImportDebugModal = ({
           {debugInfo}
         </Text>
 
-        <CopyButton value={debugInfo} timeout={2000}>
-          {({ copied, copy }) => (
-            <Button
-              size="xs"
-              variant="default"
-              leftSection={copied ? <IconCheck size={ICON_SIZE} /> : undefined}
-              onClick={copy}
-            >
-              {copied ? t("json.copied") : t("json.copyDebugInfo")}
-            </Button>
-          )}
-        </CopyButton>
+        <CopyDebugInfoButton debugInfo={debugInfo} />
       </Stack>
     </AppModal>
   )
