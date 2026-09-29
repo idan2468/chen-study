@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["scripts/check-no-debug-files.cjs"],
+  "project": ["src/**/*.{ts,tsx}!", "test/**/*.{ts,tsx}", "scripts/**/*.cjs"],
+  "ignoreBinaries": ["vite"]
+}
