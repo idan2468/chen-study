@@ -104,7 +104,11 @@ export const he = {
     jsonAdded: "נוספו {{count}} מודולים בהצלחה.",
     missedReviewButton: "תרגול מילים שטעיתי ({{count}})",
     missedReviewTitle: "תרגול מילים שטעיתי",
-    missedReviewSubtitle: "נשארו {{count}} מילים מכל המודולים",
+    missedReviewSubtitle: "{{count}} מילים מכל המודולים",
+    missedReviewAllKnown: "🎉 כל המילים שתרגלתם ידועות עכשיו!",
+    missedReviewPartial:
+      "✅ עברתם על כל המילים שטעיתם בהן. {{count}} עדיין דורשות תרגול",
+    missedReviewAgain: "תרגול נוסף",
     backToModules: "חזרה למודולים",
     moduleCompleteAllKnown: "🎉 כל המילים במודול הזה ידועות!",
     moduleCompletePartial:

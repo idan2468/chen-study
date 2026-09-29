@@ -45,7 +45,7 @@ const preloaded = () => ({
     currentModuleId: toVersionedValue(at(defaultModuleExercises, 0).id),
     cardIndex: toVersionedValue(0),
     filterMissed: false,
-    reviewingMissed: false,
+    missedReview: null,
     progress: [],
   },
 })
