@@ -15,7 +15,7 @@ stays Hebrew — only the chrome translates).
 
 This app started as three standalone static HTML files (still kept in `old/` for
 reference) and was converted to React + Redux Toolkit + Mantine + CSS Modules. See
-`docs/migration/react-conversion-plan.md` for the full conversion history and design
+`docs/completed/migration/react-conversion-plan.md` for the full conversion history and design
 decisions.
 
 ## Stack
@@ -105,15 +105,4 @@ sub-path, `vite.config.ts` sets `base: "/chen-study/"`, and the app uses
 
 ## Docs
 
-- `docs/migration/react-conversion-plan.md` — the original HTML-to-React conversion plan and
-  decision log
-- `docs/testing/component-testing-plan.md` — the component testing rollout plan
-- `docs/speech/kokoro-tts.md` / `docs/speech/remove-neural-tts.md` — the neural TTS experiment
-  and why it was removed (the app now speaks only through
-  `window.speechSynthesis`, with a voice-ranking layer on top)
-- `docs/sync/google-account-sync.md` — the Google Drive sync design and Google Cloud setup
-- `docs/sync/google-merge-sync-plan.md` — the approved merge-sync design
-- `docs/sync/google-merge-sync-process.md` — rollout progress and agent handoff SOT
-- `docs/sync/persistence-gaps.md` — audit of persisted and intentionally transient state
-- `docs/speech/module-pronunciation-recording.md` — proposed post-v2 design for recording and
-  syncing the user's own pronunciation of a module word
+See [`docs/README.md`](docs/README.md) for every design doc and plan, grouped by status (reference, active, proposed, completed).

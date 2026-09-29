@@ -1,5 +1,7 @@
 # Google account sync
 
+**Status: reference.** Describes how sync works now; update it along with the code.
+
 The app can optionally back up progress to the user's own Google Drive. It remains a static GitHub Pages application: there is no application backend or database.
 
 ## Storage
@@ -22,7 +24,7 @@ The token is stored locally and never included in the Drive file. It normally la
 Every trigger runs the same sync (`src/utils/sync/google/driveSync.ts`):
 
 1. Read `progress-v2.json` from Drive.
-2. Merge it with the running app's state: for each entry, the newer `updatedAt` wins, and Drive wins ties. The full merge rules are in [google-merge-sync-plan.md](./google-merge-sync-plan.md).
+2. Merge it with the running app's state: for each entry, the newer `updatedAt` wins, and Drive wins ties. The full merge rules are in [google-merge-sync-plan.md](../completed/sync/google-merge-sync-plan.md).
 3. If the merge changed anything, save it locally and reload the store from it, without a page reload.
 4. Upload the merge, skipped when Drive already holds the same state.
 
