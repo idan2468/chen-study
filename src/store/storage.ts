@@ -1,7 +1,6 @@
 /**
  * Safe localStorage access. Every function swallows failures (private
- * browsing, quota), so a storage error never breaks the page; reads fall back
- * to the supplied default.
+ * browsing, quota), so a storage error never breaks the page.
  */
 
 export const writeJson = (key: string, value: unknown) => {
@@ -12,11 +11,12 @@ export const writeJson = (key: string, value: unknown) => {
   }
 }
 
-export const readString = (key: string, fallback = "") => {
+/** `""` when the key is missing or unreadable. */
+export const readString = (key: string) => {
   try {
-    return window.localStorage.getItem(key) ?? fallback
+    return window.localStorage.getItem(key) ?? ""
   } catch {
-    return fallback
+    return ""
   }
 }
 

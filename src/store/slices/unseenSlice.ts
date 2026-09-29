@@ -92,9 +92,6 @@ export const unseenSlice = createAppSlice({
     addExercises: create.preparedReducer(
       withUpdatedAt<UnseenExercise[]>,
       (state, action: TimestampedAction<UnseenExercise[]>) => {
-        if (action.payload.length === 0) {
-          return
-        }
         const finalExercises = keepLastBy(
           action.payload,
           exercise => exercise.exerciseId,

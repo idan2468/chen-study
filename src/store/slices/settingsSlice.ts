@@ -25,7 +25,7 @@ import {
  * the UI language, which `react-i18next` owns; see `i18n/useLocale.ts`.
  */
 
-export type SettingsState = {
+type SettingsState = {
   dyslexiaFont: VersionedValue<boolean>
   shuffleUnseenAnswers: VersionedValue<boolean>
   /** `speechSynthesis` rate per language, 0.1 - 1.0. Independent per
@@ -48,8 +48,8 @@ const defaultPreferences = (): PersistedState["preferences"] => ({
 const loadFromStorage = (): SettingsState => {
   const { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang } =
     readLocalPersistedState()?.preferences ?? defaultPreferences()
-  const storedSystemVoice = readString(DeviceStorageKeys.systemVoice, "")
-  const storedSystemVoiceHe = readString(DeviceStorageKeys.systemVoiceHe, "")
+  const storedSystemVoice = readString(DeviceStorageKeys.systemVoice)
+  const storedSystemVoiceHe = readString(DeviceStorageKeys.systemVoiceHe)
 
   return {
     dyslexiaFont,

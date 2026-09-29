@@ -21,7 +21,7 @@ const isLocale = (value: string): value is Locale =>
   locales.includes(value as Locale)
 
 export const readStoredLocale = (): Locale => {
-  const stored = readString(DeviceStorageKeys.locale, "")
+  const stored = readString(DeviceStorageKeys.locale)
   return isLocale(stored) ? stored : DEFAULT_LOCALE
 }
 

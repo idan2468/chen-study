@@ -8,7 +8,7 @@
  * Node server too.
  */
 
-export type FakeDriveFile = {
+type FakeDriveFile = {
   id: string
   name: string
   content: string

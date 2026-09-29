@@ -119,7 +119,7 @@ export const colorSchemeManager = (): MantineColorSchemeManager => {
 
   return {
     get: defaultValue => {
-      const raw = readString(DeviceStorageKeys.darkMode, "")
+      const raw = readString(DeviceStorageKeys.darkMode)
       return raw === "" ? defaultValue : toScheme(raw)
     },
 

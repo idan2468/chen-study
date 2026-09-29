@@ -54,7 +54,7 @@ export const authorizedFetch = async (
 }
 
 export const getAccessToken = () => {
-  const stored = readString(DeviceStorageKeys.googleAccessToken, "")
+  const stored = readString(DeviceStorageKeys.googleAccessToken)
   return stored === "" ? null : stored
 }
 
