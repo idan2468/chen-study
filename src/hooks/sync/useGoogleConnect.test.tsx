@@ -357,49 +357,33 @@ test("reissueForSync refreshes the token and reports success, without fetching e
   expect(fetch).not.toHaveBeenCalled()
 })
 
-test("reissueForSync reports failure without clearing an existing token when the popup is blocked", async () => {
-  setAccessToken("ya29.token")
-  vi.mocked(fetch).mockResolvedValueOnce(
-    jsonResponse({ email: "chen@example.com" }),
-  )
-  const { user } = renderWithProviders(<Host />)
-  await waitFor(() => {
-    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
-  })
+test.each([
+  ["the popup is blocked", triggerPopupBlocked],
+  ["GIS returns an error", triggerLoginError],
+])(
+  "reissueForSync reports failure without clearing an existing token when %s",
+  async (_label, failLogin) => {
+    setAccessToken("ya29.token")
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({ email: "chen@example.com" }),
+    )
+    const { user } = renderWithProviders(<Host />)
+    await waitFor(() => {
+      expect(screen.getByText("chen@example.com")).toBeInTheDocument()
+    })
 
-  await user.click(screen.getByRole("button", { name: "Reissue" }))
-  await waitFor(() => {
-    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
-  })
-  triggerPopupBlocked()
+    await user.click(screen.getByRole("button", { name: "Reissue" }))
+    await waitFor(() => {
+      expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
+    })
+    failLogin()
 
-  await waitFor(() => {
-    expect(screen.getByText("reissue-failed")).toBeInTheDocument()
-  })
-  expect(getAccessToken()).toBe("ya29.token")
-})
-
-test("reissueForSync reports failure without clearing an existing token", async () => {
-  setAccessToken("ya29.token")
-  vi.mocked(fetch).mockResolvedValueOnce(
-    jsonResponse({ email: "chen@example.com" }),
-  )
-  const { user } = renderWithProviders(<Host />)
-  await waitFor(() => {
-    expect(screen.getByText("chen@example.com")).toBeInTheDocument()
-  })
-
-  await user.click(screen.getByRole("button", { name: "Reissue" }))
-  await waitFor(() => {
-    expect(latestLoginFn).toHaveBeenCalledWith({ prompt: "none" })
-  })
-  triggerLoginError()
-
-  await waitFor(() => {
-    expect(screen.getByText("reissue-failed")).toBeInTheDocument()
-  })
-  expect(getAccessToken()).toBe("ya29.token")
-})
+    await waitFor(() => {
+      expect(screen.getByText("reissue-failed")).toBeInTheDocument()
+    })
+    expect(getAccessToken()).toBe("ya29.token")
+  },
+)
 
 describe("connect failure debug info", () => {
   const copyDebugInfo = async () => {
