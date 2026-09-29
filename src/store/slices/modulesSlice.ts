@@ -145,17 +145,6 @@ export const modulesSlice = createAppSlice({
       },
     ),
 
-    setCardIndex: create.preparedReducer(
-      withUpdatedAt<number>,
-      (state, action: TimestampedAction<number>) => {
-        setValueIfChanged(
-          state.cardIndex,
-          Math.max(0, action.payload),
-          action.meta.updatedAt,
-        )
-      },
-    ),
-
     /** Payload is the active list's length; no wraparound, as in the original. */
     nextCard: create.preparedReducer(
       withUpdatedAt<number>,
@@ -319,7 +308,6 @@ export const modulesSlice = createAppSlice({
 
 export const {
   selectModule,
-  setCardIndex,
   nextCard,
   prevCard,
   toggleFilterMissed,

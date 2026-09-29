@@ -10,7 +10,6 @@ import type { PersistedState } from "@/types/schemas/persistedState"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import type { UnseenState } from "@/store/slices/unseenSlice"
 import {
-  addExercise,
   addExercises,
   answerQuestion,
   deleteExercise,
@@ -223,7 +222,7 @@ describe("library", () => {
         answers: { [defaultId]: previousAnswers },
       }),
     })
-    store.dispatch(addExercise(otherExercise))
+    store.dispatch(addExercises([otherExercise]))
 
     const state = store.getState()
     expect(selectCurrentExerciseId(state)).toBe("other_1")
@@ -252,7 +251,7 @@ describe("library", () => {
       }),
     })
 
-    store.dispatch(addExercise(replacement))
+    store.dispatch(addExercises([replacement]))
 
     expect(
       selectLibrary(store.getState())[otherExercise.exerciseId],
@@ -664,7 +663,7 @@ describe("version metadata", () => {
       deleted: true,
     })
 
-    store.dispatch(addExercise(otherExercise))
+    store.dispatch(addExercises([otherExercise]))
     expect(
       store.getState().unseen.exercises.map(entry => entry.value.exerciseId),
     ).toStrictEqual([defaultUnseenExercise.exerciseId, "other_1"])

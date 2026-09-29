@@ -89,15 +89,6 @@ export const unseenSlice = createAppSlice({
       },
     ),
 
-    addExercise: create.preparedReducer(
-      withUpdatedAt<UnseenExercise>,
-      (state, action: TimestampedAction<UnseenExercise>) => {
-        const exercise = action.payload
-        replaceExercise(state, exercise, action.meta.updatedAt)
-        openExercise(state, exercise.exerciseId, action.meta.updatedAt)
-      },
-    ),
-
     addExercises: create.preparedReducer(
       withUpdatedAt<UnseenExercise[]>,
       (state, action: TimestampedAction<UnseenExercise[]>) => {
@@ -222,17 +213,6 @@ export const unseenSlice = createAppSlice({
       },
     ),
 
-    setFlashcardIndex: create.preparedReducer(
-      withUpdatedAt<number>,
-      (state, action: TimestampedAction<number>) => {
-        setValueIfChanged(
-          state.cardIndex,
-          Math.max(0, action.payload),
-          action.meta.updatedAt,
-        )
-      },
-    ),
-
     /** Payload is the current exercise's flashcard count. */
     nextFlashcard: create.preparedReducer(
       withUpdatedAt<number>,
@@ -271,14 +251,12 @@ export const unseenSlice = createAppSlice({
 
 export const {
   switchExercise,
-  addExercise,
   addExercises,
   deleteExercise,
   answerQuestion,
   markFlashcard,
   resetFlashcardProgress,
   toggleMarkedWord,
-  setFlashcardIndex,
   nextFlashcard,
   prevFlashcard,
 } = unseenSlice.actions

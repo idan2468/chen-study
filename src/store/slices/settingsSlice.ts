@@ -77,16 +77,6 @@ export const settingsSlice = createAppSlice({
         )
       },
     ),
-    setDyslexiaFont: create.preparedReducer(
-      withUpdatedAt<boolean>,
-      (state, action: TimestampedAction<boolean>) => {
-        setValueIfChanged(
-          state.dyslexiaFont,
-          action.payload,
-          action.meta.updatedAt,
-        )
-      },
-    ),
     toggleShuffleUnseenAnswers: create.preparedReducer(
       withUpdatedAtOnly,
       (state, action: TimestampedAction) => {
@@ -136,7 +126,6 @@ export const settingsSlice = createAppSlice({
 
 export const {
   toggleDyslexiaFont,
-  setDyslexiaFont,
   toggleShuffleUnseenAnswers,
   setSpeechRate,
   setSystemVoiceUri,
