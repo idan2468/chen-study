@@ -1,0 +1,31 @@
+# Manual web testing with the fake Drive
+
+When testing Google sync in a browser (e.g. through the Chrome DevTools MCP), never sign in to or touch a real Google account. Fake Google with `test/fakeDrive.ts`, the same fake the Drive integration test uses:
+
+1. Start the dev server (`npm run dev`) and the fake Drive (`npm run fake-drive`, on `http://localhost:5299`). The fake Drive keeps its files in memory, so they reset when it stops.
+2. Open each device in its own isolated browser context (DevTools MCP: `new_page` with a distinct `isolatedContext`), so each has its own localStorage while all of them share one Drive.
+3. Load the app with this init script (DevTools MCP: `navigate_page` with `initScript`). It stores the fake token as a saved sign-in and sends every `googleapis.com` request to the fake Drive:
+
+   ```js
+   localStorage.setItem("google_access_token", "fake-token")
+   const realFetch = window.fetch.bind(window)
+   window.fetch = (input, init) => {
+     const url =
+       typeof input === "string"
+         ? input
+         : input instanceof URL
+           ? input.href
+           : input.url
+     return url.startsWith("https://www.googleapis.com")
+       ? realFetch(
+           url.replace("https://www.googleapis.com", "http://localhost:5299"),
+           init,
+         )
+       : realFetch(input, init)
+   }
+   ```
+
+   Init scripts only run on a new document, so give each device its own query string (e.g. `?device=laptop#/modules`): a hash-only change keeps the current document. Leave out the token line to test a device that never connected.
+
+4. Check what reached Drive at `http://localhost:5299/__drive` (files and the request log) and `http://localhost:5299/__drive/v2` (the parsed `progress-v2.json`).
+5. Stop the dev server and the fake Drive when done.

@@ -4,8 +4,8 @@
  * flows can run end to end without Google. Every request is logged, letting
  * tests check what was sent to Google.
  *
- * Dependency-free on purpose: the browser manual test serves it from a small
- * Node server too.
+ * Dependency-free on purpose: `scripts/fakeDriveServer.ts` also serves it for
+ * manual browser testing.
  */
 
 type FakeDriveFile = {

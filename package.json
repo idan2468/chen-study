@@ -16,7 +16,8 @@
     "test": "vitest --run",
     "type-check": "tsc -b --noEmit",
     "dupes": "jscpd src",
-    "knip": "knip && knip --production"
+    "knip": "knip && knip --production",
+    "fake-drive": "node scripts/fakeDriveServer.ts"
   },
   "dependencies": {
     "@mantine/core": "^9.5.1",
