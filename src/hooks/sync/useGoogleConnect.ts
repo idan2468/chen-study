@@ -4,7 +4,7 @@ import { hasGrantedAllScopesGoogle, useGoogleLogin } from "@react-oauth/google"
 import { useTranslation } from "react-i18next"
 import { useLatest } from "@/hooks/useLatest"
 import { useSyncWithDrive } from "@/hooks/sync/useSyncWithDrive"
-import { notifyErrorWithDebugInfo } from "@/utils/notifyErrorWithDebugInfo"
+import { notifyErrorWithDebugInfo } from "@/utils/notifications.tsx"
 import type { ConnectFailureStage } from "@/utils/sync/google/connectDebugInfo"
 import { buildConnectDebugInfo } from "@/utils/sync/google/connectDebugInfo"
 import {
