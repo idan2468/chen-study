@@ -15,7 +15,7 @@ import { markCard, selectModulesProgress } from "@/store/slices/modulesSlice"
 import type { AppStore } from "@/store/store"
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
-import { syncWithDrive } from "./driveSync"
+import { syncWithDrive } from "@/utils/sync/google/driveSync"
 
 const TOKEN = "fake-token"
 const V2_FILE = "progress-v2.json"

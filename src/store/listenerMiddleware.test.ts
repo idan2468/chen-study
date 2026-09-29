@@ -7,26 +7,26 @@ import {
   PERSISTED_STATE_KEY,
   readLocalPersistedState,
   selectPersistedState,
-} from "./persistedState"
-import { makeStore } from "./store"
+} from "@/store/persistedState"
+import { makeStore } from "@/store/store"
 import {
   markCard,
   nextCard,
   selectModule,
   toggleFilterMissed,
-} from "./slices/modulesSlice"
+} from "@/store/slices/modulesSlice"
 import {
   answerQuestion,
   markFlashcard,
   nextFlashcard,
   toggleMarkedWord,
-} from "./slices/unseenSlice"
+} from "@/store/slices/unseenSlice"
 import {
   setSpeechRate,
   setSystemVoiceUri,
   toggleDyslexiaFont,
   toggleShuffleUnseenAnswers,
-} from "./slices/settingsSlice"
+} from "@/store/slices/settingsSlice"
 import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
 
 const otherId = "other_1"

@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
-import { CardNavigation } from "./CardNavigation"
+import { CardNavigation } from "@/components/CardNavigation/CardNavigation"
 
 describe("CardNavigation", () => {
   test("shows the 1-based position out of the total", () => {

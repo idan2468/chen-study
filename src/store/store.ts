@@ -1,10 +1,10 @@
 import type { Action, ThunkAction } from "@reduxjs/toolkit"
 import { combineSlices, configureStore } from "@reduxjs/toolkit"
-import { listenerMiddleware } from "./listenerMiddleware"
-import { modulesSlice } from "./slices/modulesSlice"
-import { settingsSlice } from "./slices/settingsSlice"
-import { speechSlice } from "./slices/speechSlice"
-import { unseenSlice } from "./slices/unseenSlice"
+import { listenerMiddleware } from "@/store/listenerMiddleware"
+import { modulesSlice } from "@/store/slices/modulesSlice"
+import { settingsSlice } from "@/store/slices/settingsSlice"
+import { speechSlice } from "@/store/slices/speechSlice"
+import { unseenSlice } from "@/store/slices/unseenSlice"
 
 const rootReducer = combineSlices(
   settingsSlice,

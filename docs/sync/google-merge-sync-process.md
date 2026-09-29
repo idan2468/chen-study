@@ -80,6 +80,7 @@
   - Exports: drop `export` on anything used only inside its own file. For exports used only by tests, drop it on functions (their tests go through the public API) and keep it on variables, Zod schemas included (e.g. `isoTimestampSchema`).
   - knip becomes a devDependency with `npm run knip` and a config, used for repeated removal passes until nothing unneeded is left.
   - Tests of legacy behavior are deleted. Tests that only seeded state through legacy keys set it up through the store instead (real actions plus the write-through), not hand-written v2 JSON.
+  - Imports in `src/` and `test/` go through the `@/`, `@test/`, and `@resources/` aliases, never relative paths: every existing relative import is converted in one commit, and ESLint's `no-restricted-imports` rejects new ones there (config files at the root keep relative imports, which the aliases don't cover).
   - Docs: rewrite `google-account-sync.md` for v2 only, update the README sync paragraph and this doc. `persistence-gaps.md`, the plan doc, and the "legacy" wording in `index.html`/`theme.ts` (the original apps' `'1'`/`'0'` format) stay as they are.
 
 #### Removal checklist (Step 11.5 audit)

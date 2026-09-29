@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import type { FlashcardKeyHandlers } from "./useFlashcardKeys"
-import { useFlashcardKeys } from "./useFlashcardKeys"
+import type { FlashcardKeyHandlers } from "@/hooks/useFlashcardKeys"
+import { useFlashcardKeys } from "@/hooks/useFlashcardKeys"
 
 /** A minimal host, since `useFlashcardKeys` itself has no rendered output. */
 const Host = ({ onFlip = vi.fn() }: { onFlip?: () => void }) => {

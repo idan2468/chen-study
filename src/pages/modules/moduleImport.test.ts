@@ -1,5 +1,5 @@
 import { expectFailure, expectOk, omitKey } from "@test/helpers"
-import { parseModulesJson } from "./moduleImport"
+import { parseModulesJson } from "@/pages/modules/moduleImport"
 
 const valid = {
   id: "m1",

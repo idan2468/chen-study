@@ -4,8 +4,8 @@ import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import {
   readDrivePersistedState,
   writeDrivePersistedState,
-} from "./drivePersistedState"
-import { GoogleAuthError } from "./googleAuth"
+} from "@/utils/sync/google/drivePersistedState"
+import { GoogleAuthError } from "@/utils/sync/google/googleAuth"
 
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
 const DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"

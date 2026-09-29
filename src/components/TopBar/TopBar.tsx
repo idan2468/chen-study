@@ -20,8 +20,8 @@ import {
   toggleDyslexiaFont,
 } from "@/store/slices/settingsSlice"
 import { isGoogleSyncAvailable } from "@/utils/sync/google/googleAuth"
-import { TopBarDesktop } from "./TopBarDesktop"
-import { TopBarMobile } from "./TopBarMobile"
+import { TopBarDesktop } from "@/components/TopBar/TopBarDesktop"
+import { TopBarMobile } from "@/components/TopBar/TopBarMobile"
 
 export type TopBarProps = {
   /** Page-specific controls, e.g. the Unseen page's exercise picker. */

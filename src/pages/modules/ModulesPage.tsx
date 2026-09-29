@@ -50,9 +50,9 @@ import {
   toggleFilterMissed,
 } from "@/store/slices/modulesSlice"
 import { sampleModuleExercise } from "@/data/defaultModuleExercises"
-import { ModuleFlashcard } from "./ModuleFlashcard"
-import { RuleBox } from "./RuleBox"
-import { parseModulesJson } from "./moduleImport"
+import { ModuleFlashcard } from "@/pages/modules/ModuleFlashcard"
+import { RuleBox } from "@/pages/modules/RuleBox"
+import { parseModulesJson } from "@/pages/modules/moduleImport"
 
 export const ModulesPage = () => {
   const { t } = useTranslation()

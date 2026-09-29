@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
-import { AssessmentButtons } from "./AssessmentButtons"
+import { AssessmentButtons } from "@/components/AssessmentButtons/AssessmentButtons"
 
 describe("AssessmentButtons", () => {
   test.each([

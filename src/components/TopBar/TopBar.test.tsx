@@ -8,7 +8,7 @@ import type * as GoogleAuthModule from "@/utils/sync/google/googleAuth"
 import * as googleAuth from "@/utils/sync/google/googleAuth"
 import { getAccessToken, setAccessToken } from "@/utils/sync/google/googleAuth"
 import { MOBILE_MAX_WIDTH_QUERY } from "@/constants/breakpoints"
-import { TopBar } from "./TopBar"
+import { TopBar } from "@/components/TopBar/TopBar"
 
 /** Captured by the `useGoogleLogin` mock below, so tests can fire `onSuccess`/`onError` directly. */
 let latestLoginOptions: UseGoogleLoginOptionsImplicitFlow | undefined

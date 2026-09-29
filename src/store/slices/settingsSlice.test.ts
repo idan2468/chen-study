@@ -14,7 +14,7 @@ import {
   setSpeechRate,
   toggleDyslexiaFont,
   toggleShuffleUnseenAnswers,
-} from "./settingsSlice"
+} from "@/store/slices/settingsSlice"
 import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
 
 describe("hydration", () => {

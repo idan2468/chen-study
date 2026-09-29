@@ -8,7 +8,7 @@
  * rule has to be waived for this one declaration.
  */
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
-import type { he } from "./he"
+import type { he } from "@/i18n/he"
 
 declare module "i18next" {
   interface CustomTypeOptions {

@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
-import { RuleBox } from "./RuleBox"
+import { RuleBox } from "@/pages/modules/RuleBox"
 
 const html =
   "<div class='rule-section'><b>Rule:</b> short A sounds like this.</div>"

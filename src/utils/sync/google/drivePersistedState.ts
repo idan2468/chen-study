@@ -6,7 +6,7 @@ import {
   renameFile,
   requireAccessToken,
   updateFileContent,
-} from "./driveFiles"
+} from "@/utils/sync/google/driveFiles"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import { persistedStateSchema } from "@/types/schemas/persistedState"
 import { toIsoTimestamp } from "@/utils/sync/timestamp"

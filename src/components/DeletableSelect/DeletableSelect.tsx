@@ -6,7 +6,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react"
 import { ICON_SIZE } from "@/constants/icons"
-import classes from "./DeletableSelect.module.css"
+import classes from "@/components/DeletableSelect/DeletableSelect.module.css"
 
 export type DeletableSelectItem = {
   value: string

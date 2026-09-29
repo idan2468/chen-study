@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { useState } from "react"
 import { CardStatus } from "@/types/moduleExercise"
-import { FlipCard } from "./FlipCard"
+import { FlipCard } from "@/components/FlipCard/FlipCard"
 
 /** A stateful host, since `FlipCard` itself is fully controlled by `flipped`/`onToggle`. */
 const StatefulFlipCard = ({ status }: { status?: CardStatus }) => {

@@ -1,5 +1,5 @@
-import { makeStore } from "./store"
-import { addModules, deleteModule } from "./slices/modulesSlice"
+import { makeStore } from "@/store/store"
+import { addModules, deleteModule } from "@/store/slices/modulesSlice"
 import { defaultModuleExercises } from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
@@ -12,7 +12,7 @@ import {
   selectPersistedState,
   writeLocalPersistedState,
   writeLocalPersistedStateIfMissing,
-} from "./persistedState"
+} from "@/store/persistedState"
 
 beforeEach(() => {
   localStorage.clear()

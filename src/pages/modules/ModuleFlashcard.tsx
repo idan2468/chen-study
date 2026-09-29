@@ -12,7 +12,7 @@ import { useIsMobile } from "@/hooks/useIsMobile"
 import { useSpeech } from "@/hooks/useSpeech"
 import { CardStatus } from "@/types/moduleExercise"
 import type { ModuleCard } from "@/types/moduleExercise"
-import classes from "./ModuleFlashcard.module.css"
+import classes from "@/pages/modules/ModuleFlashcard.module.css"
 
 export type ModuleFlashcardProps = {
   card: ModuleCard

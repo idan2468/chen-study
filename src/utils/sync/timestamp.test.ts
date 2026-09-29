@@ -1,4 +1,4 @@
-import { compareTimestamps, toIsoTimestamp } from "./timestamp"
+import { compareTimestamps, toIsoTimestamp } from "@/utils/sync/timestamp"
 
 test("formats summer time with the +03:00 offset", () => {
   expect(toIsoTimestamp(new Date("2026-09-26T08:02:56.123Z"))).toBe(

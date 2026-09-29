@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
 import { selectAnswers } from "@/store/slices/unseenSlice"
-import { ReadingTab } from "./ReadingTab"
+import { ReadingTab } from "@/pages/unseen/ReadingTab"
 
 beforeEach(() => {
   localStorage.clear()

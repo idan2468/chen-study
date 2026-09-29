@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
-import { DeletableSelect } from "./DeletableSelect"
+import { DeletableSelect } from "@/components/DeletableSelect/DeletableSelect"
 
 const longLabel =
   "Advanced review exercise with a very long descriptive title for mobile"

@@ -5,7 +5,7 @@ import {
   PERSISTED_STATE_VERSION,
   persistedStateSchema,
 } from "@/types/schemas/persistedState"
-import type { RootState } from "./store"
+import type { RootState } from "@/store/store"
 
 export const PERSISTED_STATE_KEY = "english_progress_v2"
 

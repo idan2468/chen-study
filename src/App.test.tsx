@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/react"
 import i18next from "i18next"
 import { renderWithProviders } from "@test/render"
 import { setAccessToken } from "@/utils/sync/google/googleAuth"
-import { App } from "./App"
+import { App } from "@/App"
 
 vi.mock("@react-oauth/google", () => ({
   useGoogleLogin: vi.fn(() => vi.fn()),

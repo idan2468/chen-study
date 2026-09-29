@@ -2,8 +2,8 @@ import i18next from "i18next"
 import { initReactI18next } from "react-i18next"
 import { readString } from "@/store/storage"
 import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
-import { en } from "./en"
-import { he } from "./he"
+import { en } from "@/i18n/en"
+import { he } from "@/i18n/he"
 
 export const locales = ["he", "en"] as const
 export type Locale = (typeof locales)[number]

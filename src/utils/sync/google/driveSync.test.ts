@@ -8,10 +8,10 @@ import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
   readDrivePersistedState,
   writeDrivePersistedState,
-} from "./drivePersistedState"
-import { syncWithDrive } from "./driveSync"
+} from "@/utils/sync/google/drivePersistedState"
+import { syncWithDrive } from "@/utils/sync/google/driveSync"
 
-vi.mock("./drivePersistedState")
+vi.mock("@/utils/sync/google/drivePersistedState")
 
 const EDITED_AT = "2026-09-27T10:00:00.000+03:00"
 

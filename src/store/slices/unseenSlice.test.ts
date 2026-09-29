@@ -8,7 +8,7 @@ import {
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
-import type { UnseenState } from "./unseenSlice"
+import type { UnseenState } from "@/store/slices/unseenSlice"
 import {
   addExercise,
   addExercises,
@@ -32,7 +32,7 @@ import {
   selectVocabSet,
   switchExercise,
   toggleMarkedWord,
-} from "./unseenSlice"
+} from "@/store/slices/unseenSlice"
 
 const otherExercise: UnseenExercise = {
   title: "Other",

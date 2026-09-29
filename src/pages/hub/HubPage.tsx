@@ -5,7 +5,7 @@ import { Link } from "react-router-dom"
 import { TopBar } from "@/components/TopBar/TopBar"
 import { APP_ROUTES } from "@/constants/routes"
 import { useIsMobile } from "@/hooks/useIsMobile"
-import classes from "./HubPage.module.css"
+import classes from "@/pages/hub/HubPage.module.css"
 
 /** The two practice apps, as in the original `index.html`. */
 const links = [

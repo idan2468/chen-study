@@ -3,7 +3,7 @@ import i18next from "i18next"
 import { renderWithProviders } from "@test/render"
 import { syncWithDrive } from "@/utils/sync/google/driveSync"
 import { GoogleAuthError } from "@/utils/sync/google/googleAuth"
-import { useDriveSync } from "./useDriveSync"
+import { useDriveSync } from "@/hooks/sync/useDriveSync"
 
 vi.mock("@/utils/sync/google/driveSync")
 

@@ -25,7 +25,7 @@ import {
   selectFlashcardPosition,
   selectFlashcardStats,
 } from "@/store/slices/unseenSlice"
-import classes from "./FlashcardsTab.module.css"
+import classes from "@/pages/unseen/FlashcardsTab.module.css"
 
 export const FlashcardsTab = () => {
   const { t } = useTranslation()

@@ -7,6 +7,14 @@ import { defineConfig } from "eslint/config"
 import globals from "globals"
 import { configs } from "typescript-eslint"
 
+const restrictedImportPaths = [
+  {
+    name: "react-redux",
+    importNames: ["useSelector", "useStore", "useDispatch"],
+    message: "Please use pre-typed versions from `src/store/hooks.ts` instead.",
+  },
+]
+
 const eslintConfig = defineConfig(
   {
     name: "global-ignores",
@@ -64,15 +72,21 @@ const eslintConfig = defineConfig(
           disallowTypeAnnotations: true,
         },
       ],
+      "no-restricted-imports": [2, { paths: restrictedImportPaths }],
+    },
+  },
+  {
+    name: "alias-imports",
+    files: ["src/**", "test/**"],
+    rules: {
       "no-restricted-imports": [
         2,
         {
-          paths: [
+          paths: restrictedImportPaths,
+          patterns: [
             {
-              name: "react-redux",
-              importNames: ["useSelector", "useStore", "useDispatch"],
-              message:
-                "Please use pre-typed versions from `src/store/hooks.ts` instead.",
+              group: ["./*", "../*"],
+              message: "Import through `@/`, `@test/`, or `@resources/`.",
             },
           ],
         },

@@ -1,12 +1,12 @@
 import { createListenerMiddleware } from "@reduxjs/toolkit"
-import type { AppDispatch, RootState } from "./store"
-import { writeString } from "./storage"
+import type { AppDispatch, RootState } from "@/store/store"
+import { writeString } from "@/store/storage"
 import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import {
   selectPersistedState,
   writeLocalPersistedState,
-} from "./persistedState"
-import { setSystemVoiceUri } from "./slices/settingsSlice"
+} from "@/store/persistedState"
+import { setSystemVoiceUri } from "@/store/slices/settingsSlice"
 import { SpeechLang } from "@/types/speech"
 
 /**

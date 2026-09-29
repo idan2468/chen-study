@@ -10,7 +10,7 @@ import {
   upsertValue,
   setValueIfChanged,
   toVersionedValue,
-} from "./versionedValue"
+} from "@/utils/sync/versionedValue"
 
 type Word = { word: string; note?: string }
 

@@ -13,8 +13,8 @@ import { AppDrawer } from "@/components/AppModal/AppDrawer"
 import { GoogleIcon } from "@/components/GoogleIcon/GoogleIcon"
 import { ICON_SIZE } from "@/constants/icons"
 import { APP_ROUTES } from "@/constants/routes"
-import type { SettingsItem } from "./TopBar"
-import classes from "./TopBar.module.css"
+import type { SettingsItem } from "@/components/TopBar/TopBar"
+import classes from "@/components/TopBar/TopBar.module.css"
 
 export type TopBarMobileProps = {
   withHomeLink: boolean

@@ -1,5 +1,8 @@
 import { z } from "zod"
-import { isoTimestampSchema, versionedValueSchema } from "./versionedValue"
+import {
+  isoTimestampSchema,
+  versionedValueSchema,
+} from "@/types/schemas/versionedValue"
 
 test.each(["2026-09-26T11:02:56.123+03:00", "2026-01-16T00:30:00.000+02:00"])(
   "accepts %s",

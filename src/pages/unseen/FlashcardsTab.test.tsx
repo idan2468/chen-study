@@ -7,7 +7,7 @@ import {
   selectFlashcardIndex,
 } from "@/store/slices/unseenSlice"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
-import { FlashcardsTab } from "./FlashcardsTab"
+import { FlashcardsTab } from "@/pages/unseen/FlashcardsTab"
 
 const exercise: UnseenExercise = {
   title: "Sample exercise",

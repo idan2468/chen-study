@@ -1,14 +1,14 @@
 import { useEffect } from "react"
 import { Route, Routes, useLocation } from "react-router-dom"
-import { APP_ROUTES } from "./constants/routes"
-import { GoogleConnectProvider } from "./hooks/sync/GoogleConnectContext"
-import { useAppDispatch, useAppSelector } from "./store/hooks"
-import { selectDyslexiaFont } from "./store/slices/settingsSlice"
-import { speechStopped } from "./store/slices/speechSlice"
-import { cancelSpeech } from "./utils/speech/speech"
-import { HubPage } from "./pages/hub/HubPage"
-import { ModulesPage } from "./pages/modules/ModulesPage"
-import { UnseenPage } from "./pages/unseen/UnseenPage"
+import { APP_ROUTES } from "@/constants/routes"
+import { GoogleConnectProvider } from "@/hooks/sync/GoogleConnectContext"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { selectDyslexiaFont } from "@/store/slices/settingsSlice"
+import { speechStopped } from "@/store/slices/speechSlice"
+import { cancelSpeech } from "@/utils/speech/speech"
+import { HubPage } from "@/pages/hub/HubPage"
+import { ModulesPage } from "@/pages/modules/ModulesPage"
+import { UnseenPage } from "@/pages/unseen/UnseenPage"
 
 /**
  * The dyslexia rule keys off a body class, since it overrides the global

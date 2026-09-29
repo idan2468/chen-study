@@ -1,4 +1,4 @@
-import { hasWord, keepLastBy } from "./collections"
+import { hasWord, keepLastBy } from "@/utils/collections"
 
 test("keeps the final value for each key", () => {
   const values = [

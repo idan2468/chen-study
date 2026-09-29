@@ -15,8 +15,11 @@ import {
   selectAnswers,
   selectCurrentExercise,
 } from "@/store/slices/unseenSlice"
-import { MAIN_READER_OWNER, ParagraphReader } from "./ParagraphReader"
-import { QuestionCard } from "./QuestionCard"
+import {
+  MAIN_READER_OWNER,
+  ParagraphReader,
+} from "@/pages/unseen/ParagraphReader"
+import { QuestionCard } from "@/pages/unseen/QuestionCard"
 
 const optionIndexes = (length: number, shuffle: boolean) => {
   const indexes = Array.from({ length }, (_, index) => index)

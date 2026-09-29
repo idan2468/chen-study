@@ -1,4 +1,4 @@
-import type { he } from "./he"
+import type { he } from "@/i18n/he"
 
 /**
  * English UI strings.

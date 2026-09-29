@@ -1,5 +1,5 @@
 import { at, expectFailure, expectOk, omitKey } from "@test/helpers"
-import { parseUnseenExerciseJson } from "./unseenExerciseImport"
+import { parseUnseenExerciseJson } from "@/pages/unseen/unseenExerciseImport"
 
 const valid = {
   title: "Title",

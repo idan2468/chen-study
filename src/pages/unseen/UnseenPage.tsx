@@ -27,9 +27,9 @@ import {
   switchExercise,
 } from "@/store/slices/unseenSlice"
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
-import { FlashcardsTab } from "./FlashcardsTab"
-import { ReadingTab } from "./ReadingTab"
-import { parseUnseenExerciseJson } from "./unseenExerciseImport"
+import { FlashcardsTab } from "@/pages/unseen/FlashcardsTab"
+import { ReadingTab } from "@/pages/unseen/ReadingTab"
+import { parseUnseenExerciseJson } from "@/pages/unseen/unseenExerciseImport"
 
 type TabValue = "reading" | "flashcards" | "json"
 

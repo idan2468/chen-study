@@ -1,5 +1,9 @@
 import { at } from "@test/helpers"
-import { pickBestVoice, resolveVoice, voicesForLanguage } from "./voices"
+import {
+  pickBestVoice,
+  resolveVoice,
+  voicesForLanguage,
+} from "@/utils/speech/voices"
 
 /** `SpeechSynthesisVoice` is exactly these five fields, so no cast is needed. */
 const voice = (

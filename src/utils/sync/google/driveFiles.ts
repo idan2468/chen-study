@@ -6,7 +6,7 @@
  * well-known filename is enough; no folder bookkeeping is needed.
  */
 import { z } from "zod"
-import { authorizedFetch, getAccessToken } from "./googleAuth"
+import { authorizedFetch, getAccessToken } from "@/utils/sync/google/googleAuth"
 
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
 const DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"

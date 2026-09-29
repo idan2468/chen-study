@@ -6,11 +6,11 @@ import objectHash from "object-hash"
 import { writeLocalPersistedState } from "@/store/persistedState"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import { mergePersistedState } from "@/utils/sync/mergePersistedState"
-import type { DrivePersistedState } from "./drivePersistedState"
+import type { DrivePersistedState } from "@/utils/sync/google/drivePersistedState"
 import {
   readDrivePersistedState,
   writeDrivePersistedState,
-} from "./drivePersistedState"
+} from "@/utils/sync/google/drivePersistedState"
 
 const mergeWithDrive = (local: PersistedState, drive: DrivePersistedState) =>
   drive.status === "valid" ? mergePersistedState(local, drive.state) : local

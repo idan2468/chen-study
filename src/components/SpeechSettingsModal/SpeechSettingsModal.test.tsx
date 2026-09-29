@@ -3,7 +3,7 @@ import { renderWithProviders } from "@test/render"
 import { setSpeechRate } from "@/store/slices/settingsSlice"
 import { makeStore } from "@/store/store"
 import { SpeechLang } from "@/types/speech"
-import { SpeechSettingsModal } from "./SpeechSettingsModal"
+import { SpeechSettingsModal } from "@/components/SpeechSettingsModal/SpeechSettingsModal"
 
 beforeEach(() => {
   localStorage.clear()

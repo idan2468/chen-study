@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
 import { CardStatus } from "@/types/moduleExercise"
 import type { ModuleCard } from "@/types/moduleExercise"
-import { ModuleFlashcard } from "./ModuleFlashcard"
+import { ModuleFlashcard } from "@/pages/modules/ModuleFlashcard"
 
 const card: ModuleCard = { en: "HAT", he: "hat-translit", meaning: "a hat" }
 

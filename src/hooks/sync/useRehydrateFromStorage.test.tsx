@@ -20,7 +20,7 @@ import {
 } from "@/store/slices/modulesSlice"
 import { colorSchemeManager, theme } from "@/theme"
 import { builtInModuleIds } from "@/data/defaultModuleExercises"
-import { useRehydrateFromStorage } from "./useRehydrateFromStorage"
+import { useRehydrateFromStorage } from "@/hooks/sync/useRehydrateFromStorage"
 
 const Host = () => {
   const rehydrate = useRehydrateFromStorage()

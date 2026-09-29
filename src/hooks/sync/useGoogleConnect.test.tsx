@@ -18,7 +18,7 @@ import {
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
-import { useGoogleConnect } from "./useGoogleConnect"
+import { useGoogleConnect } from "@/hooks/sync/useGoogleConnect"
 
 /** Captured by the `useGoogleLogin` mock below, so tests can fire `onSuccess`/`onError` directly. */
 let latestLoginOptions: UseGoogleLoginOptionsImplicitFlow | undefined

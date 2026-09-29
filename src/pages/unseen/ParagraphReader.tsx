@@ -12,7 +12,7 @@ import {
 } from "@/store/slices/unseenSlice"
 import { cleanWord } from "@/utils/speech/speech"
 import { cx } from "@/utils/cx"
-import classes from "./ParagraphReader.module.css"
+import classes from "@/pages/unseen/ParagraphReader.module.css"
 
 /** Long enough to tell a single click from a double click, as in the original. */
 const CLICK_DELAY_MS = 240

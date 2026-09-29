@@ -6,7 +6,7 @@ import { setAccessToken } from "@/utils/sync/google/googleAuth"
 import {
   GoogleConnectProvider,
   useGoogleConnectContext,
-} from "./GoogleConnectContext"
+} from "@/hooks/sync/GoogleConnectContext"
 
 vi.mock("@react-oauth/google", () => ({
   useGoogleLogin: vi.fn(() => vi.fn()),

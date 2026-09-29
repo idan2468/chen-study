@@ -1,7 +1,7 @@
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react"
 import { CardStatus } from "@/types/moduleExercise"
 import { cx } from "@/utils/cx"
-import classes from "./FlipCard.module.css"
+import classes from "@/components/FlipCard/FlipCard.module.css"
 
 export type FlipCardProps = {
   front: ReactNode

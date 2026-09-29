@@ -4,7 +4,7 @@ import {
   getAccessToken,
   GoogleAuthError,
   setAccessToken,
-} from "./googleAuth"
+} from "@/utils/sync/google/googleAuth"
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status })

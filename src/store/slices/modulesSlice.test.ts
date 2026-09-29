@@ -16,7 +16,7 @@ import {
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
-import type { ModulesState } from "./modulesSlice"
+import type { ModulesState } from "@/store/slices/modulesSlice"
 import {
   addModules,
   deleteModule,
@@ -39,7 +39,7 @@ import {
   selectReviewingMissed,
   startMissedReview,
   toggleFilterMissed,
-} from "./modulesSlice"
+} from "@/store/slices/modulesSlice"
 
 const customModule: ModuleExercise = {
   id: "custom_1",

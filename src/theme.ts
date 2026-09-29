@@ -5,7 +5,7 @@ import type {
   MantineColorsTuple,
 } from "@mantine/core"
 import { createTheme } from "@mantine/core"
-import { readString, writeString } from "./store/storage"
+import { readString, writeString } from "@/store/storage"
 import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 
 /**
