@@ -136,6 +136,5 @@ export const speakQueue = (
     return
   }
 
-  const token = runToken
-  speakWithSystem(items, options, handlers, token)
+  speakWithSystem(items, options, handlers, runToken)
 }
