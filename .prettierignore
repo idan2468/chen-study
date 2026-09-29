@@ -1,2 +1,4 @@
 # No parser for dotenv files.
 .env.example
+# npm owns its formatting.
+package-lock.json
