@@ -16,7 +16,7 @@
     "test": "vitest --run",
     "type-check": "tsc -b --noEmit",
     "dupes": "jscpd src",
-    "knip": "knip"
+    "knip": "knip && knip --production"
   },
   "dependencies": {
     "@mantine/core": "^9.5.1",

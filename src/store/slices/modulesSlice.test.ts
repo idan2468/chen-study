@@ -1,7 +1,4 @@
-import {
-  builtInModuleIds,
-  defaultModuleExercises,
-} from "@/data/defaultModuleExercises"
+import { defaultModuleExercises } from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
 import { CardStatus } from "@/types/moduleExercise"
 import type {
@@ -64,6 +61,7 @@ const otherCustomModule: ModuleExercise = {
   cards: [{ en: "QUIZ", he: "quiz", meaning: "test" }],
 }
 
+const builtInModuleIds = defaultModuleExercises.map(module => module.id)
 const firstBuiltInId = at(builtInModuleIds, 0)
 const secondBuiltInId = at(builtInModuleIds, 1)
 const thirdBuiltInId = at(builtInModuleIds, 2)

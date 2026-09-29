@@ -7,6 +7,7 @@ import {
 } from "@/types/schemas/persistedState"
 import type { RootState } from "@/store/store"
 
+/** @internal Exported for tests. */
 export const PERSISTED_STATE_KEY = "english_progress_v2"
 
 /**
@@ -54,7 +55,10 @@ export const selectPersistedState = createSelector(
   }),
 )
 
-/** Keeps the last rejected document, since falling back means the next write replaces it. */
+/**
+ * Keeps the last rejected document, since falling back means the next write replaces it.
+ * @internal Exported for tests.
+ */
 export const REJECTED_PERSISTED_STATE_KEY = "english_progress_v2_rejected"
 
 const parseStored = (raw: string) => {

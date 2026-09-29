@@ -78,7 +78,8 @@
   - `useRehydrateFromStorage` folds into `useSyncWithDrive` as `dispatch(reloadFromStorage())`; the locale and colour-scheme reload goes with the legacy pull that needed it.
   - Pre-existing dead code (D below) is in scope, in its own commits.
   - Exports: drop `export` on anything used only inside its own file. For exports used only by tests, drop it on functions (their tests go through the public API) and keep it on variables, Zod schemas included (e.g. `isoTimestampSchema`).
-  - knip becomes a devDependency with `npm run knip` and a config, used for repeated removal passes until nothing unneeded is left.
+  - knip becomes a devDependency with a config, used for repeated removal passes until nothing unneeded is left. `npm run knip` runs default and production mode; the variables kept exported for tests carry an `@internal` tag, which knip skips in production mode, so a new test-only function export fails the check.
+  - `builtInModuleIds` is deleted: a hand-written copy of the built-in IDs whose only purpose (telling built-ins from user modules) was the legacy readers'; tests derive the IDs from `defaultModuleExercises`.
   - Tests of legacy behavior are deleted. Tests that only seeded state through legacy keys set it up through the store instead (real actions plus the write-through), not hand-written v2 JSON.
   - Imports in `src/` and `test/` go through the `@/`, `@test/`, and `@resources/` aliases, never relative paths: every existing relative import is converted in one commit, and ESLint's `no-restricted-imports` rejects new ones there (config files at the root keep relative imports, which the aliases don't cover).
   - Docs: rewrite `google-account-sync.md` for v2 only, update the README sync paragraph and this doc. `persistence-gaps.md`, the plan doc, and the "legacy" wording in `index.html`/`theme.ts` (the original apps' `'1'`/`'0'` format) stay as they are.
