@@ -54,6 +54,9 @@ npm run dev
   `src/` (see `.jscpd.json`)
 - `knip` — [knip](https://knip.dev) check for unused files, exports, and
   dependencies, in default and production mode (see `knip.json`)
+- `fake-drive` — serve the test fake of Google Drive on port 5299 for manual
+  browser testing of sync (see "Manual web testing with the fake Drive" in
+  `CLAUDE.md`)
 
 ## Testing
 
