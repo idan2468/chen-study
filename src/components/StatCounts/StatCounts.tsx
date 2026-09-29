@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { Badge, Group, Paper } from "@mantine/core"
 
-export type StatCount = {
+type StatCount = {
   label: string
   value: number
   color?: "success" | "danger" | "gray" | "brand"

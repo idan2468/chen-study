@@ -15,7 +15,7 @@ export type FakeDriveFile = {
   modifiedTime: string
 }
 
-export type FakeDriveRequest = {
+type FakeDriveRequest = {
   method: string
   /** Path plus query, e.g. `/drive/v3/files/abc?alt=media`. */
   url: string

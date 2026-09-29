@@ -8,7 +8,7 @@ import {
 import { ICON_SIZE } from "@/constants/icons"
 import classes from "@/components/DeletableSelect/DeletableSelect.module.css"
 
-export type DeletableSelectItem = {
+type DeletableSelectItem = {
   value: string
   label: string
   completed?: boolean

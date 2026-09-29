@@ -38,7 +38,7 @@ export type ModulesState = {
   progress: ModulesProgress
 }
 
-export type MissedReview = {
+type MissedReview = {
   /** The words that were unknown when the review started; fixed for the session. */
   words: string[]
   /** This session's marks, shown instead of the saved progress. */

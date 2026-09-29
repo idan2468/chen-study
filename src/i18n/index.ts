@@ -5,7 +5,7 @@ import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import { en } from "@/i18n/en"
 import { he } from "@/i18n/he"
 
-export const locales = ["he", "en"] as const
+const locales = ["he", "en"] as const
 export type Locale = (typeof locales)[number]
 
 /** Hebrew is the default, matching the original apps. */
@@ -58,5 +58,3 @@ export const initI18n = (locale: Locale) => {
     },
   })
 }
-
-export { i18next }

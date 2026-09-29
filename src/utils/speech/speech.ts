@@ -44,12 +44,11 @@ export const isSpeechSupported = () =>
   typeof window !== "undefined" && "speechSynthesis" in window
 
 /** The originals auto-detected Hebrew rather than tagging content with a lang. */
-export const detectLang = (text: string) =>
+const detectLang = (text: string) =>
   HEBREW_CHARS.test(text) ? "he-IL" : "en-US"
 
 /** Strips the 🔊 / ▶ / ⏹️ glyphs that were baked into the buttons' labels. */
-export const cleanSpeechText = (raw: string) =>
-  raw.replace(BUTTON_GLYPHS, "").trim()
+const cleanSpeechText = (raw: string) => raw.replace(BUTTON_GLYPHS, "").trim()
 
 /** `cleanWord` from `Unseen New.html:1588` -- for speaking a single tapped word. */
 export const cleanWord = (raw: string) => raw.replace(NON_WORD_CHARS, "")

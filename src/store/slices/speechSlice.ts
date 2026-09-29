@@ -7,7 +7,7 @@ import { createAppSlice } from "@/store/createAppSlice"
  * utterance object and queue stay out of the store (non-serializable) and
  * live in `src/utils/speech/speech.ts` instead.
  */
-export type SpeechState = {
+type SpeechState = {
   /** `null` when nothing is playing. `ownerId !== null` *is* "is speaking". */
   ownerId: string | null
   /** Index into the owner's queue, so sequential readers can highlight. */

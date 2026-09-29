@@ -1,7 +1,7 @@
 import { z } from "zod"
 import type { ModuleCard, ModuleExercise } from "@/types/moduleExercise"
 
-export const moduleCardSchema = z.object({
+const moduleCardSchema = z.object({
   en: z.string().trim().min(1),
   he: z.string().min(1),
   meaning: z.string().min(1),
