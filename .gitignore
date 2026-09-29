@@ -35,3 +35,4 @@ yalc.lock
 
 # Playwright MCP's screenshots/snapshots from browser-driven verification, never committed.
 /.playwright-mcp/
+/reports/
