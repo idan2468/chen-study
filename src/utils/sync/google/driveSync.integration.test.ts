@@ -59,6 +59,12 @@ const sync = (store: AppStore) =>
     () => store.dispatch(reloadFromStorage()),
   )
 
+const markAndSync = (device: Device, word: string, isKnown: boolean) =>
+  onDevice(device, async store => {
+    store.dispatch(markCard({ word, isKnown }))
+    await sync(store)
+  })
+
 const progressOf = (device: Device) =>
   onDevice(device, store => selectDisplayedProgress(store.getState()))
 
@@ -94,10 +100,7 @@ describe("the first sync of each device", () => {
   test("the first device creates progress-v2.json", async () => {
     const laptop = createDevice()
 
-    await onDevice(laptop, async store => {
-      store.dispatch(markCard({ word: "FOX", isKnown: false }))
-      await sync(store)
-    })
+    await markAndSync(laptop, "FOX", false)
 
     expect(drive.calls()).toStrictEqual([
       "GET /drive/v3/files", // locate progress-v2.json: none
@@ -110,16 +113,10 @@ describe("the first sync of each device", () => {
   test("the second device merges into progress-v2.json", async () => {
     const laptop = createDevice()
     const phone = createDevice()
-    await onDevice(laptop, async store => {
-      store.dispatch(markCard({ word: "HAT", isKnown: true }))
-      await sync(store)
-    })
+    await markAndSync(laptop, "HAT", true)
     drive.clearRequests()
 
-    await onDevice(phone, async store => {
-      store.dispatch(markCard({ word: "CAT", isKnown: true }))
-      await sync(store)
-    })
+    await markAndSync(phone, "CAT", true)
 
     expect(drive.calls()).toStrictEqual([
       "GET /drive/v3/files", // locate progress-v2.json
@@ -149,20 +146,14 @@ describe("two synced devices", () => {
   beforeEach(async () => {
     laptop = createDevice()
     phone = createDevice()
-    await onDevice(laptop, async store => {
-      store.dispatch(markCard({ word: "HAT", isKnown: true }))
-      await sync(store)
-    })
+    await markAndSync(laptop, "HAT", true)
     await onDevice(phone, sync)
     drive.clearRequests()
   })
 
   test("an edit on one device reaches the other on its next sync", async () => {
     nextMinute()
-    await onDevice(laptop, async store => {
-      store.dispatch(markCard({ word: "FOX", isKnown: true }))
-      await sync(store)
-    })
+    await markAndSync(laptop, "FOX", true)
     await onDevice(phone, sync)
 
     expect(await progressOf(phone)).toMatchObject({ FOX: "known" })
