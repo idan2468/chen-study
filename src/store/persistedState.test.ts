@@ -11,6 +11,7 @@ import {
   REJECTED_PERSISTED_STATE_KEY,
   selectPersistedState,
   writeLocalPersistedState,
+  writeLocalPersistedStateIfMissing,
 } from "./persistedState"
 
 beforeEach(() => {
@@ -235,6 +236,37 @@ describe("a rejected local document", () => {
     store.dispatch(addModules([at(defaultModuleExercises, 0)]))
 
     expect(readLocalPersistedState()).not.toBeNull()
+    expect(localStorage.getItem(REJECTED_PERSISTED_STATE_KEY)).toBe("{not json")
+  })
+})
+
+describe("saving on a first run", () => {
+  test("saves the state when nothing is stored", () => {
+    const state = defaultState()
+
+    writeLocalPersistedStateIfMissing(state)
+
+    expect(readLocalPersistedState()).toStrictEqual(state)
+  })
+
+  test("keeps a valid stored document", () => {
+    const store = makeStore()
+    store.dispatch(deleteModule(at(defaultModuleExercises, 1).id))
+    const stored = readLocalPersistedState()
+
+    writeLocalPersistedStateIfMissing(defaultState())
+
+    expect(readLocalPersistedState()).toStrictEqual(stored)
+  })
+
+  test("replaces a rejected document, keeping its backup", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined)
+    localStorage.setItem(PERSISTED_STATE_KEY, "{not json")
+    const state = defaultState()
+
+    writeLocalPersistedStateIfMissing(state)
+
+    expect(readLocalPersistedState()).toStrictEqual(state)
     expect(localStorage.getItem(REJECTED_PERSISTED_STATE_KEY)).toBe("{not json")
   })
 })

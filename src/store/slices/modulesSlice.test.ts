@@ -8,7 +8,6 @@ import type {
   ModuleExercise,
   ModuleProgressRecord,
 } from "@/types/moduleExercise"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import {
   reloadFromStorage,
   selectPersistedState,
@@ -33,6 +32,7 @@ import {
   selectModuleCardPosition,
   selectModuleOptions,
   selectMissedWordsAcrossModules,
+  selectModule,
   selectModuleStats,
   selectModules,
   selectModulesProgress,
@@ -45,7 +45,7 @@ const customModule: ModuleExercise = {
   id: "custom_1",
   tabName: "Mine",
   title: "My module",
-  rule: "",
+  rule: "A rule",
   cards: [
     { en: "ZAP", he: "zap", meaning: "zap" },
     { en: "QUIZ", he: "quiz", meaning: "test" },
@@ -62,7 +62,7 @@ const otherCustomModule: ModuleExercise = {
   id: "custom_2",
   tabName: "Mine 2",
   title: "My module 2",
-  rule: "",
+  rule: "A rule",
   cards: [{ en: "QUIZ", he: "quiz", meaning: "test" }],
 }
 
@@ -375,99 +375,107 @@ describe("hydration", () => {
     localStorage.clear()
   })
 
-  test("reopens on the stored module id rather than the hardcoded default", () => {
-    localStorage.setItem(StorageKeys.currentModuleId, thirdBuiltInId)
+  /** Saves a store's state with some module fields replaced, for states actions can't reach. */
+  const writeModules = (modules: Partial<PersistedState["modules"]>) => {
+    const persisted = selectPersistedState(makeStore().getState())
+    writeLocalPersistedState({
+      ...persisted,
+      modules: { ...persisted.modules, ...modules },
+    })
+  }
 
-    const store = makeStore()
+  test("starts a new user on every built-in, with the first module open at card 0", () => {
+    const state = makeStore().getState()
 
-    expect(selectCurrentModuleId(store.getState())).toBe(thirdBuiltInId)
+    expect(selectModules(state).map(m => m.id)).toStrictEqual([
+      ...builtInModuleIds,
+    ])
+    expect(selectCurrentModuleId(state)).toBe(firstBuiltInId)
+    expect(selectModuleCardPosition(state)).toBe(0)
   })
 
-  test("falls back to the preferred default when the stored id no longer exists", () => {
-    localStorage.setItem(StorageKeys.currentModuleId, "no-such-module")
+  test("reopens on the module that was open", () => {
+    makeStore().dispatch(selectModule(thirdBuiltInId))
 
-    const store = makeStore()
-
-    // Third built-in (mod3_short_i) is the hardcoded preferred default.
-    expect(selectCurrentModuleId(store.getState())).toBe(thirdBuiltInId)
+    expect(selectCurrentModuleId(makeStore().getState())).toBe(thirdBuiltInId)
   })
 
-  test("reopens on the stored card index for the current module", () => {
-    localStorage.setItem(StorageKeys.moduleCardIndex, "3")
+  test("reopens on the card that was open", () => {
+    const previous = makeStore()
+    const deckLength = at(defaultModuleExercises, 0).cards.length
+    for (let step = 0; step < 3; step += 1) {
+      previous.dispatch(nextCard(deckLength))
+    }
 
-    const store = makeStore()
-
-    expect(selectModuleCardIndex(store.getState())).toBe(3)
+    expect(selectModuleCardPosition(makeStore().getState())).toBe(3)
   })
 
   test("keeps a stored index past the deck, which the position selector clamps", () => {
-    localStorage.setItem(StorageKeys.moduleCardIndex, "9999")
+    writeModules({ cardIndex: toVersionedValue(9999) })
 
     const state = makeStore().getState()
     const current = selectModules(state).find(
       module => module.id === selectCurrentModuleId(state),
     )
 
-    expect(selectModuleCardIndex(state)).toBe(9999)
+    expect(state.modules.cardIndex.value).toBe(9999)
     expect(selectModuleCardPosition(state)).toBe(
       (current?.cards.length ?? 1) - 1,
     )
   })
 
-  test("reopens with stored modules merged in alongside the built-ins", () => {
-    localStorage.setItem(StorageKeys.allModules, JSON.stringify([customModule]))
+  test("reopens with added modules after the built-ins", () => {
+    makeStore().dispatch(addModules([customModule]))
 
-    const store = makeStore()
-
-    expect(selectModules(store.getState()).map(m => m.id)).toStrictEqual([
+    expect(selectModules(makeStore().getState()).map(m => m.id)).toStrictEqual([
       ...builtInModuleIds,
       "custom_1",
     ])
   })
 
-  test("reopens with the stored progress", () => {
-    localStorage.setItem(
-      StorageKeys.modulesProgress,
-      JSON.stringify({ [firstCard.en]: "known" }),
-    )
+  test("reopens with the saved progress", () => {
+    makeStore().dispatch(markCard({ word: firstCard.en, isKnown: true }))
 
-    const store = makeStore()
-
-    expect(selectModulesProgress(store.getState())).toStrictEqual({
+    expect(selectModulesProgress(makeStore().getState())).toStrictEqual({
       [firstCard.en]: "known",
     })
   })
 
-  test("marks a module complete from existing stored progress", () => {
+  test("marks a module complete from saved progress", () => {
     const firstModule = at(defaultModuleExercises, 0)
-    const progress = Object.fromEntries(
-      firstModule.cards.map((card, index) => [
-        card.en,
-        index % 2 === 0 ? CardStatus.Known : CardStatus.Unknown,
-      ]),
-    )
-    localStorage.setItem(StorageKeys.modulesProgress, JSON.stringify(progress))
-
-    const store = makeStore()
+    const previous = makeStore()
+    firstModule.cards.forEach((card, index) => {
+      previous.dispatch(markCard({ word: card.en, isKnown: index % 2 === 0 }))
+    })
 
     expect(
-      selectModuleOptions(store.getState()).find(
+      selectModuleOptions(makeStore().getState()).find(
         option => option.value === firstModule.id,
       )?.completed,
     ).toBe(true)
   })
 
   test("reopens without a deleted built-in, and does not re-seed it", () => {
-    localStorage.setItem(
-      StorageKeys.deletedBuiltInModules,
-      JSON.stringify([secondBuiltInId]),
-    )
+    makeStore().dispatch(deleteModule(secondBuiltInId))
 
     const store = makeStore()
-    const state = store.getState()
 
-    expect(selectModules(state).map(m => m.id)).not.toContain(secondBuiltInId)
+    expect(selectModules(store.getState()).map(m => m.id)).not.toContain(
+      secondBuiltInId,
+    )
     expect(moduleEntry(store, secondBuiltInId)?.deleted).toBe(true)
+  })
+
+  test("uses stored modules as they are, without adding built-ins", () => {
+    const first = at(defaultModuleExercises, 0)
+    writeModules({
+      modules: [toVersionedValue(first)],
+      currentModuleId: toVersionedValue(first.id),
+    })
+
+    const ids = selectModules(makeStore().getState()).map(module => module.id)
+
+    expect(ids).toStrictEqual([first.id])
   })
 })
 
@@ -495,46 +503,6 @@ describe("reloadFromStorage", () => {
     expect(selectModulesProgress(store.getState())).toStrictEqual({
       [firstCard.en]: "unknown",
     })
-  })
-})
-
-describe("hydration from local v2", () => {
-  beforeEach(() => {
-    localStorage.clear()
-  })
-
-  const writeModules = (modules: Partial<PersistedState["modules"]>) => {
-    const persisted = selectPersistedState(makeStore().getState())
-    writeLocalPersistedState({
-      ...persisted,
-      modules: { ...persisted.modules, ...modules },
-    })
-  }
-
-  test("prefers local v2 over legacy keys", () => {
-    localStorage.setItem(
-      StorageKeys.modulesProgress,
-      JSON.stringify({ HAT: CardStatus.Known }),
-    )
-    writeModules({
-      progress: [toVersionedValue({ word: "FOX", status: CardStatus.Unknown })],
-    })
-
-    expect(selectModulesProgress(makeStore().getState())).toStrictEqual({
-      FOX: CardStatus.Unknown,
-    })
-  })
-
-  test("uses v2 modules as stored, without adding built-ins", () => {
-    const first = at(defaultModuleExercises, 0)
-    writeModules({
-      modules: [toVersionedValue(first)],
-      currentModuleId: toVersionedValue(first.id),
-    })
-
-    const ids = selectModules(makeStore().getState()).map(module => module.id)
-
-    expect(ids).toStrictEqual([first.id])
   })
 })
 

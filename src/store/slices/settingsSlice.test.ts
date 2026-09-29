@@ -1,4 +1,3 @@
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import {
   reloadFromStorage,
   selectPersistedState,
@@ -14,6 +13,7 @@ import {
   selectSystemVoiceUri,
   setSpeechRate,
   toggleDyslexiaFont,
+  toggleShuffleUnseenAnswers,
 } from "./settingsSlice"
 import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
 
@@ -29,12 +29,10 @@ describe("hydration", () => {
       expect(selectDyslexiaFont(store.getState())).toBe(false)
     })
 
-    test("on when the key is set", () => {
-      localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+    test("reopens on after it was turned on", () => {
+      makeStore().dispatch(toggleDyslexiaFont())
 
-      const store = makeStore()
-
-      expect(selectDyslexiaFont(store.getState())).toBe(true)
+      expect(selectDyslexiaFont(makeStore().getState())).toBe(true)
     })
   })
 
@@ -42,7 +40,7 @@ describe("hydration", () => {
     test("defaults off and reopens on the stored preference", () => {
       expect(selectShuffleUnseenAnswers(makeStore().getState())).toBe(false)
 
-      localStorage.setItem(StorageKeys.shuffleUnseenAnswers, "1")
+      makeStore().dispatch(toggleShuffleUnseenAnswers())
 
       expect(selectShuffleUnseenAnswers(makeStore().getState())).toBe(true)
     })
@@ -61,36 +59,14 @@ describe("hydration", () => {
     })
 
     test("reopens on the stored rate, independently per language", () => {
-      localStorage.setItem(StorageKeys.speechRate, "0.75")
-      localStorage.setItem(StorageKeys.speechRateHe, "0.3")
+      const previous = makeStore()
+      previous.dispatch(setSpeechRate({ lang: SpeechLang.English, rate: 0.75 }))
+      previous.dispatch(setSpeechRate({ lang: SpeechLang.Hebrew, rate: 0.3 }))
 
       const store = makeStore()
 
       expect(selectSpeechRate(store.getState(), SpeechLang.English)).toBe(0.75)
       expect(selectSpeechRate(store.getState(), SpeechLang.Hebrew)).toBe(0.3)
-    })
-
-    test.each(["5", "-2"])(
-      "falls back to the default for an out-of-range stored rate (%s)",
-      stored => {
-        localStorage.setItem(StorageKeys.speechRate, stored)
-
-        const store = makeStore()
-
-        expect(selectSpeechRate(store.getState(), SpeechLang.English)).toBe(
-          DEFAULT_SPEECH_RATE,
-        )
-      },
-    )
-
-    test("falls back to the default for unparsable input", () => {
-      localStorage.setItem(StorageKeys.speechRate, "not-a-number")
-
-      const store = makeStore()
-
-      expect(selectSpeechRate(store.getState(), SpeechLang.English)).toBe(
-        DEFAULT_SPEECH_RATE,
-      )
     })
   })
 
@@ -154,26 +130,6 @@ describe("reloadFromStorage", () => {
       "Google US English",
     )
     expect(selectSystemVoiceUri(state, SpeechLang.Hebrew)).toBe("Carmit")
-  })
-
-  test("prefers local v2 over legacy keys", () => {
-    const persisted = selectPersistedState(makeStore().getState())
-    writeLocalPersistedState({
-      ...persisted,
-      preferences: {
-        ...persisted.preferences,
-        speechRateByLang: {
-          ...persisted.preferences.speechRateByLang,
-          [SpeechLang.Hebrew]: toVersionedValue(0.3),
-        },
-      },
-    })
-    localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-
-    const state = makeStore().getState()
-
-    expect(selectDyslexiaFont(state)).toBe(false)
-    expect(selectSpeechRate(state, SpeechLang.Hebrew)).toBe(0.3)
   })
 })
 

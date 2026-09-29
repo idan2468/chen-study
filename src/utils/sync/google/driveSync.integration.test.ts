@@ -1,6 +1,6 @@
 /**
- * Two devices syncing through one fake Drive, running the real migration,
- * transport, and merge code. Only Google itself is faked (see
+ * Two devices syncing through one fake Drive, running the real transport
+ * and merge code. Only Google itself is faked (see
  * `test/fakeDrive.ts`); signing in is just a stored access token.
  */
 import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
@@ -15,22 +15,16 @@ import { markCard, selectModulesProgress } from "@/store/slices/modulesSlice"
 import type { AppStore } from "@/store/store"
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
-import { isV2Activated } from "@/utils/sync/legacy/migrateToV2"
 import { syncWithDrive } from "./driveSync"
 
 const TOKEN = "fake-token"
 const V2_FILE = "progress-v2.json"
-const LEGACY_FILE = "progress.json"
 
 type Device = { storage: Record<string, string>; store?: AppStore }
 
-/** A device signed in to Google, with its own legacy localStorage. */
-const createDevice = (legacyProgress: Record<string, string>): Device => ({
-  storage: {
-    [DeviceStorageKeys.googleAccessToken]: TOKEN,
-    [StorageKeys.modulesProgress]: JSON.stringify(legacyProgress),
-  },
+/** A device signed in to Google, starting from the defaults. */
+const createDevice = (): Device => ({
+  storage: { [DeviceStorageKeys.googleAccessToken]: TOKEN },
 })
 
 /**
@@ -89,13 +83,6 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-09-27T09:00:00Z") })
   drive = createFakeDrive({ token: TOKEN })
   vi.stubGlobal("fetch", drive.fetch)
-  // Production's legacy snapshot, pushed by the old app before this release.
-  drive.addFile(
-    LEGACY_FILE,
-    JSON.stringify({
-      [StorageKeys.modulesProgress]: JSON.stringify({ HAT: "known" }),
-    }),
-  )
 })
 
 afterEach(() => {
@@ -103,43 +90,41 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("migrating two legacy devices", () => {
-  test("the first device pulls progress.json and creates progress-v2.json", async () => {
-    const laptop = createDevice({ FOX: "unknown" })
+describe("the first sync of each device", () => {
+  test("the first device creates progress-v2.json", async () => {
+    const laptop = createDevice()
 
-    await onDevice(laptop, sync)
+    await onDevice(laptop, async store => {
+      store.dispatch(markCard({ word: "FOX", isKnown: false }))
+      await sync(store)
+    })
 
     expect(drive.calls()).toStrictEqual([
       "GET /drive/v3/files", // locate progress-v2.json: none
-      "GET /drive/v3/files", // locate progress.json
-      "GET /drive/v3/files/file-1", // download it
-      "POST /upload/drive/v3/files", // create progress-v2.json
+      "POST /upload/drive/v3/files", // create it
     ])
     expect(drive.requests[0]?.url).toContain("spaces=appDataFolder")
-    // The legacy pull replaces the whole legacy key, as connect always did.
-    expect(driveProgress()).toStrictEqual({ HAT: "known" })
-    expect(await progressOf(laptop)).toStrictEqual({ HAT: "known" })
-    await onDevice(laptop, () => {
-      expect(isV2Activated()).toBe(true)
-      expect(localStorage.getItem(StorageKeys.modulesProgress)).toBeNull()
-      expect(localStorage.getItem(DeviceStorageKeys.googleAccessToken)).toBe(
-        TOKEN,
-      )
-    })
+    expect(driveProgress()).toStrictEqual({ FOX: "unknown" })
   })
 
-  test("the second device merges into progress-v2.json and never reads progress.json", async () => {
-    const laptop = createDevice({})
-    const phone = createDevice({ CAT: "known" })
-    await onDevice(laptop, sync)
+  test("the second device merges into progress-v2.json", async () => {
+    const laptop = createDevice()
+    const phone = createDevice()
+    await onDevice(laptop, async store => {
+      store.dispatch(markCard({ word: "HAT", isKnown: true }))
+      await sync(store)
+    })
     drive.clearRequests()
 
-    await onDevice(phone, sync)
+    await onDevice(phone, async store => {
+      store.dispatch(markCard({ word: "CAT", isKnown: true }))
+      await sync(store)
+    })
 
     expect(drive.calls()).toStrictEqual([
       "GET /drive/v3/files", // locate progress-v2.json
-      "GET /drive/v3/files/file-2", // download it
-      "PATCH /upload/drive/v3/files/file-2", // upload the merge
+      "GET /drive/v3/files/file-1", // download it
+      "PATCH /upload/drive/v3/files/file-1", // upload the merge
     ])
     expect(driveProgress()).toStrictEqual({ HAT: "known", CAT: "known" })
     expect(await progressOf(phone)).toStrictEqual({
@@ -147,37 +132,27 @@ describe("migrating two legacy devices", () => {
       CAT: "known",
     })
   })
-
-  test("progress.json is only ever read, never written", async () => {
-    const legacyContent = drive.fileNamed(LEGACY_FILE)?.content
-    await onDevice(createDevice({}), sync)
-    await onDevice(createDevice({ CAT: "known" }), sync)
-
-    expect(drive.fileNamed(LEGACY_FILE)?.content).toBe(legacyContent)
-    expect(
-      drive.requests.filter(
-        request => request.method !== "GET" && request.url.includes("file-1"),
-      ),
-    ).toStrictEqual([])
-  })
 })
 
 test("overlapping syncs on one device create progress-v2.json only once", async () => {
-  const laptop = createDevice({})
+  const laptop = createDevice()
   await onDevice(laptop, store => Promise.all([sync(store), sync(store)]))
 
   expect(drive.files.filter(file => file.name === V2_FILE)).toHaveLength(1)
   expect(drive.calls().filter(call => call.startsWith("POST"))).toHaveLength(1)
 })
 
-describe("two activated devices", () => {
+describe("two synced devices", () => {
   let laptop: Device
   let phone: Device
 
   beforeEach(async () => {
-    laptop = createDevice({})
-    phone = createDevice({})
-    await onDevice(laptop, sync)
+    laptop = createDevice()
+    phone = createDevice()
+    await onDevice(laptop, async store => {
+      store.dispatch(markCard({ word: "HAT", isKnown: true }))
+      await sync(store)
+    })
     await onDevice(phone, sync)
     drive.clearRequests()
   })
@@ -235,7 +210,7 @@ describe("two activated devices", () => {
 
     expect(drive.calls()).toStrictEqual([
       "GET /drive/v3/files",
-      "GET /drive/v3/files/file-2",
+      "GET /drive/v3/files/file-1",
     ])
   })
 
@@ -248,7 +223,7 @@ describe("two activated devices", () => {
     await onDevice(laptop, sync)
 
     expect(drive.calls().slice(-2)).toStrictEqual([
-      "PATCH /drive/v3/files/file-2", // rename aside
+      "PATCH /drive/v3/files/file-1", // rename aside
       "POST /upload/drive/v3/files", // fresh progress-v2.json
     ])
     expect(corrupt?.name).toMatch(/^progress-v2\.invalid-.+\.json\.bck$/)

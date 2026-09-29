@@ -4,7 +4,6 @@ import {
 } from "@/store/persistedState"
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
-import { isV2Activated, migrateToV2 } from "@/utils/sync/legacy/migrateToV2"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
   readDrivePersistedState,
@@ -13,7 +12,6 @@ import {
 import { syncWithDrive } from "./driveSync"
 
 vi.mock("./drivePersistedState")
-vi.mock("@/utils/sync/legacy/migrateToV2")
 
 const EDITED_AT = "2026-09-27T10:00:00.000+03:00"
 
@@ -33,21 +31,8 @@ const withDyslexiaFont = (
 beforeEach(() => {
   localStorage.clear()
   vi.clearAllMocks()
-  vi.mocked(isV2Activated).mockReturnValue(true)
   vi.mocked(readDrivePersistedState).mockResolvedValue({ status: "missing" })
   vi.mocked(writeDrivePersistedState).mockResolvedValue()
-  vi.mocked(migrateToV2).mockResolvedValue()
-})
-
-test("an unactivated device migrates, reloads, and skips the v2 sync", async () => {
-  vi.mocked(isV2Activated).mockReturnValue(false)
-  const reloadApp = vi.fn()
-
-  await syncWithDrive(localState, reloadApp)
-
-  expect(migrateToV2).toHaveBeenCalledWith(true)
-  expect(reloadApp).toHaveBeenCalledOnce()
-  expect(readDrivePersistedState).not.toHaveBeenCalled()
 })
 
 test("uploads local state as-is when Drive has none, without reloading", async () => {

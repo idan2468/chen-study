@@ -1,7 +1,7 @@
 import { createListenerMiddleware } from "@reduxjs/toolkit"
 import type { AppDispatch, RootState } from "./store"
 import { writeString } from "./storage"
-import { DeviceStorageKeys } from "./deviceStorageKeys"
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import {
   selectPersistedState,
   writeLocalPersistedState,

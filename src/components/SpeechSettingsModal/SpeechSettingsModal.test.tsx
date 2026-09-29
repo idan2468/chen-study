@@ -1,8 +1,8 @@
 import { screen } from "@testing-library/react"
 import { renderWithProviders } from "@test/render"
 import { setSpeechRate } from "@/store/slices/settingsSlice"
+import { makeStore } from "@/store/store"
 import { SpeechLang } from "@/types/speech"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { SpeechSettingsModal } from "./SpeechSettingsModal"
 
 beforeEach(() => {
@@ -11,11 +11,13 @@ beforeEach(() => {
 
 describe("SpeechSettingsModal", () => {
   test("English and Hebrew each get their own tab with an independent speed slider", async () => {
-    localStorage.setItem(StorageKeys.speechRate, "0.75")
-    localStorage.setItem(StorageKeys.speechRateHe, "0.25")
+    const store = makeStore()
+    store.dispatch(setSpeechRate({ lang: SpeechLang.English, rate: 0.75 }))
+    store.dispatch(setSpeechRate({ lang: SpeechLang.Hebrew, rate: 0.25 }))
 
     const { user } = renderWithProviders(
       <SpeechSettingsModal opened onClose={vi.fn()} />,
+      { store },
     )
 
     // English tab is the default.

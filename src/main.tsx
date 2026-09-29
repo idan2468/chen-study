@@ -18,13 +18,13 @@ import {
   initI18n,
   readStoredLocale,
 } from "./i18n"
+import {
+  selectPersistedState,
+  writeLocalPersistedStateIfMissing,
+} from "@/store/persistedState"
 import { makeStore } from "./store/store"
 import { colorSchemeManager, cssVariablesResolver, theme } from "./theme"
-import {
-  getAccessToken,
-  GOOGLE_CLIENT_ID,
-} from "./utils/sync/google/googleAuth"
-import { migrateToV2 } from "./utils/sync/legacy/migrateToV2"
+import { GOOGLE_CLIENT_ID } from "@/utils/sync/google/googleAuth"
 
 /** No-op when unset, so a build without `VITE_GOOGLE_CLIENT_ID` doesn't load GIS at all. */
 const GoogleAuthGate = ({ children }: { children: ReactNode }) =>
@@ -36,16 +36,9 @@ const GoogleAuthGate = ({ children }: { children: ReactNode }) =>
     children
   )
 
-/** A connected device migrates during the boot restore, which can reach Drive; a tokenless one migrates here, before the store first reads storage. */
-const migrateTokenlessDevice = async () => {
-  if (!getAccessToken()) {
-    await migrateToV2(false)
-  }
-}
-
-const bootstrap = async () => {
-  await migrateTokenlessDevice()
+const bootstrap = () => {
   const store = makeStore()
+  writeLocalPersistedStateIfMissing(selectPersistedState(store.getState()))
 
   const locale = readStoredLocale()
   // Set `lang`/`dir` before mounting: Mantine's DirectionProvider reads `dir` off
@@ -97,4 +90,4 @@ const bootstrap = async () => {
   )
 }
 
-void bootstrap()
+bootstrap()

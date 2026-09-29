@@ -8,7 +8,6 @@ import type * as GoogleAuthModule from "@/utils/sync/google/googleAuth"
 import * as googleAuth from "@/utils/sync/google/googleAuth"
 import { getAccessToken, setAccessToken } from "@/utils/sync/google/googleAuth"
 import { MOBILE_MAX_WIDTH_QUERY } from "@/constants/breakpoints"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { TopBar } from "./TopBar"
 
 /** Captured by the `useGoogleLogin` mock below, so tests can fire `onSuccess`/`onError` directly. */
@@ -187,8 +186,7 @@ test("shows a Sync now button once connected, which uploads the persisted state 
   setAccessToken("ya29.token")
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" })) // boot's email fetch
-    // Boot migrates: no progress-v2.json, no legacy progress.json, then create.
-    .mockResolvedValueOnce(filesResponse([]))
+    // Boot syncs: no progress-v2.json yet, so it's created.
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
 
@@ -196,7 +194,7 @@ test("shows a Sync now button once connected, which uploads the persisted state 
   const syncButton = await screen.findByRole("button", {
     name: i18next.t("common.syncNowLabel"),
   })
-  expect(fetch).toHaveBeenCalledTimes(4)
+  expect(fetch).toHaveBeenCalledTimes(3)
 
   vi.mocked(fetch)
     .mockResolvedValueOnce(filesResponse([])) // syncNow's own locate
@@ -204,9 +202,9 @@ test("shows a Sync now button once connected, which uploads the persisted state 
   await user.click(syncButton)
 
   await waitFor(() => {
-    expect(fetch).toHaveBeenCalledTimes(6)
+    expect(fetch).toHaveBeenCalledTimes(5)
   })
-  const [url, init] = vi.mocked(fetch).mock.calls[5] ?? []
+  const [url, init] = vi.mocked(fetch).mock.calls[4] ?? []
   expect(url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
   expect(init?.body as string).toContain('"name":"progress-v2.json"')
 })
@@ -216,7 +214,6 @@ test("marks the Sync now button aria-busy (spinning icon) while a sync is in fli
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
     .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
 
   const { user } = renderTopBar()
@@ -224,7 +221,6 @@ test("marks the Sync now button aria-busy (spinning icon) while a sync is in fli
     name: i18next.t("common.syncNowLabel"),
   })
 
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
   let resolveLocate: (response: Response) => void = () => undefined
   vi.mocked(fetch)
     .mockReturnValueOnce(
@@ -251,7 +247,6 @@ test("shows a success toast once the Sync now button completes a sync", async ()
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
     .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
 
   const { user } = renderTopBar()
@@ -259,7 +254,6 @@ test("shows a success toast once the Sync now button completes a sync", async ()
     name: i18next.t("common.syncNowLabel"),
   })
 
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
   vi.mocked(fetch)
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
@@ -281,7 +275,6 @@ test("switches to tap-to-reconnect after a failed silent reissue, and tapping it
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
     .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
 
   renderTopBar()
@@ -295,8 +288,6 @@ test("switches to tap-to-reconnect after a failed silent reissue, and tapping it
     ).toBeInTheDocument()
   })
 
-  // A local change after boot's baseline gives the 30-second timer something dirty to push.
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
   vi.mocked(fetch)
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(new Response(null, { status: 401 }))
@@ -348,7 +339,6 @@ test("on mobile, shows a lost connection in the top row without opening the draw
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
     .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
 
   renderTopBar()
@@ -362,7 +352,6 @@ test("on mobile, shows a lost connection in the top row without opening the draw
     ).toBeInTheDocument()
   })
 
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
   vi.mocked(fetch)
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(new Response(null, { status: 401 }))
@@ -422,12 +411,11 @@ test("on mobile, connects Google from the top row and pushes a snapshot, with Sy
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
     .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
 
   renderTopBar()
   await waitFor(() => {
-    expect(fetch).toHaveBeenCalledTimes(4)
+    expect(fetch).toHaveBeenCalledTimes(3)
   })
 
   const googleButton = screen.getByRole("button", {

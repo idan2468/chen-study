@@ -83,3 +83,10 @@ export const readLocalPersistedState = (): PersistedState | null => {
 export const writeLocalPersistedState = (state: PersistedState) => {
   writeJson(PERSISTED_STATE_KEY, state)
 }
+
+/** Lets a first run save its defaults, so every new user starts from saved data; an invalid document counts as missing. */
+export const writeLocalPersistedStateIfMissing = (state: PersistedState) => {
+  if (!readLocalPersistedState()) {
+    writeLocalPersistedState(state)
+  }
+}

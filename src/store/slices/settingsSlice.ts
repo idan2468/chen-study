@@ -10,9 +10,12 @@ import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { speechRateSchema } from "@/types/schemas/persistedState"
 import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
+import type { PersistedState } from "@/types/schemas/persistedState"
 import type { VersionedValue } from "@/types/versionedValue"
-import { readLegacyPreferences } from "@/utils/sync/legacy/legacyStorage"
-import { setValueIfChanged } from "@/utils/sync/versionedValue"
+import {
+  setValueIfChanged,
+  toVersionedValue,
+} from "@/utils/sync/versionedValue"
 
 /**
  * Cross-page user preferences.
@@ -33,9 +36,18 @@ export type SettingsState = {
   systemVoiceUriByLang: Record<SpeechLang, string | null>
 }
 
+const defaultPreferences = (): PersistedState["preferences"] => ({
+  dyslexiaFont: toVersionedValue(false),
+  shuffleUnseenAnswers: toVersionedValue(false),
+  speechRateByLang: {
+    [SpeechLang.English]: toVersionedValue(DEFAULT_SPEECH_RATE),
+    [SpeechLang.Hebrew]: toVersionedValue(DEFAULT_SPEECH_RATE),
+  },
+})
+
 const loadFromStorage = (): SettingsState => {
   const { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang } =
-    readLocalPersistedState()?.preferences ?? readLegacyPreferences()
+    readLocalPersistedState()?.preferences ?? defaultPreferences()
   const storedSystemVoice = readString(DeviceStorageKeys.systemVoice, "")
   const storedSystemVoiceHe = readString(DeviceStorageKeys.systemVoiceHe, "")
 

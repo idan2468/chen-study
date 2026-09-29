@@ -7,12 +7,12 @@ import {
 import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { clampIndex, hasWord, keepLastBy } from "@/utils/collections"
-import { readLegacyUnseenState } from "@/utils/sync/legacy/legacyStorage"
 import {
   findLiveValue,
   liveValues,
   markDeleted,
   setValueIfChanged,
+  toVersionedValue,
   tombstoneValue,
   upsertValue,
 } from "@/utils/sync/versionedValue"
@@ -34,10 +34,15 @@ export type UnseenState = {
 const hasExerciseId = (exerciseId: string) => (exercise: UnseenExercise) =>
   exercise.exerciseId === exerciseId
 
+const defaultUnseenState = (): UnseenState => ({
+  exercises: [toVersionedValue(defaultUnseenExercise)],
+  currentId: toVersionedValue(defaultUnseenExercise.exerciseId),
+  cardIndex: toVersionedValue(0),
+})
+
 /** Loads local v2 as stored; built-ins are only the default for an empty state. */
 const loadFromStorage = (): UnseenState =>
-  readLocalPersistedState()?.unseen ??
-  readLegacyUnseenState(defaultUnseenExercise)
+  readLocalPersistedState()?.unseen ?? defaultUnseenState()
 
 const findExercise = (state: UnseenState, exerciseId: string) =>
   findLiveValue(state.exercises, hasExerciseId(exerciseId))

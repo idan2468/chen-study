@@ -8,11 +8,11 @@ import type { TimestampedAction } from "@/store/updatedAt"
 import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { clampIndex, hasWord, keepLastBy } from "@/utils/collections"
 import type { IsoTimestamp } from "@/utils/sync/timestamp"
-import { readLegacyModulesState } from "@/utils/sync/legacy/legacyStorage"
 import {
   findLiveValue,
   liveValues,
   setValueIfChanged,
+  toVersionedValue,
   tombstoneValue,
   upsertValue,
 } from "@/utils/sync/versionedValue"
@@ -22,7 +22,9 @@ import type {
   ModulesProgress,
 } from "@/types/moduleExercise"
 import { CardStatus } from "@/types/moduleExercise"
+import type { PersistedState } from "@/types/schemas/persistedState"
 import type { VersionedValue } from "@/types/versionedValue"
+import { defaultModuleExercises } from "@/data/defaultModuleExercises"
 
 export type ModulesState = {
   /** Includes tombstones, so a deletion reaches your other devices. */
@@ -55,9 +57,16 @@ const setModuleProgressStatus = (
   upsertValue(progress, hasWord(word), { word, status }, updatedAt)
 }
 
+const defaultModulesState = (): PersistedState["modules"] => ({
+  modules: defaultModuleExercises.map(module => toVersionedValue(module)),
+  progress: [],
+  currentModuleId: toVersionedValue(defaultModuleExercises[0]?.id ?? ""),
+  cardIndex: toVersionedValue(0),
+})
+
 /** Loads local v2 as stored; built-ins are only the default for an empty state. */
 const loadFromStorage = (): ModulesState => ({
-  ...(readLocalPersistedState()?.modules ?? readLegacyModulesState()),
+  ...(readLocalPersistedState()?.modules ?? defaultModulesState()),
   filterMissed: false,
   missedReview: null,
 })

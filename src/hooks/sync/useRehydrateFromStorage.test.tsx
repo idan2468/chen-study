@@ -10,31 +10,21 @@ import {
 import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import { useAppSelector } from "@/store/hooks"
 import { makeStore } from "@/store/store"
-import { selectDyslexiaFont } from "@/store/slices/settingsSlice"
-import { selectCurrentExerciseId } from "@/store/slices/unseenSlice"
-import { selectCurrentModuleId } from "@/store/slices/modulesSlice"
+import {
+  selectDyslexiaFont,
+  toggleDyslexiaFont,
+} from "@/store/slices/settingsSlice"
+import {
+  selectCurrentModuleId,
+  selectModule,
+} from "@/store/slices/modulesSlice"
 import { colorSchemeManager, theme } from "@/theme"
 import { builtInModuleIds } from "@/data/defaultModuleExercises"
-import type { UnseenExercise } from "@/types/unseenExercise"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import { useRehydrateFromStorage } from "./useRehydrateFromStorage"
-
-const otherExercise: UnseenExercise = {
-  title: "Other",
-  subtitle: "Second exercise",
-  exerciseId: "other_1",
-  paragraphs: ["A cat sat."],
-  questions: [],
-  flashcards: [{ en: "Cat", he: "cat", trans: "kat" }],
-  answers: [],
-  highlights: [],
-  flashcardProgress: [],
-}
 
 const Host = () => {
   const rehydrate = useRehydrateFromStorage()
   const dyslexiaFont = useAppSelector(selectDyslexiaFont)
-  const currentExerciseId = useAppSelector(selectCurrentExerciseId)
   const currentModuleId = useAppSelector(selectCurrentModuleId)
   const { colorScheme } = useMantineColorScheme()
   const { dir } = useDirection()
@@ -42,7 +32,6 @@ const Host = () => {
   return (
     <div>
       <span>{dyslexiaFont ? "dyslexia-on" : "dyslexia-off"}</span>
-      <span>{currentExerciseId}</span>
       <span>{currentModuleId}</span>
       <span>{colorScheme}</span>
       <span>{dir}</span>
@@ -74,7 +63,7 @@ beforeEach(() => {
   document.documentElement.lang = "en"
 })
 
-test("re-reads settings, unseen, modules, locale and colour scheme from storage, discarding in-memory state", async () => {
+test("re-reads settings, modules, locale and colour scheme from storage, discarding in-memory state", async () => {
   const user = userEvent.setup()
   renderHost()
   const secondBuiltInId = builtInModuleIds[1] ?? ""
@@ -82,23 +71,17 @@ test("re-reads settings, unseen, modules, locale and colour scheme from storage,
   expect(screen.getByText("dark")).toBeInTheDocument()
   expect(screen.getByText("ltr")).toBeInTheDocument()
   expect(screen.queryByText(secondBuiltInId)).not.toBeInTheDocument()
-  expect(screen.queryByText("other_1")).not.toBeInTheDocument()
 
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
+  const otherTab = makeStore()
+  otherTab.dispatch(toggleDyslexiaFont())
+  otherTab.dispatch(selectModule(secondBuiltInId))
   localStorage.setItem(DeviceStorageKeys.locale, "he")
   localStorage.setItem(DeviceStorageKeys.darkMode, "0")
-  localStorage.setItem(
-    StorageKeys.exerciseLibrary,
-    JSON.stringify({ other_1: otherExercise }),
-  )
-  localStorage.setItem(StorageKeys.currentExerciseId, "other_1")
-  localStorage.setItem(StorageKeys.currentModuleId, secondBuiltInId)
 
   await user.click(screen.getByRole("button", { name: "Rehydrate" }))
 
   expect(screen.getByText("dyslexia-on")).toBeInTheDocument()
   expect(screen.getByText("light")).toBeInTheDocument()
-  expect(screen.getByText("other_1")).toBeInTheDocument()
   expect(screen.getByText(secondBuiltInId)).toBeInTheDocument()
   expect(document.documentElement.lang).toBe("he")
   // `detectDirection={false}` above rules out Mantine's own dir-attribute

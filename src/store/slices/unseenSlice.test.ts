@@ -1,10 +1,6 @@
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import type { UnseenExercise } from "@/types/unseenExercise"
 import {
-  flashcardStatusKey,
-  StorageKeys,
-} from "@/utils/sync/legacy/legacyStorage"
-import {
   reloadFromStorage,
   selectPersistedState,
   writeLocalPersistedState,
@@ -28,6 +24,7 @@ import {
   selectCurrentProgress,
   selectExerciseOptions,
   selectCurrentFlashcard,
+  selectCurrentMarkedWords,
   selectFlashcardIndex,
   selectFlashcardPosition,
   selectFlashcardStats,
@@ -431,156 +428,97 @@ describe("hydration", () => {
     localStorage.clear()
   })
 
-  test("reopens on the stored flashcard index", () => {
-    localStorage.setItem(StorageKeys.flashcardIndex, "2")
+  test("starts a new user on the default exercise, at card 0", () => {
+    const state = makeStore().getState()
 
-    const store = makeStore()
-
-    expect(selectFlashcardIndex(store.getState())).toBe(2)
+    expect(
+      selectExerciseOptions(state).map(option => option.value),
+    ).toStrictEqual([defaultUnseenExercise.exerciseId])
+    expect(selectCurrentExerciseId(state)).toBe(
+      defaultUnseenExercise.exerciseId,
+    )
+    expect(selectFlashcardPosition(state)).toBe(0)
   })
 
-  test("migrates legacy active-exercise answers and reopens marked words", () => {
-    localStorage.setItem(
-      StorageKeys.quizAnswers,
-      JSON.stringify({ q1: { selected: 1, correct: true } }),
-    )
-    localStorage.setItem(
-      StorageKeys.markedWords,
-      JSON.stringify({ [defaultUnseenExercise.exerciseId]: ["Maya"] }),
-    )
+  test("reopens on the card that was open", () => {
+    const previous = makeStore()
+    previous.dispatch(nextFlashcard(defaultUnseenExercise.flashcards.length))
+    previous.dispatch(nextFlashcard(defaultUnseenExercise.flashcards.length))
 
-    const store = makeStore()
-    const state = store.getState()
+    expect(selectFlashcardPosition(makeStore().getState())).toBe(2)
+  })
+
+  test("reopens with the saved answers and marked words", () => {
+    const previous = makeStore()
+    previous.dispatch(
+      answerQuestion({ questionId: "q1", selected: 1, correct: true }),
+    )
+    previous.dispatch(toggleMarkedWord("Maya"))
+
+    const state = makeStore().getState()
 
     expect(selectAnswers(state)).toStrictEqual({
       q1: { selected: 1, correct: true },
     })
-    expect(selectAllMarkedWords(state)).toStrictEqual({
-      [defaultUnseenExercise.exerciseId]: ["Maya"],
-    })
-    expect(
-      selectLibrary(state)[defaultUnseenExercise.exerciseId]?.answers,
-    ).toStrictEqual([
-      toVersionedValue({ questionId: "q1", selected: 1, correct: true }),
-    ])
+    expect(selectCurrentMarkedWords(state)).toStrictEqual(["Maya"])
   })
 
-  test("marks a completed legacy active exercise as complete", () => {
-    const answers = Object.fromEntries(
-      defaultUnseenExercise.questions.map(question => [
-        question.id,
-        {
+  test("marks an exercise complete from saved answers", () => {
+    const previous = makeStore()
+    for (const question of defaultUnseenExercise.questions) {
+      previous.dispatch(
+        answerQuestion({
+          questionId: question.id,
           selected: question.options.findIndex(option => option.isCorrect),
           correct: true,
-        },
-      ]),
-    )
-    localStorage.setItem(StorageKeys.quizAnswers, JSON.stringify(answers))
+        }),
+      )
+    }
 
-    const store = makeStore()
-
-    expect(selectAnswers(store.getState())).toStrictEqual(answers)
     expect(
-      selectExerciseOptions(store.getState()).find(
+      selectExerciseOptions(makeStore().getState()).find(
         option => option.value === defaultUnseenExercise.exerciseId,
       )?.completed,
     ).toBe(true)
   })
 
-  test("reopens per-exercise answers in the new storage shape", () => {
-    localStorage.setItem(
-      StorageKeys.exerciseLibrary,
-      JSON.stringify({
-        [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
-        other_1: otherExercise,
-      }),
+  test("reopens answers and flashcard progress per exercise", () => {
+    const previous = makeStore()
+    previous.dispatch(
+      answerQuestion({ questionId: "q1", selected: 1, correct: true }),
     )
-    localStorage.setItem(
-      StorageKeys.quizAnswers,
-      JSON.stringify({
-        [defaultUnseenExercise.exerciseId]: {
-          q1: { selected: 1, correct: true },
-        },
-        other_1: { q2: { selected: 0, correct: false } },
-      }),
+    previous.dispatch(markFlashcard({ word: "Delicate", isKnown: true }))
+    previous.dispatch(addExercises([otherExercise]))
+    previous.dispatch(
+      answerQuestion({ questionId: "q1", selected: 0, correct: true }),
     )
-
-    const library = selectLibrary(makeStore().getState())
-
-    expect(library[defaultUnseenExercise.exerciseId]?.answers).toStrictEqual([
-      toVersionedValue({ questionId: "q1", selected: 1, correct: true }),
-    ])
-    expect(library.other_1?.answers).toStrictEqual([
-      toVersionedValue({ questionId: "q2", selected: 0, correct: false }),
-    ])
-  })
-
-  test("reopens with per-exercise flashcard progress, keyed by exercise", () => {
-    localStorage.setItem(
-      StorageKeys.exerciseLibrary,
-      JSON.stringify({
-        [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
-        other_1: otherExercise,
-      }),
-    )
-    localStorage.setItem(
-      flashcardStatusKey(defaultUnseenExercise.exerciseId),
-      JSON.stringify({ Delicate: true }),
-    )
-    localStorage.setItem(
-      flashcardStatusKey("other_1"),
-      JSON.stringify({ Cat: false }),
-    )
+    previous.dispatch(markFlashcard({ word: "Cat", isKnown: false }))
 
     const store = makeStore()
-    const progress = selectAllProgress(store.getState())
 
-    expect(progress[defaultUnseenExercise.exerciseId]).toStrictEqual({
+    expect(selectCurrentExerciseId(store.getState())).toBe("other_1")
+    expect(selectAnswers(store.getState())).toStrictEqual({
+      q1: { selected: 0, correct: true },
+    })
+    expect(selectCurrentProgress(store.getState())).toStrictEqual({
+      Cat: false,
+    })
+    store.dispatch(switchExercise(defaultUnseenExercise.exerciseId))
+    expect(selectAnswers(store.getState())).toStrictEqual({
+      q1: { selected: 1, correct: true },
+    })
+    expect(selectCurrentProgress(store.getState())).toStrictEqual({
       Delicate: true,
     })
-    expect(progress.other_1).toStrictEqual({ Cat: false })
   })
 
-  describe("currentId resolution", () => {
-    beforeEach(() => {
-      localStorage.setItem(
-        StorageKeys.exerciseLibrary,
-        JSON.stringify({
-          [defaultUnseenExercise.exerciseId]: defaultUnseenExercise,
-          other_1: otherExercise,
-        }),
-      )
-    })
+  test("reopens on the exercise that was open", () => {
+    const previous = makeStore()
+    previous.dispatch(addExercises([otherExercise]))
+    previous.dispatch(switchExercise(defaultUnseenExercise.exerciseId))
+    previous.dispatch(switchExercise("other_1"))
 
-    test("prefers a stored id that is still in the library", () => {
-      localStorage.setItem(StorageKeys.currentExerciseId, "other_1")
-
-      const store = makeStore()
-
-      expect(selectCurrentExerciseId(store.getState())).toBe("other_1")
-    })
-
-    test("falls back to the legacy single-exercise mirror when the stored id is gone", () => {
-      localStorage.setItem(StorageKeys.currentExerciseId, "no-such-exercise")
-      localStorage.setItem(
-        StorageKeys.currentExerciseData,
-        JSON.stringify(otherExercise),
-      )
-
-      const store = makeStore()
-
-      expect(selectCurrentExerciseId(store.getState())).toBe("other_1")
-    })
-
-    test("falls back to the built-in default when neither the stored id nor the legacy mirror resolve", () => {
-      localStorage.setItem(StorageKeys.currentExerciseId, "no-such-exercise")
-
-      const store = makeStore()
-
-      expect(selectCurrentExerciseId(store.getState())).toBe(
-        defaultUnseenExercise.exerciseId,
-      )
-    })
+    expect(selectCurrentExerciseId(makeStore().getState())).toBe("other_1")
   })
 })
 

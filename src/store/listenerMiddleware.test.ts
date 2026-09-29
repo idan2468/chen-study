@@ -1,7 +1,7 @@
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import { defaultModuleExercises } from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
-import { DeviceStorageKeys } from "./deviceStorageKeys"
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
   PERSISTED_STATE_KEY,

@@ -17,7 +17,6 @@ import {
 } from "@/store/persistedState"
 import { makeStore } from "@/store/store"
 import type { PersistedState } from "@/types/schemas/persistedState"
-import { V2_ACTIVATED_KEY } from "@/utils/sync/legacy/migrateToV2"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import { useGoogleConnect } from "./useGoogleConnect"
 
@@ -145,7 +144,6 @@ test("a 401 at boot triggers a silent re-issue that succeeds with a fresh token"
     .mockResolvedValueOnce(jsonResponse({}, 401)) // boot's own fetchConnectedEmail
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" })) // after the re-issue
     .mockResolvedValueOnce(filesResponse([]))
-    .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(new Response(null, { status: 200 }))
 
   renderWithProviders(<Host />)
@@ -249,7 +247,6 @@ test("disconnect clears the stored token", async () => {
 })
 
 test("connecting merges newer Drive v2 changes and rehydrates the app", async () => {
-  localStorage.setItem(V2_ACTIVATED_KEY, "1")
   const driveState = withDyslexiaFont(true)
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
@@ -270,7 +267,6 @@ test("connecting merges newer Drive v2 changes and rehydrates the app", async ()
 })
 
 test("connecting uploads local state when Drive has no v2 yet", async () => {
-  localStorage.setItem(V2_ACTIVATED_KEY, "1")
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
     .mockResolvedValueOnce(filesResponse([]))
@@ -287,22 +283,6 @@ test("connecting uploads local state when Drive has no v2 yet", async () => {
   expect(init?.body as string).toContain('"name":"progress-v2.json"')
 })
 
-test("connecting an unactivated device migrates it and creates Drive v2", async () => {
-  vi.mocked(fetch)
-    .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-    .mockResolvedValueOnce(filesResponse([])) // progress-v2.json
-    .mockResolvedValueOnce(filesResponse([])) // legacy progress.json
-    .mockResolvedValueOnce(new Response(null, { status: 200 }))
-
-  renderWithProviders(<Host />)
-  triggerLoginSuccess("ya29.new")
-
-  await waitFor(() => {
-    expect(localStorage.getItem(V2_ACTIVATED_KEY)).toBe("1")
-  })
-  const [url] = vi.mocked(fetch).mock.calls[3] ?? []
-  expect(url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
-})
 test("a failed email fetch during connect shows the error notification and stays signed out", async () => {
   vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 500 }))
 
@@ -340,7 +320,6 @@ test("a Drive failure during connect shows the error notification but keeps the 
 })
 
 test("an invalid Drive v2 file is renamed aside, not overwritten", async () => {
-  localStorage.setItem(V2_ACTIVATED_KEY, "1")
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
     .mockResolvedValueOnce(

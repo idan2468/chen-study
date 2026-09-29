@@ -3,7 +3,6 @@ import i18next from "i18next"
 import { storeTestLocale } from "@test/helpers"
 import { renderWithProviders } from "@test/render"
 import { setAccessToken } from "@/utils/sync/google/googleAuth"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
 import {
   GoogleConnectProvider,
   useGoogleConnectContext,
@@ -93,8 +92,7 @@ test("exposes syncNow, wired to useDriveSync and gated on being connected", asyn
   setAccessToken("ya29.token")
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" })) // boot's email fetch
-    // Boot migrates: no progress-v2.json, no legacy progress.json, then create.
-    .mockResolvedValueOnce(filesResponse([]))
+    // Boot syncs: no progress-v2.json yet, so it's created.
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
 
@@ -106,7 +104,7 @@ test("exposes syncNow, wired to useDriveSync and gated on being connected", asyn
   await waitFor(() => {
     expect(screen.getByText("chen@example.com")).toBeInTheDocument()
   })
-  expect(fetch).toHaveBeenCalledTimes(4)
+  expect(fetch).toHaveBeenCalledTimes(3)
 
   vi.mocked(fetch)
     .mockResolvedValueOnce(filesResponse([])) // syncNow's own locate
@@ -114,9 +112,9 @@ test("exposes syncNow, wired to useDriveSync and gated on being connected", asyn
   await user.click(screen.getByRole("button", { name: "Sync now" }))
 
   await waitFor(() => {
-    expect(fetch).toHaveBeenCalledTimes(6)
+    expect(fetch).toHaveBeenCalledTimes(5)
   })
-  const [url, init] = vi.mocked(fetch).mock.calls[5] ?? []
+  const [url, init] = vi.mocked(fetch).mock.calls[4] ?? []
   expect(url).toBe(`${DRIVE_UPLOAD_URL}?uploadType=multipart`)
   expect(init?.body as string).toContain('"name":"progress-v2.json"')
 })
@@ -125,7 +123,6 @@ test("exposes syncing, wired to useDriveSync", async () => {
   setAccessToken("ya29.token")
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-    .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(filesResponse([]))
     .mockResolvedValueOnce(okResponse())
 
@@ -139,7 +136,6 @@ test("exposes syncing, wired to useDriveSync", async () => {
   })
   expect(screen.getByText("idle")).toBeInTheDocument()
 
-  localStorage.setItem(StorageKeys.dyslexiaFont, "1")
   let resolveLocate: (response: Response) => void = () => undefined
   vi.mocked(fetch)
     .mockReturnValueOnce(
