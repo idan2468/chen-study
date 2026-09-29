@@ -1,7 +1,7 @@
 import { defaultUnseenExercise } from "@/data/defaultUnseenExercise"
 import { defaultModuleExercises } from "@/data/defaultModuleExercises"
 import { at } from "@test/helpers"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import { DeviceStorageKeys } from "./deviceStorageKeys"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
   PERSISTED_STATE_KEY,
@@ -102,8 +102,8 @@ test("a system voice is written to its device-local key only", () => {
   store.dispatch(setSystemVoiceUri({ lang: SpeechLang.Hebrew, uri: "Carmit" }))
   store.dispatch(setSystemVoiceUri({ lang: SpeechLang.English, uri: null }))
 
-  expect(localStorage.getItem(StorageKeys.systemVoiceHe)).toBe("Carmit")
-  expect(localStorage.getItem(StorageKeys.systemVoice)).toBe("")
+  expect(localStorage.getItem(DeviceStorageKeys.systemVoiceHe)).toBe("Carmit")
+  expect(localStorage.getItem(DeviceStorageKeys.systemVoice)).toBe("")
   expect(localStorage.getItem(PERSISTED_STATE_KEY)).toBeNull()
 })
 

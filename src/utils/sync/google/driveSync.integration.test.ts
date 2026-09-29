@@ -3,6 +3,7 @@
  * transport, and merge code. Only Google itself is faked (see
  * `test/fakeDrive.ts`); signing in is just a stored access token.
  */
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import { createFakeDrive } from "@test/fakeDrive"
 import type { FakeDrive } from "@test/fakeDrive"
 import {
@@ -27,7 +28,7 @@ type Device = { storage: Record<string, string>; store?: AppStore }
 /** A device signed in to Google, with its own legacy localStorage. */
 const createDevice = (legacyProgress: Record<string, string>): Device => ({
   storage: {
-    [StorageKeys.googleAccessToken]: TOKEN,
+    [DeviceStorageKeys.googleAccessToken]: TOKEN,
     [StorageKeys.modulesProgress]: JSON.stringify(legacyProgress),
   },
 })
@@ -121,7 +122,9 @@ describe("migrating two legacy devices", () => {
     await onDevice(laptop, () => {
       expect(isV2Activated()).toBe(true)
       expect(localStorage.getItem(StorageKeys.modulesProgress)).toBeNull()
-      expect(localStorage.getItem(StorageKeys.googleAccessToken)).toBe(TOKEN)
+      expect(localStorage.getItem(DeviceStorageKeys.googleAccessToken)).toBe(
+        TOKEN,
+      )
     })
   })
 
@@ -257,7 +260,7 @@ describe("two activated devices", () => {
   })
 
   test("an expired token is rejected before anything is written", async () => {
-    laptop.storage[StorageKeys.googleAccessToken] = "expired"
+    laptop.storage[DeviceStorageKeys.googleAccessToken] = "expired"
 
     await expect(onDevice(laptop, sync)).rejects.toThrow("token expired")
 

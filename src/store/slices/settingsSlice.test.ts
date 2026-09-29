@@ -4,6 +4,7 @@ import {
   selectPersistedState,
   writeLocalPersistedState,
 } from "@/store/persistedState"
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import { makeStore } from "@/store/store"
 import { toVersionedValue } from "@/utils/sync/versionedValue"
 import {
@@ -106,8 +107,8 @@ describe("hydration", () => {
     })
 
     test("reopens on the stored voice, independently per language", () => {
-      localStorage.setItem(StorageKeys.systemVoice, "Google US English")
-      localStorage.setItem(StorageKeys.systemVoiceHe, "Carmit")
+      localStorage.setItem(DeviceStorageKeys.systemVoice, "Google US English")
+      localStorage.setItem(DeviceStorageKeys.systemVoiceHe, "Carmit")
 
       const store = makeStore()
 
@@ -142,8 +143,8 @@ describe("reloadFromStorage", () => {
         },
       },
     })
-    localStorage.setItem(StorageKeys.systemVoice, "Google US English")
-    localStorage.setItem(StorageKeys.systemVoiceHe, "Carmit")
+    localStorage.setItem(DeviceStorageKeys.systemVoice, "Google US English")
+    localStorage.setItem(DeviceStorageKeys.systemVoiceHe, "Carmit")
     store.dispatch(reloadFromStorage())
 
     const state = store.getState()

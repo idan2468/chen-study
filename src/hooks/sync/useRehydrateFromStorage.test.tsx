@@ -7,6 +7,7 @@ import {
   useDirection,
   useMantineColorScheme,
 } from "@mantine/core"
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import { useAppSelector } from "@/store/hooks"
 import { makeStore } from "@/store/store"
 import { selectDyslexiaFont } from "@/store/slices/settingsSlice"
@@ -84,8 +85,8 @@ test("re-reads settings, unseen, modules, locale and colour scheme from storage,
   expect(screen.queryByText("other_1")).not.toBeInTheDocument()
 
   localStorage.setItem(StorageKeys.dyslexiaFont, "1")
-  localStorage.setItem(StorageKeys.locale, "he")
-  localStorage.setItem(StorageKeys.darkMode, "0")
+  localStorage.setItem(DeviceStorageKeys.locale, "he")
+  localStorage.setItem(DeviceStorageKeys.darkMode, "0")
   localStorage.setItem(
     StorageKeys.exerciseLibrary,
     JSON.stringify({ other_1: otherExercise }),

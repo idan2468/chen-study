@@ -1,3 +1,4 @@
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import {
   PERSISTED_STATE_KEY,
   readLocalPersistedState,
@@ -23,10 +24,10 @@ vi.mock("@/utils/sync/google/driveStore")
 const EDITED_AT = "2026-09-27T10:00:00.000+03:00"
 
 const DEVICE_SETTINGS = {
-  [StorageKeys.darkMode]: "1",
-  [StorageKeys.locale]: "he",
-  [StorageKeys.systemVoice]: "voice-uri",
-  [StorageKeys.googleAccessToken]: "ya29.token",
+  [DeviceStorageKeys.darkMode]: "1",
+  [DeviceStorageKeys.locale]: "he",
+  [DeviceStorageKeys.systemVoice]: "voice-uri",
+  [DeviceStorageKeys.googleAccessToken]: "ya29.token",
 }
 
 const seedLegacyStorage = () => {

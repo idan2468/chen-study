@@ -1,5 +1,6 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "@/store/createAppSlice"
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import {
   readLocalPersistedState,
   reloadFromStorage,
@@ -10,10 +11,7 @@ import { withUpdatedAt, withUpdatedAtOnly } from "@/store/updatedAt"
 import { speechRateSchema } from "@/types/schemas/persistedState"
 import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
 import type { VersionedValue } from "@/types/versionedValue"
-import {
-  readLegacyPreferences,
-  StorageKeys,
-} from "@/utils/sync/legacy/legacyStorage"
+import { readLegacyPreferences } from "@/utils/sync/legacy/legacyStorage"
 import { setValueIfChanged } from "@/utils/sync/versionedValue"
 
 /**
@@ -38,8 +36,8 @@ export type SettingsState = {
 const loadFromStorage = (): SettingsState => {
   const { dyslexiaFont, shuffleUnseenAnswers, speechRateByLang } =
     readLocalPersistedState()?.preferences ?? readLegacyPreferences()
-  const storedSystemVoice = readString(StorageKeys.systemVoice, "")
-  const storedSystemVoiceHe = readString(StorageKeys.systemVoiceHe, "")
+  const storedSystemVoice = readString(DeviceStorageKeys.systemVoice, "")
+  const storedSystemVoiceHe = readString(DeviceStorageKeys.systemVoiceHe, "")
 
   return {
     dyslexiaFont,

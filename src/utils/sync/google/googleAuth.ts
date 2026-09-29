@@ -9,7 +9,7 @@
  */
 
 import { readString, removeKey, writeString } from "@/store/storage"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 
 const USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
@@ -54,15 +54,15 @@ export const authorizedFetch = async (
 }
 
 export const getAccessToken = () => {
-  const stored = readString(StorageKeys.googleAccessToken, "")
+  const stored = readString(DeviceStorageKeys.googleAccessToken, "")
   return stored === "" ? null : stored
 }
 
 export const setAccessToken = (token: string | null) => {
   if (token) {
-    writeString(StorageKeys.googleAccessToken, token)
+    writeString(DeviceStorageKeys.googleAccessToken, token)
   } else {
-    removeKey(StorageKeys.googleAccessToken)
+    removeKey(DeviceStorageKeys.googleAccessToken)
   }
 }
 

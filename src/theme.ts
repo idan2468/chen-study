@@ -6,7 +6,7 @@ import type {
 } from "@mantine/core"
 import { createTheme } from "@mantine/core"
 import { readString, writeString } from "./store/storage"
-import { StorageKeys } from "./utils/sync/legacy/legacyStorage"
+import { DeviceStorageKeys } from "./store/deviceStorageKeys"
 
 /**
  * The single source of truth for every colour, radius and font in the app.
@@ -119,7 +119,7 @@ export const colorSchemeManager = (): MantineColorSchemeManager => {
 
   return {
     get: defaultValue => {
-      const raw = readString(StorageKeys.darkMode, "")
+      const raw = readString(DeviceStorageKeys.darkMode, "")
       return raw === "" ? defaultValue : toScheme(raw)
     },
 
@@ -130,14 +130,14 @@ export const colorSchemeManager = (): MantineColorSchemeManager => {
         value === "auto"
           ? window.matchMedia("(prefers-color-scheme: dark)").matches
           : value === "dark"
-      writeString(StorageKeys.darkMode, isDark ? "1" : "0")
+      writeString(DeviceStorageKeys.darkMode, isDark ? "1" : "0")
     },
 
     subscribe: onUpdate => {
       handleStorageEvent = event => {
         if (
           event.storageArea === window.localStorage &&
-          event.key === StorageKeys.darkMode &&
+          event.key === DeviceStorageKeys.darkMode &&
           event.newValue !== null
         ) {
           onUpdate(toScheme(event.newValue))
@@ -153,7 +153,7 @@ export const colorSchemeManager = (): MantineColorSchemeManager => {
     },
 
     clear: () => {
-      window.localStorage.removeItem(StorageKeys.darkMode)
+      window.localStorage.removeItem(DeviceStorageKeys.darkMode)
     },
   }
 }

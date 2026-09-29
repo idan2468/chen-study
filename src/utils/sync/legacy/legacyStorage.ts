@@ -1,3 +1,4 @@
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import { z } from "zod"
 import { PERSISTED_STATE_KEY } from "@/store/persistedState"
 import { readFlag, readJson, readString } from "@/store/storage"
@@ -27,15 +28,10 @@ export type SyncPayload = z.infer<typeof syncPayloadSchema>
 
 /** Storage keys inherited from the original standalone HTML apps. */
 export const StorageKeys = {
-  darkMode: "dark_mode_enabled",
   dyslexiaFont: "dyslexia_font_enabled",
   speechRate: "english_speech_rate",
   speechRateHe: "hebrew_speech_rate",
   shuffleUnseenAnswers: "english_shuffle_unseen_answers",
-  locale: "english_locale",
-  systemVoice: "english_system_voice",
-  systemVoiceHe: "hebrew_system_voice",
-  googleAccessToken: "google_access_token",
   googleLastSyncedHash: "google_last_synced_hash",
   exerciseLibrary: "english_exercise_library",
   currentExerciseId: "english_current_exercise_id",
@@ -56,9 +52,9 @@ export const flashcardStatusKey = (exerciseId: string) =>
   `${FLASHCARD_STATUS_PREFIX}${exerciseId || "default"}`
 
 const DEVICE_LOCAL_KEYS = new Set<string>([
-  StorageKeys.systemVoice,
-  StorageKeys.systemVoiceHe,
-  StorageKeys.googleAccessToken,
+  DeviceStorageKeys.systemVoice,
+  DeviceStorageKeys.systemVoiceHe,
+  DeviceStorageKeys.googleAccessToken,
   StorageKeys.googleLastSyncedHash,
 ])
 

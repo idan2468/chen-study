@@ -1,4 +1,4 @@
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import {
   fetchConnectedEmail,
   getAccessToken,
@@ -25,7 +25,9 @@ afterEach(() => {
 test("setAccessToken round-trips through localStorage", () => {
   setAccessToken("ya29.token")
 
-  expect(localStorage.getItem(StorageKeys.googleAccessToken)).toBe("ya29.token")
+  expect(localStorage.getItem(DeviceStorageKeys.googleAccessToken)).toBe(
+    "ya29.token",
+  )
   expect(getAccessToken()).toBe("ya29.token")
 })
 
@@ -33,7 +35,7 @@ test("setAccessToken(null) removes the stored token", () => {
   setAccessToken("ya29.token")
   setAccessToken(null)
 
-  expect(localStorage.getItem(StorageKeys.googleAccessToken)).toBeNull()
+  expect(localStorage.getItem(DeviceStorageKeys.googleAccessToken)).toBeNull()
   expect(getAccessToken()).toBeNull()
 })
 

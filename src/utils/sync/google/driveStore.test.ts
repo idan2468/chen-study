@@ -1,8 +1,6 @@
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import { GoogleAuthError } from "./googleAuth"
-import {
-  type SyncPayload,
-  StorageKeys,
-} from "@/utils/sync/legacy/legacyStorage"
+import { type SyncPayload } from "@/utils/sync/legacy/legacyStorage"
 import { readSnapshot } from "./driveStore"
 
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
@@ -29,7 +27,7 @@ const authorizationHeader = (init: RequestInit | undefined) =>
 const payload: SyncPayload = { english_marked_words: "{}" }
 
 beforeEach(() => {
-  localStorage.setItem(StorageKeys.googleAccessToken, "ya29.token")
+  localStorage.setItem(DeviceStorageKeys.googleAccessToken, "ya29.token")
   vi.stubGlobal("fetch", vi.fn())
 })
 
@@ -101,7 +99,7 @@ describe("readSnapshot", () => {
   })
 
   test("throws a plain error instead of calling fetch when there is no access token", async () => {
-    localStorage.removeItem(StorageKeys.googleAccessToken)
+    localStorage.removeItem(DeviceStorageKeys.googleAccessToken)
 
     await expect(readSnapshot()).rejects.toThrow("No Google access token")
     expect(fetch).not.toHaveBeenCalled()

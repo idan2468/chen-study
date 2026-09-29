@@ -1,7 +1,7 @@
 import { createListenerMiddleware } from "@reduxjs/toolkit"
 import type { AppDispatch, RootState } from "./store"
 import { writeString } from "./storage"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import { DeviceStorageKeys } from "./deviceStorageKeys"
 import {
   selectPersistedState,
   writeLocalPersistedState,
@@ -21,8 +21,8 @@ const startListening = listenerMiddleware.startListening.withTypes<
 >()
 
 const SYSTEM_VOICE_KEYS: Record<SpeechLang, string> = {
-  [SpeechLang.English]: StorageKeys.systemVoice,
-  [SpeechLang.Hebrew]: StorageKeys.systemVoiceHe,
+  [SpeechLang.English]: DeviceStorageKeys.systemVoice,
+  [SpeechLang.Hebrew]: DeviceStorageKeys.systemVoiceHe,
 }
 
 startListening({

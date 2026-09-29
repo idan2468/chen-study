@@ -1,7 +1,7 @@
 import i18next from "i18next"
 import { initReactI18next } from "react-i18next"
 import { readString } from "@/store/storage"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import { en } from "./en"
 import { he } from "./he"
 
@@ -21,7 +21,7 @@ const isLocale = (value: string): value is Locale =>
   locales.includes(value as Locale)
 
 export const readStoredLocale = (): Locale => {
-  const stored = readString(StorageKeys.locale, "")
+  const stored = readString(DeviceStorageKeys.locale, "")
   return isLocale(stored) ? stored : DEFAULT_LOCALE
 }
 

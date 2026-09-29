@@ -2,7 +2,7 @@ import { useCallback } from "react"
 import { useDirection } from "@mantine/core"
 import { useTranslation } from "react-i18next"
 import { writeString } from "@/store/storage"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import type { Locale } from "."
 import { applyDocumentLocale, directionFor, DEFAULT_LOCALE } from "."
 
@@ -22,7 +22,7 @@ export const useLocale = () => {
   const setLocale = useCallback(
     (next: Locale) => {
       void i18n.changeLanguage(next)
-      writeString(StorageKeys.locale, next)
+      writeString(DeviceStorageKeys.locale, next)
       applyDocumentLocale(next)
       setDirection(directionFor(next))
     },

@@ -1,3 +1,4 @@
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import {
   builtInModuleIds,
   defaultModuleExercises,
@@ -38,29 +39,32 @@ describe("applySyncPayload", () => {
   test("writes syncable keys into localStorage and reports how many applied", () => {
     const applied = applySyncPayload({
       [StorageKeys.modulesProgress]: JSON.stringify({ HAT: "known" }),
-      [StorageKeys.darkMode]: "1",
+      [DeviceStorageKeys.darkMode]: "1",
     })
 
     expect(applied).toBe(2)
     expect(localStorage.getItem(StorageKeys.modulesProgress)).toBe(
       JSON.stringify({ HAT: "known" }),
     )
-    expect(localStorage.getItem(StorageKeys.darkMode)).toBe("1")
+    expect(localStorage.getItem(DeviceStorageKeys.darkMode)).toBe("1")
   })
 
   test("ignores a device-local key rather than overwriting it, e.g. a crafted Drive file cannot hijack the stored Google token", () => {
-    localStorage.setItem(StorageKeys.googleAccessToken, "victims-real-token")
+    localStorage.setItem(
+      DeviceStorageKeys.googleAccessToken,
+      "victims-real-token",
+    )
 
     const applied = applySyncPayload({
-      [StorageKeys.googleAccessToken]: "attackers-token",
-      [StorageKeys.darkMode]: "1",
+      [DeviceStorageKeys.googleAccessToken]: "attackers-token",
+      [DeviceStorageKeys.darkMode]: "1",
     })
 
     expect(applied).toBe(1)
-    expect(localStorage.getItem(StorageKeys.googleAccessToken)).toBe(
+    expect(localStorage.getItem(DeviceStorageKeys.googleAccessToken)).toBe(
       "victims-real-token",
     )
-    expect(localStorage.getItem(StorageKeys.darkMode)).toBe("1")
+    expect(localStorage.getItem(DeviceStorageKeys.darkMode)).toBe("1")
   })
 })
 
@@ -69,16 +73,9 @@ test("never lets a legacy payload overwrite the persisted state", () => {
   expect(localStorage.getItem(PERSISTED_STATE_KEY)).toBeNull()
 })
 
-test("treats every legacy key except device settings as migratable data", () => {
-  expect(
-    Object.values(StorageKeys).filter(key => !isLegacyDataKey(key)),
-  ).toStrictEqual([
-    StorageKeys.darkMode,
-    StorageKeys.locale,
-    StorageKeys.systemVoice,
-    StorageKeys.systemVoiceHe,
-    StorageKeys.googleAccessToken,
-  ])
+test("treats every legacy key as migratable data, and no device setting", () => {
+  expect(Object.values(StorageKeys).every(isLegacyDataKey)).toBe(true)
+  expect(Object.values(DeviceStorageKeys).some(isLegacyDataKey)).toBe(false)
   expect(isLegacyDataKey(flashcardStatusKey("u1"))).toBe(true)
   expect(isLegacyDataKey(PERSISTED_STATE_KEY)).toBe(false)
 })

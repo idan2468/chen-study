@@ -1,6 +1,6 @@
 import { selectPersistedState } from "@/store/persistedState"
 import { makeStore } from "@/store/store"
-import { StorageKeys } from "@/utils/sync/legacy/legacyStorage"
+import { DeviceStorageKeys } from "@/store/deviceStorageKeys"
 import {
   readDrivePersistedState,
   writeDrivePersistedState,
@@ -34,7 +34,7 @@ const fetchCall = (index: number) => {
 const defaultState = () => selectPersistedState(makeStore().getState())
 
 beforeEach(() => {
-  localStorage.setItem(StorageKeys.googleAccessToken, "ya29.token")
+  localStorage.setItem(DeviceStorageKeys.googleAccessToken, "ya29.token")
   vi.stubGlobal("fetch", vi.fn())
 })
 
@@ -101,7 +101,7 @@ describe("readDrivePersistedState", () => {
   })
 
   test("throws instead of calling fetch when there is no access token", async () => {
-    localStorage.removeItem(StorageKeys.googleAccessToken)
+    localStorage.removeItem(DeviceStorageKeys.googleAccessToken)
 
     await expect(readDrivePersistedState()).rejects.toThrow(
       "No Google access token",
@@ -213,7 +213,7 @@ describe("writeDrivePersistedState", () => {
   })
 
   test("throws instead of calling fetch when there is no access token", async () => {
-    localStorage.removeItem(StorageKeys.googleAccessToken)
+    localStorage.removeItem(DeviceStorageKeys.googleAccessToken)
 
     await expect(
       writeDrivePersistedState({ status: "missing" }, defaultState()),
