@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-09-29
+
+### Changed
+
+- New users start on the first module.
+
+### Removed
+
+- Progress saved by versions before 2.0.0 no longer carries over. Every device has to have opened 2.0.0 or later to keep its progress.
+
 ## [2.1.0] - 2026-09-28
 
 ### Changed
@@ -52,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional Google Drive backup of all progress, plus link-based sync.
 - Mobile layout down to 360px, deployed on GitHub Pages.
 
+[3.0.0]: https://github.com/idan2468/chen-study/compare/v2.1.0...v3.0.0
 [2.1.0]: https://github.com/idan2468/chen-study/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/idan2468/chen-study/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/idan2468/chen-study/releases/tag/v1.0.0
