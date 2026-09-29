@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Blocks committing scratch/debug files -- the kind of one-off file created
  * while investigating something (e.g. `__csscheck.test.tsx`, a throwaway
@@ -14,8 +13,8 @@
  * `probe.test.tsx` has no legitimate reason to be committed regardless of
  * what's inside it.
  */
-const { execFileSync } = require("node:child_process")
-const path = require("node:path")
+import { execFileSync } from "node:child_process"
+import path from "node:path"
 
 const DEBUG_NAME_PATTERNS = [
   /^__.*check$/, // e.g. __csscheck
@@ -43,7 +42,7 @@ const getStagedFiles = () =>
     .map(line => line.trim())
     .filter(Boolean)
 
-const isDebugFile = filePath => {
+const isDebugFile = (filePath: string) => {
   const base = path.basename(filePath).toLowerCase()
   const nameWithoutExt = base.split(".")[0] ?? base
   return DEBUG_NAME_PATTERNS.some(pattern => pattern.test(nameWithoutExt))

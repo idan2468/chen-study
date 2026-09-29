@@ -1,0 +1,1 @@
+node scripts/release.ts tag --since HEAD^

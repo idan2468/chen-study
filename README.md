@@ -57,6 +57,9 @@ npm run dev
 - `fake-drive` — serve the test fake of Google Drive on port 5299 for manual
   browser testing of sync (see "Manual web testing with the fake Drive" in
   `CLAUDE.md`)
+- `release:version` — set the npm version to `CHANGELOG.md`'s top version
+- `release:tag` — tag `HEAD` as that version, with its changelog section as the
+  message (see Releases)
 
 ## Testing
 
@@ -102,6 +105,21 @@ Deployed to GitHub Pages via `.github/workflows/deploy.yml` on every push to
 `main` (or manually via `workflow_dispatch`). Because Pages serves from a
 sub-path, `vite.config.ts` sets `base: "/chen-study/"`, and the app uses
 `HashRouter` so deep links work without server-side rewrite rules.
+
+## Releases
+
+Every merge to `main` is a release. Add a dated `## [X.Y.Z] - YYYY-MM-DD`
+section at the top of `CHANGELOG.md`, plus its compare link at the bottom.
+Git hooks (via Husky) handle the rest:
+
+- **pre-commit:** when `CHANGELOG.md` is staged, sets `package.json` and
+  `package-lock.json` to its top version and stages them.
+- **post-commit / post-merge:** on `main`, when a commit or merge changes
+  `CHANGELOG.md` or `package.json`, creates the annotated tag `vX.Y.Z` with that
+  version's changelog section as the message. An existing tag is never moved.
+
+`npm install` sets `push.followTags`, so `git push` sends the new tag with the
+commits.
 
 ## Docs
 

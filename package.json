@@ -11,13 +11,15 @@
     "lint:fix": "eslint --fix .",
     "lint": "eslint .",
     "preview": "vite preview",
-    "prepare": "husky",
+    "prepare": "husky && git config push.followTags true",
     "start": "vite",
     "test": "vitest --run",
     "type-check": "tsc -b --noEmit",
     "dupes": "jscpd src",
     "knip": "knip && knip --production",
-    "fake-drive": "node scripts/fakeDriveServer.ts"
+    "fake-drive": "node scripts/fakeDriveServer.ts",
+    "release:version": "node scripts/release.ts sync-version",
+    "release:tag": "node scripts/release.ts tag"
   },
   "dependencies": {
     "@mantine/core": "^9.5.1",

@@ -1,1 +1,2 @@
-node scripts/check-no-debug-files.cjs
+node scripts/check-no-debug-files.ts
+node scripts/release.ts sync-version --staged

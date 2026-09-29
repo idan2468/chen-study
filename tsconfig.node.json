@@ -32,6 +32,6 @@
     "vite.config.ts",
     "eslint.config.js",
     "postcss.config.cjs",
-    "scripts/**/*.ts"
+    "scripts"
   ]
 }
