@@ -32,7 +32,6 @@ export const he = {
     cardAriaLabelTap: "כרטיסייה - הקשה להיפוך",
     speakWord: "הקראת המילה {{word}}",
     stopSpeaking: "עצירת ההקראה: {{label}}",
-    deleteItem: "מחיקת {{name}}",
     voiceSettings: "הגדרות קול",
     settingsMenu: "הגדרות",
     connectGoogle: "חיבור לחשבון Google",

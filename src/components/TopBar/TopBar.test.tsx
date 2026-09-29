@@ -403,7 +403,7 @@ test("on mobile, opening the voice settings modal from the drawer closes the dra
   ).not.toBeInTheDocument()
 })
 
-test("on mobile, connects Google from the top row and pushes a snapshot, with Sync now still in the drawer", async () => {
+test("on mobile, connects Google from the top row and syncs, with Sync now still in the drawer", async () => {
   mockMobileViewport()
   setAccessToken("ya29.token")
   vi.mocked(fetch)

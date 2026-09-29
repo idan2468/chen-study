@@ -38,7 +38,6 @@ export const en: Messages = {
     cardAriaLabelTap: "Flashcard - tap to flip",
     speakWord: "Read the word {{word}} aloud",
     stopSpeaking: "Stop reading: {{label}}",
-    deleteItem: "Delete {{name}}",
     voiceSettings: "Voice settings",
     settingsMenu: "Settings",
     connectGoogle: "Connect Google",

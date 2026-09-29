@@ -21,7 +21,7 @@ export type GoogleConnectProviderProps = {
  * Owns the single `useGoogleConnect` instance for the whole app, shared by
  * the boot-time restore and `TopBar`'s Connect button. Renders a full-page
  * spinner in place of `children` until that restore settles, so a returning
- * user doesn't see local state flash before the Drive pull replaces it.
+ * user doesn't see local state flash before the Drive merge updates it.
  */
 export const GoogleConnectProvider = ({
   children,

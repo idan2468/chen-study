@@ -106,7 +106,7 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
 /**
  * Persists the colour scheme under the originals' `dark_mode_enabled` key
  * (`'1'` / `'0'`) instead of Mantine's own `mantine-color-scheme-value`, so a
- * returning user keeps their preference and old sync payloads still apply.
+ * returning user keeps their preference.
  *
  * Mirrors Mantine's built-in `localStorageColorSchemeManager`, with the value
  * mapping and the legacy key swapped in.

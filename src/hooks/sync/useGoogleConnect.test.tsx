@@ -181,11 +181,11 @@ test("a 401 at boot falls back to signed-out when the silent re-issue fails", as
   ).toBeInTheDocument()
 })
 
-test("a 401 from the Drive pull (after the email fetch already succeeded) also falls back to signed-out when the re-issue fails", async () => {
+test("a 401 from the Drive read (after the email fetch already succeeded) also falls back to signed-out when the re-issue fails", async () => {
   setAccessToken("ya29.expired")
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" })) // boot's email fetch succeeds
-    .mockResolvedValueOnce(jsonResponse({}, 401)) // then the Drive pull itself 401s
+    .mockResolvedValueOnce(jsonResponse({}, 401)) // then the Drive read itself 401s
 
   renderWithProviders(<Host />)
 

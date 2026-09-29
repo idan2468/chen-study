@@ -290,7 +290,7 @@ export const modulesSlice = createAppSlice({
     ),
   }),
   extraReducers: builder => {
-    // Keeps a running review alive through a Drive pull.
+    // Keeps a running review alive when a sync reloads the store.
     builder.addCase(reloadFromStorage, state => ({
       ...loadFromStorage(),
       missedReview: state.missedReview,
