@@ -23,7 +23,7 @@ describe("hydration", () => {
   })
 
   describe("dyslexiaFont", () => {
-    test("off when the key is not set", () => {
+    test("off by default", () => {
       const store = makeStore()
 
       expect(selectDyslexiaFont(store.getState())).toBe(false)
@@ -145,7 +145,7 @@ describe("version metadata", () => {
     vi.useRealTimers()
   })
 
-  test("loads stored preferences at the initial timestamp", () => {
+  test("starts the default preferences at the initial timestamp", () => {
     const { settings } = makeStore().getState()
 
     expect(settings.dyslexiaFont).toStrictEqual(toVersionedValue(false))

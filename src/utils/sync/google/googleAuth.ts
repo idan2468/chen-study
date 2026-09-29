@@ -35,7 +35,7 @@ export class GoogleAuthError extends Error {
   }
 }
 
-/** Attaches the bearer token to any Google API call; shared by `fetchConnectedEmail` and `driveStore.ts`. */
+/** Attaches the bearer token to any Google API call; shared by `fetchConnectedEmail` and `driveFiles.ts`. */
 export const authorizedFetch = async (
   token: string,
   url: string,

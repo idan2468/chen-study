@@ -58,11 +58,10 @@ test("renders children immediately with no saved token", () => {
 
 test("renders a spinner while a saved token is being restored, then swaps to children", async () => {
   setAccessToken("ya29.token")
-  const existingFile = { id: "f1", modifiedTime: "2024-01-01T00:00:00.000Z" }
   vi.mocked(fetch)
     .mockResolvedValueOnce(jsonResponse({ email: "chen@example.com" }))
-    .mockResolvedValueOnce(filesResponse([existingFile]))
-    .mockResolvedValueOnce(jsonResponse({}))
+    .mockResolvedValueOnce(filesResponse([]))
+    .mockResolvedValueOnce(okResponse())
 
   renderWithProviders(
     <GoogleConnectProvider>

@@ -29,14 +29,9 @@ import {
 } from "@/store/slices/settingsSlice"
 import { DEFAULT_SPEECH_RATE, SpeechLang } from "@/types/speech"
 
-const otherId = "other_1"
-
 const preloaded = () => ({
   unseen: {
-    exercises: [
-      toVersionedValue(defaultUnseenExercise),
-      toVersionedValue({ ...defaultUnseenExercise, exerciseId: otherId }),
-    ],
+    exercises: [toVersionedValue(defaultUnseenExercise)],
     currentId: toVersionedValue(defaultUnseenExercise.exerciseId),
     cardIndex: toVersionedValue(0),
   },

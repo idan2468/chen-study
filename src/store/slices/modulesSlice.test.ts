@@ -451,7 +451,7 @@ describe("hydration", () => {
     ).toBe(true)
   })
 
-  test("reopens without a deleted built-in, and does not re-seed it", () => {
+  test("reopens without a deleted built-in", () => {
     makeStore().dispatch(deleteModule(secondBuiltInId))
 
     const store = makeStore()
@@ -555,7 +555,7 @@ describe("addModules", () => {
 })
 
 describe("deleteModule", () => {
-  test("keeps a deleted built-in as a tombstone so it is not re-seeded", () => {
+  test("keeps a deleted built-in as a tombstone, so the deletion syncs", () => {
     const store = makeStore({ modules: baseState() })
     store.dispatch(deleteModule(secondBuiltInId))
 
@@ -563,9 +563,6 @@ describe("deleteModule", () => {
       secondBuiltInId,
     )
     expect(moduleEntry(store, secondBuiltInId)?.deleted).toBe(true)
-    expect(
-      selectModules(makeStore().getState()).map(module => module.id),
-    ).not.toContain(secondBuiltInId)
   })
 
   test("refuses to delete the last remaining module", () => {
