@@ -83,6 +83,20 @@
   - Tests of legacy behavior are deleted. Tests that only seeded state through legacy keys set it up through the store instead (real actions plus the write-through), not hand-written v2 JSON.
   - Imports in `src/` and `test/` go through the `@/`, `@test/`, and `@resources/` aliases, never relative paths: every existing relative import is converted in one commit, and ESLint's `no-restricted-imports` rejects new ones there (config files at the root keep relative imports, which the aliases don't cover).
   - Docs: rewrite `google-account-sync.md` for v2 only, update the README sync paragraph and this doc. `persistence-gaps.md`, the plan doc, and the "legacy" wording in `index.html`/`theme.ts` (the original apps' `'1'`/`'0'` format) stay as they are.
+  - `.prettierignore` skips `.env.example` (no parser) and `package-lock.json` (npm owns its format); the six files already unformatted on `main` are formatted instead of ignored, so `npm run format:check` passes for the whole repo.
+  - `toIsoTimestamp`'s `zone` parameter stays (Step 8 decision, E below), though only its test passes it.
+  - `test/fakeDrive.ts`'s `userinfo` route, `email`, and `token` options stay: the fake Drive also backs manual browser testing.
+- Commits: `64abbbe`, `5a3aa82`, `fc2305c`, `d05f59b`, `2388911`, `9c8dbd5`, `ebc93c8`, `c2a42bc`, `3523abb`, `97640fb`, `aa30160`, `ca06412`, `50d1ddc`, `7406e1d`, `a56730a`, `a753221`, `d71b8e1`, `7ff0577`, `94cd7a5`, `c2acf96`, `d013ee5`.
+- Removal passes: knip in default and production mode after each group of removals until both came back clean; greps for legacy terms, keys, and pull/push wording; a translation-key usage check; then an independent read-only review of the branch, whose confirmed findings were applied (`a56730a`, `a753221`), including a restore-spinner test that passed only because its legacy `{}` mock made an unmocked rename throw.
+- Validation: 333 tests, type-check (including forced `tsc -b --force`), lint, whole-repo format check, build, `npm run knip`, and diff checks pass.
+- Review (`review-code-quality`): F1 (reuse `findLiveValue` in a test helper) and F2 (one mark-and-sync helper in the integration test) accepted and applied (`c2acf96`, `d013ee5`).
+- Manual Chrome test (dev server, isolated contexts per device; Google faked by serving `test/fakeDrive.ts` from a local Node server and redirecting `googleapis.com` requests to it from an init script; the user's real Drive was never touched):
+  - A fresh device saves the defaults at boot (only `english_progress_v2`, epoch timestamps, all 33 built-ins, the first module and default exercise open); a marked card persists with real timestamps and survives a reload.
+  - That device connecting creates `progress-v2.json` from its state (one locate, one create despite StrictMode's doubled boot); a second device merges it in and uploads nothing.
+  - **Sync now** on the second device PATCHes the existing file; the first device shows the edit in its running UI after returning to the tab, and its syncs stay read-only.
+  - A device with leftover legacy keys and `sync_v2_activated` starts from the defaults and leaves those keys untouched; dark mode and locale are kept.
+  - Consoles are clean.
+- Awaiting manual approval.
 
 #### Removal checklist (Step 11.5 audit)
 
