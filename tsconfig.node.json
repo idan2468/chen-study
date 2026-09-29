@@ -24,8 +24,14 @@
     "noUncheckedSideEffectImports": true,
     // TS 6.0 defaults an unset `types` to `[]` (previously implicit
     // "include everything under @types"); this config needs Node's ambient
-    // globals (`process`, etc.) for vite.config.ts/eslint.config.js.
+    // globals (`process`, etc.) for vite.config.ts/eslint.config.js and the
+    // Node-run scripts.
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "eslint.config.js", "postcss.config.cjs"]
+  "include": [
+    "vite.config.ts",
+    "eslint.config.js",
+    "postcss.config.cjs",
+    "scripts/**/*.ts"
+  ]
 }
