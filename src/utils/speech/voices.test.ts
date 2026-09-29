@@ -1,9 +1,5 @@
 import { at } from "@test/helpers"
-import {
-  pickBestVoice,
-  resolveVoice,
-  voicesForLanguage,
-} from "@/utils/speech/voices"
+import { resolveVoice, voicesForLanguage } from "@/utils/speech/voices"
 
 /** `SpeechSynthesisVoice` is exactly these five fields, so no cast is needed. */
 const voice = (
@@ -19,16 +15,20 @@ const voice = (
   ...extra,
 })
 
+/** The voice used when the user hasn't chosen one. */
+const bestVoice = (voices: readonly SpeechSynthesisVoice[], lang: string) =>
+  resolveVoice(voices, lang, null)
+
 test("prefers premium over enhanced over plain", () => {
   const voices = [voice("Ava"), voice("Ava (Enhanced)"), voice("Ava (Premium)")]
 
-  expect(pickBestVoice(voices, "en")?.name).toBe("Ava (Premium)")
+  expect(bestVoice(voices, "en")?.name).toBe("Ava (Premium)")
 })
 
 test("prefers the modern neural families over legacy voices", () => {
   const voices = [voice("Samantha"), voice("Google US English")]
 
-  expect(pickBestVoice(voices, "en")?.name).toBe("Google US English")
+  expect(bestVoice(voices, "en")?.name).toBe("Google US English")
 })
 
 describe("Windows", () => {
@@ -42,7 +42,7 @@ describe("Windows", () => {
       ),
     ]
 
-    expect(pickBestVoice(voices, "en")?.name).toBe(
+    expect(bestVoice(voices, "en")?.name).toBe(
       "Microsoft Ava Online (Natural) - English (United States)",
     )
   })
@@ -55,7 +55,7 @@ describe("Android", () => {
   test("prefers the -network variant over the -local variant of the same voice", () => {
     const voices = [voice("en-us-x-iol-local"), voice("en-us-x-iol-network")]
 
-    expect(pickBestVoice(voices, "en")?.name).toBe("en-us-x-iol-network")
+    expect(bestVoice(voices, "en")?.name).toBe("en-us-x-iol-network")
   })
 
   test("still falls back to the OS default when neither suffix is present", () => {
@@ -64,7 +64,7 @@ describe("Android", () => {
       voice("en-us-x-sfg", "en-US", { default: true }),
     ]
 
-    expect(pickBestVoice(voices, "en")?.name).toBe("en-us-x-sfg")
+    expect(bestVoice(voices, "en")?.name).toBe("en-us-x-sfg")
   })
 })
 
@@ -73,7 +73,7 @@ describe("novelty voices", () => {
   test("are never selected, even when they are the only alternative to nothing", () => {
     const voices = [voice("Bad News"), voice("Boing"), voice("Samantha")]
 
-    expect(pickBestVoice(voices, "en")?.name).toBe("Samantha")
+    expect(bestVoice(voices, "en")?.name).toBe("Samantha")
   })
 
   test("are excluded from the picker list entirely", () => {
@@ -94,7 +94,7 @@ test("falls back to the OS default when no voice carries a quality signal", () =
     voice("Samantha", "en-US", { default: true }),
   ]
 
-  expect(pickBestVoice(voices, "en")?.name).toBe("Samantha")
+  expect(bestVoice(voices, "en")?.name).toBe("Samantha")
 })
 
 describe("language matching", () => {
@@ -108,7 +108,7 @@ describe("language matching", () => {
 
   test("returns nothing when the language is unavailable", () => {
     expect(voicesForLanguage([voice("Samantha")], "he-IL")).toStrictEqual([])
-    expect(pickBestVoice([voice("Samantha")], "he-IL")).toBeUndefined()
+    expect(bestVoice([voice("Samantha")], "he-IL")).toBeUndefined()
   })
 })
 

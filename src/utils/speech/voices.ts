@@ -142,10 +142,8 @@ export const voicesForLanguage = (
     .filter(voice => matchesLanguage(voice, lang) && !isNovelty(voice))
     .sort((a, b) => qualityScore(b) - qualityScore(a))
 
-export const pickBestVoice = (
-  voices: readonly SpeechSynthesisVoice[],
-  lang: string,
-) => voicesForLanguage(voices, lang)[0]
+const pickBestVoice = (voices: readonly SpeechSynthesisVoice[], lang: string) =>
+  voicesForLanguage(voices, lang)[0]
 
 /**
  * Resolves the voice to speak with: the user's explicit choice when it is
