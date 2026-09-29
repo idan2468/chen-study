@@ -1,0 +1,2 @@
+# No parser for dotenv files.
+.env.example
